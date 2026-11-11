@@ -1,0 +1,59 @@
+# Datasets: keep only their documentation
+/data/*
+!/data/README.md
+!/data/used_data/
+/data/used_data/*
+!/data/used_data/README.md
+
+# Pretrained weights, experiment outputs and historical code copies
+/model/
+/results/*
+!/results/README.md
+
+# Operational logs: keep documentation
+/logs/*
+!/logs/README.md
+
+# Large arrays, model checkpoints and archives
+*.npy
+*.npz
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.h5
+*.hdf5
+*.joblib
+*.pkl
+*.parquet
+*.arrow
+*.bin
+*.mmap
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Runtime files and caches
+*.log
+*.pid
+*.lock
+*.tmp
+nohup.out
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+miniconda3/
+
+# Local credentials and editor state
+.env
+.env.*
+!.env.example
+.aws/
+.codex/
+.DS_Store
+*~
+/.vscode/
