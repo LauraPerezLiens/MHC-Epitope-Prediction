@@ -192,16 +192,6 @@ Current development includes large-scale data preparation, protein representatio
 
 Future work includes further model evaluation, methodological validation, and comparisons with established epitope prediction approaches.
 
-## Evaluation Considerations
-
-The experimental workflow has used random row-level dataset partitioning.
-
-Consequently, related sequence windows, augmented variants, or proteins may appear across different partitions.
-
-Results obtained using this strategy should not be interpreted as evidence of generalization to entirely unseen proteins.
-
-Additional evaluation strategies are needed to assess generalization under more restrictive biological separation criteria.
-
 ## Research Context
 
 Developed as part of doctoral research in computational biology and cancer immunotherapy at the Spanish National Centre for Biotechnology (CNB-CSIC).
