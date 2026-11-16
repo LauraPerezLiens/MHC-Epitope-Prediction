@@ -58,6 +58,26 @@ bash neural_network/MLP/run_chunk_ladder100_dualeval.sh
 
 The launcher defaults to 200 epochs over 10 fixed chunks, with TRAIN/TEST STAGE and ALL evaluations at each epoch end. ALL uses a fixed balanced sample across the full chunk pool. See [MLP configuration](neural_network/MLP/README.md) for overrides, checkpoints and resumption.
 
+## Synthetic example
+
+Check chunk loading, metadata, splits, TRAIN normalization and CPU inference without the original data or model weights:
+
+```bash
+python examples/synthetic_mlp.py
+```
+
+See [the synthetic example](examples/README.md) for its generated schema and checks.
+
+## Tests
+
+Run the CPU regression suite with synthetic inputs:
+
+```bash
+python -m unittest discover -s tests -t . -v
+```
+
+Archive tests require `zstd`. Two known verification gaps are tracked as expected failures; see [test coverage and limitations](tests/README.md).
+
 ## Evaluation scope
 
 A positive window contains a recorded positive epitope; other windows are labeled negative without experimental confirmation. BLOSUM variants inherit the original label and structural features.
