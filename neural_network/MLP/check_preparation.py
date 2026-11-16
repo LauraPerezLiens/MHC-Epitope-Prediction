@@ -48,6 +48,7 @@ def validate_preparation(root, scaler_path, check_source_csv=False):
                 raise ValueError(f'Feature/metadata row or dimension mismatch: {primary}, chunk {cid}')
             if (not np.isin(meta['y'], [0, 1]).all()
                     or not np.isin(meta['split_id'], [0, 1, 2]).all()
+                    or meta['group_id'].dtype.kind not in 'iu'
                     or np.any(meta['group_id'] < 0)):
                 raise ValueError(f'Invalid labels, groups or split IDs: {primary}, chunk {cid}')
             expected.add((str(ds['name']), cid))
@@ -77,6 +78,9 @@ def validate_preparation(root, scaler_path, check_source_csv=False):
             if (mean.shape != (dimension,) or scale.shape != (dimension,)
                     or not np.isfinite(mean).all() or not np.isfinite(scale).all() or np.any(scale <= 0)):
                 raise ValueError('Existing scaler has invalid dimensions or values')
+        if (scaler.sampled_dataset_names.ndim != 1 or scaler.sampled_chunk_ids.ndim != 1
+                or len(scaler.sampled_dataset_names) != len(scaler.sampled_chunk_ids)):
+            raise ValueError('Existing scaler manifest has inconsistent identifier arrays')
         actual = list(zip(map(str, scaler.sampled_dataset_names), map(int, scaler.sampled_chunk_ids)))
         if set(actual) != expected or len(actual) != len(expected):
             raise ValueError('Existing scaler manifest does not match the prepared chunk set')
