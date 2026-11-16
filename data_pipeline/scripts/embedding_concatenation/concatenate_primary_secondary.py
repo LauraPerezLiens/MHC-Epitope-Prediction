@@ -178,7 +178,7 @@ def copy_verified(source, target):
     if target.exists():
         if file_digest(target) != expected:
             raise ValueError(f'Metadata differs: {target}')
-        return
+        return expected
     temporary = target.with_name(target.name + '.partial')
     with source.open('rb') as src, temporary.open('wb') as dst:
         shutil.copyfileobj(src, dst, 1024 * 1024)
@@ -187,6 +187,7 @@ def copy_verified(source, target):
     if file_digest(temporary) != expected or file_digest(source) != expected:
         raise ValueError(f'Metadata copy verification failed: {source}')
     os.replace(temporary, target)
+    return expected
 
 
 def concatenate_chunk(primary_file, group_ids, store, output, block_rows=1024,
@@ -516,7 +517,7 @@ def process_fast_job(job):
     global _worker_state
     # Initialized before worker threads are launched by run_fast.
     started = time.monotonic()
-    primary, output, gids, signature_inputs, inputs_digest, dependencies, secondary_root, block_rows, cache_paths = job
+    primary, output, gids, signature_inputs, inputs_digest, dependencies, secondary_root, block_rows, cache_paths, metadata_digests = job
     marker = output.with_suffix('.json')
     previous = json.loads(marker.read_text()) if marker.exists() else None
     n = len(gids)
@@ -530,6 +531,8 @@ def process_fast_job(job):
             raise ValueError(f'Primary changed: {primary}')
         if previous.get('bytes') != output.stat().st_size or previous.get('sha256') != file_digest(output):
             raise ValueError(f'Output checksum mismatch: {output}')
+        if previous.get('metadata_sha256') is not None and previous['metadata_sha256'] != metadata_digests:
+            raise ValueError(f'Metadata checksum differs from conversion record: {output}')
         return primary, True, n, time.monotonic()-started
     if output.exists():
         raise ValueError(f'Untracked output: {output}')
@@ -556,7 +559,8 @@ def process_fast_job(job):
         if input_signature(dependencies) != signature_inputs or input_signature([primary])[0] != primary_signature:
             raise ValueError('Inputs changed during conversion')
         write_marker(marker, {'signature': sig, 'bytes': temporary.stat().st_size,
-                              'sha256': file_digest(temporary)})
+                              'sha256': file_digest(temporary),
+                              'metadata_sha256': metadata_digests})
     concatenate_chunk_fast(primary, gids, state, output, block_rows, record)
     return primary, False, n, time.monotonic()-started
 
@@ -596,12 +600,12 @@ def run_fast(args):
         layout_path = output_root / 'feature_layout.json'
         layout = json.loads(layout_path.read_text()) if layout_path.exists() else {}
         if layout.get('complete') and not (output_root / 'INCOMPLETE').exists():
-            if not args.archive_sources:
-                print('Output already complete; nothing to convert.', flush=True)
-                return
-            if layout.get('source_root') != str(root):
+            if args.archive_sources and layout.get('source_root') != str(root):
                 raise ValueError('Completed output belongs to another source root')
             verify_completed_output(output_root)
+            if not args.archive_sources:
+                print('Output already complete; features and metadata verified.', flush=True)
+                return
             finalize_archives(args, root, archive_tree)
             return
         (output_root / 'INCOMPLETE').write_text('Concatenation and metadata verification in progress.\n')
@@ -658,6 +662,7 @@ def run_fast(args):
                     gids = np.load(gid_path)
                     if gids.ndim != 1 or gids.dtype.kind not in 'iu' or np.any(gids < 0):
                         raise ValueError(f'Invalid group IDs: {gid_path}')
+                    metadata_digests = {}
                     for suffix in ('y', 'group_id', 'split_id'):
                         name = f'chunk_{cid:06d}_{suffix}.npy'
                         a = np.load(source_meta / name, mmap_mode='r')
@@ -667,10 +672,10 @@ def run_fast(args):
                             raise ValueError('Invalid labels')
                         if suffix == 'split_id' and not np.isin(a, [0, 1, 2]).all():
                             raise ValueError('Invalid split IDs')
-                        copy_verified(source_meta / name, metadata_target / name)
+                        metadata_digests[suffix] = copy_verified(source_meta / name, metadata_target / name)
                     primary = master.parent / f'chunk_{cid:06d}_X.npy'
                     output = target / primary.name
-                    job = (primary, output, gids, signature_inputs, inputs_digest, dependencies, secondary_root, args.block_rows, cache_paths)
+                    job = (primary, output, gids, signature_inputs, inputs_digest, dependencies, secondary_root, args.block_rows, cache_paths, metadata_digests)
                     pending.append(pool.submit(process_fast_job, job))
                     scheduled += 1
                     if len(pending) >= args.workers:
@@ -702,7 +707,7 @@ def run_fast(args):
 
 
 def verify_completed_output(root):
-    """Before removing remaining sources, revalidate every durable output record."""
+    """Read-only checksum verification of completed features and metadata."""
     layout = json.loads((root / 'feature_layout.json').read_text())
     markers = sorted(root.rglob('chunk_*_X.json'))
     if len(markers) != layout.get('chunks'):
@@ -715,12 +720,33 @@ def verify_completed_output(root):
             raise ValueError(f'Corrupt completed output: {output}')
         n = rec['signature']['rows']
         a = np.load(output, mmap_mode='r')
-        if a.shape != (n, PRIMARY_DIM + SECONDARY_DIM):
+        if a.shape != (n, PRIMARY_DIM + SECONDARY_DIM) or a.dtype != np.dtype("float32"):
             raise ValueError(f'Invalid completed shape: {output}')
         for suffix in ('y', 'group_id', 'split_id'):
             metadata = marker.parent / 'chunk_metadata' / marker.name.replace('_X.json', f'_{suffix}.npy')
             if np.load(metadata, mmap_mode='r').shape != (n,):
                 raise ValueError(f'Missing completed metadata: {metadata}')
+            if 'metadata_sha256' in rec:
+                hashes = rec['metadata_sha256']
+                expected = hashes.get(suffix) if isinstance(hashes, dict) else None
+            else:
+                # Older conversion records did not store metadata hashes. Use
+                # independent source/archive evidence without changing records.
+                source_root = layout.get('source_root')
+                source = Path(source_root) / metadata.relative_to(root) if source_root else None
+                if source is not None and source.resolve() == metadata.resolve():
+                    source = None
+                archived = source.with_name(source.name + '.archive.json') if source else None
+                if archived is not None and archived.is_file():
+                    expected = json.loads(archived.read_text()).get('original_sha256')
+                elif source is not None and source.is_file():
+                    expected = file_digest(source)
+                else:
+                    expected = None
+            if not isinstance(expected, str) or len(expected) != 64:
+                raise ValueError(f'Missing recorded metadata checksum: {metadata}')
+            if file_digest(metadata) != expected:
+                raise ValueError(f'Metadata checksum mismatch: {metadata}')
         rows += n
     if rows != layout.get('rows'):
         raise ValueError('Completed row count mismatch')

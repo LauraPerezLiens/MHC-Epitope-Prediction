@@ -34,6 +34,17 @@ class SplittingTests(PipelineCase):
             with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
                 assign_row_splits(seed=42, chunk_id=0, **kwargs)
 
+    def test_small_single_class_chunks_preserve_every_row(self):
+        expected = [(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 0, 1),
+                    (3, 0, 1), (4, 0, 1), (5, 1, 0)]
+        for label in (0, 1):
+            for size, counts in enumerate(expected):
+                with self.subTest(label=label, size=size):
+                    labels = np.full(size, label, dtype=np.int8)
+                    splits = assign_row_splits(labels, seed=42, chunk_id=0)
+                    self.assertEqual(len(splits), size)
+                    self.assertEqual(tuple(np.bincount(splits, minlength=3)), counts)
+
     def test_csv_read_blocks_do_not_split_a_physical_chunk(self):
         chunks = list(iter_physical_chunks(self.primary / 'master_index.csv', read_rows=2))
         self.assertEqual(len(chunks), 1)
@@ -48,6 +59,13 @@ class ClassificationTests(unittest.TestCase):
         self.assertTrue(validate_exact_match(protein, 'DEF', 3, 5))
         for start, end in [(4, 6), (0, 2), (19, 21)]:
             self.assertFalse(validate_exact_match(protein, 'DEF', start, end))
+
+    def test_epitopes_at_both_window_boundaries_match_exactly(self):
+        from data_pipeline.scripts.data_classification.epitope_classification import validate_exact_match
+        window = 'ACDEFGHIKLMNPQRSTVWYACDEF'
+        self.assertTrue(validate_exact_match(window, 'ACD', 1, 3))
+        self.assertTrue(validate_exact_match(window, 'DEF', 23, 25))
+        self.assertTrue(validate_exact_match(window, window, 1, 25))
 
     def test_position_score_is_centered_and_symmetric(self):
         from data_pipeline.scripts.data_classification.epitope_classification import compute_epitope_position_score

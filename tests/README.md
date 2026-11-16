@@ -12,11 +12,8 @@ Coverage includes classification coordinates, BLOSUM substitutions, stratified r
 
 Archive tests inject failures during compression, after archive publication and before original removal. They also check source modification, corrupt archives, insufficient space, repeated execution, symlink rejection and checksum verification despite an `ARCHIVED.json` marker. These are controlled software-failure tests, not power-loss or filesystem-durability tests.
 
-## Known verification gaps
+## Completed-output integrity
 
-Two tests are deliberately marked `expectedFailure` until the corresponding behavior is changed:
+Completed outputs are rehashed even when no archival is requested. New per-chunk records include independent SHA-256 hashes for labels, group IDs and split IDs; tests alter each array without changing its shape and require verification to reject it.
 
-- A completed dataset can take the fast return path without rehashing corrupted features when archival is disabled.
-- Completed-output verification checks metadata shape but does not detect changed label values with unchanged shape.
-
-A run reporting `OK (expected failures=2)` confirms these limitations remain reproducible; it does not mean all intended integrity guarantees hold. The tests must be updated alongside a verified fix. Production behavior is unchanged by this test suite.
+Legacy records without metadata hashes are checked against original source metadata or its archived `original_sha256` record. Missing independent evidence is an error. Verification does not modify outputs. These regressions run as ordinary tests without `expectedFailure`.

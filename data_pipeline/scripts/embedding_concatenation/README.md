@@ -32,6 +32,8 @@ The output contains its own features, metadata, feature layout and provenance ma
 
 Do not train while `INCOMPLETE` exists. The final layout records verified row and chunk totals. `TRAINING READY` means concatenation is complete; source archival may continue afterwards. Restart the same command after interruption. It verifies existing outputs and reuses them, including chunks whose original Primary is already compressed.
 
+Rerunning a completed conversion verifies feature and metadata checksums before returning, even without archival; this reads all output files. New chunk records store `metadata_sha256` for labels, group IDs and split IDs. For older records, verification uses source metadata or the original hashes retained in its archive records. Missing evidence or a content mismatch stops verification. This check does not rewrite outputs or upgrade old records.
+
 `--max-chunks` and `--start-chunk` are benchmark options and always leave output incomplete. `--in-place` retains the legacy conversion mode; it cannot be combined with progressive archival.
 
 ## 4. Train using concatenated data only

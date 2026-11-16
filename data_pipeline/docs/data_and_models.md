@@ -80,13 +80,13 @@ The shuffle manifest records seed 42, 1,024 buckets, chunk size, source mappings
 |---|---|
 | `reorder_manifest.json` | Source mappings, shuffle parameters and row/chunk totals; source paths may reflect the original machine |
 | `feature_layout.json` and `INCOMPLETE` | Feature dimensions, normalization status and completion state; markers are not standalone integrity proofs |
-| Per-chunk `chunk_XXXXXX_X.json` | Concatenated-output SHA-256, byte size and input signature; conversion compares every output value against its source modalities and verifies copied metadata |
+| Per-chunk `chunk_XXXXXX_X.json` | Output SHA-256, byte size and input signature; new records also store SHA-256 for each copied metadata array. Conversion compares every feature value against its source modalities |
 | `check_master_split.py` | Split proportions, source-row consistency and agreement between CSVs and metadata |
 | `check_secondary_embeddings.py` | Manifest/ID/shape checks, with sampled numerical finiteness and variability checks |
 | `*.archive.json` and `ARCHIVED.json` | Per-file original/archive SHA-256 records and completed archive-tree marker; decompressed content is verified before source removal |
 | `*.tar.zst.sha256` and `*.verification.json` | Historical raw/intermediate/UniRef archive checksums and records of full GNU tar comparison against original directories |
 
-Checksums establish consistency with recorded local artifacts, not the identity of an unrecorded upstream release. See [source archiving](../scripts/data_archiving/README.md) for restoration. The concatenated training tree is independent of the source archives; those archives are needed to recover detailed source-row provenance.
+Completed-output verification checks feature and metadata content. Legacy records without metadata hashes require original source metadata or its archive checksum records; an output cannot supply its own independent source evidence. Checksums establish consistency with recorded local artifacts, not the identity of an unrecorded upstream release. See [source archiving](../scripts/data_archiving/README.md) for restoration. The concatenated training tree is independent of the source archives; those archives are needed to recover detailed source-row provenance.
 
 ## Public availability
 

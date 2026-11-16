@@ -76,7 +76,7 @@ Run the CPU regression suite with synthetic inputs:
 python -m unittest discover -s tests -t . -v
 ```
 
-Archive tests require `zstd`. Two known verification gaps are tracked as expected failures; see [test coverage and limitations](tests/README.md).
+Archive tests require `zstd`. See [test coverage and limitations](tests/README.md).
 
 ## Evaluation scope
 
