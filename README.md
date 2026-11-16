@@ -76,7 +76,7 @@ Run the CPU regression suite with synthetic inputs:
 python -m unittest discover -s tests -t . -v
 ```
 
-Archive tests require `zstd`. [GitHub Actions](.github/workflows/cpu-checks.yml) runs CPU tests, the synthetic example, syntax checks and focused Ruff checks in an independent minimal environment. See [test coverage](tests/README.md) and [local CI setup](env/README.md#cpu-tests-and-ci).
+Archive tests require `zstd`. [GitHub Actions](.github/workflows/cpu-checks.yml) is configured to run CPU tests, the synthetic example, syntax checks and focused Ruff checks in an independent minimal environment. See [test coverage](tests/README.md) and [local CI setup](env/README.md#cpu-tests-and-ci).
 
 ## Evaluation scope
 

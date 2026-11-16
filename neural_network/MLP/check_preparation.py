@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Validate existing splits, metadata and an optional scaler without changing them."""
 import argparse
+import csv
 from pathlib import Path
 import sys
 
@@ -10,11 +11,12 @@ from dataset import (PRIMARY_DIM, SECONDARY_DIM, ModalityStandardizer,
                      discover_datasets, load_chunk_metadata, _resolve_primary_embedding_file)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'data_pipeline/scripts/data_splitting'))
-from check_master_split import validate_dataset
+from check_master_split import REQUIRED, validate_dataset
 
 
-def validate_preparation(root, scaler_path):
+def validate_preparation(root, scaler_path, check_source_csv=False):
     root, scaler_path = Path(root), Path(scaler_path)
+    compare_source_csv = check_source_csv or not scaler_path.is_file()
     datasets = discover_datasets(root)
     prepared = {Path(ds['primary_path']).resolve() for ds in datasets}
     for path in root.rglob('chunk_*_X*.npy'):
@@ -53,7 +55,16 @@ def validate_preparation(root, scaler_path):
             for name in ('master_index.csv', 'master_split.csv'):
                 if not (primary / name).is_file():
                     raise FileNotFoundError(f'Missing existing {name}: {primary}; no split will be regenerated')
-            validate_dataset(primary / 'master_split.csv')
+                with (primary / name).open(newline='') as handle:
+                    header = next(csv.reader(handle), [])
+                required = set(REQUIRED) | ({'split_id'} if name == 'master_split.csv' else set())
+                if not required.issubset(header):
+                    raise ValueError(f'{primary / name}: missing required columns {sorted(required - set(header))}')
+            if compare_source_csv:
+                validate_dataset(primary / 'master_split.csv')
+            else:
+                print(f'CSV headers checked: {primary}; full CSV comparison skipped '
+                      '(existing scaler; request --check-source-csv to compare all source rows).', flush=True)
         elif not scaler_path.is_file():
             raise ValueError('A concatenated-only dataset requires its existing TRAIN scaler; '
                              'this launcher fits only from separate modalities')
@@ -76,9 +87,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--scaler-path', type=Path, required=True)
+    parser.add_argument('--check-source-csv', action='store_true',
+                        help='Compare all source CSV rows with metadata, even when a scaler already exists')
     args = parser.parse_args()
     try:
-        chunks = validate_preparation(args.root, args.scaler_path)
+        chunks = validate_preparation(args.root, args.scaler_path, args.check_source_csv)
     except (OSError, ValueError, RuntimeError, KeyError) as exc:
         parser.error(f'Existing preparation is required; no splits or metadata were changed: {exc}')
     print(f'PREPARATION VALID: {chunks} chunks; existing splits and metadata preserved.', flush=True)

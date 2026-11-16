@@ -8,7 +8,6 @@ Primary files after full blockwise verification; do not train during conversion.
 with a matching completion marker; interrupted chunks are regenerated.
 """
 import argparse
-from contextlib import nullcontext
 import hashlib
 import fcntl
 import json
@@ -278,10 +277,14 @@ def main():
         output_root = args.output.resolve()
         writer_lock = output_root / '.writer.lock'
         try:
-            with (writer_lock.open('rb') if writer_lock.exists() else nullcontext()) as lock:
-                if lock is not None:
-                    fcntl.flock(lock, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            with writer_lock.open('rb') as lock:
+                fcntl.flock(lock, fcntl.LOCK_SH | fcntl.LOCK_NB)
                 verify_completed_output(output_root)
+        except FileNotFoundError as exc:
+            if exc.filename == str(writer_lock):
+                parser.exit(1, 'Verification failed: missing .writer.lock; cannot synchronize with writers. '
+                               'Read-only verification refused without creating a lock.\n')
+            parser.exit(1, f'Verification failed: {exc}\n')
         except (OSError, ValueError, KeyError, TypeError) as exc:
             parser.exit(1, f'Verification failed: {exc}\n')
         print('Full feature and metadata SHA-256 verification passed; no files changed.', flush=True)

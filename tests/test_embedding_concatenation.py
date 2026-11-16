@@ -262,3 +262,31 @@ class ConcatenationTests(PipelineCase):
         self.assertIn('Verification failed: Corrupt completed output', result.stderr)
         self.assertNotIn('Traceback', result.stderr)
         self.assertEqual(before, {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()})
+
+    def test_verify_only_without_lock_refuses_before_payload_reads(self):
+        import sys
+        self.convert()
+        (self.output / '.writer.lock').unlink()
+        before = {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()}
+        args = [concat.__file__, '--verify-only', '--output', str(self.output)]
+        with mock.patch.object(sys, 'argv', args), mock.patch.object(concat, 'verify_completed_output') as verify:
+            with self.assertRaises(SystemExit) as exit_code:
+                concat.main()
+        self.assertEqual(exit_code.exception.code, 1)
+        verify.assert_not_called()
+        self.assertFalse((self.output / '.writer.lock').exists())
+        self.assertEqual(before, {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()})
+
+    def test_missing_lock_cannot_bypass_a_new_incompatible_writer(self):
+        import subprocess
+        import sys
+        self.convert()
+        lock_path = self.output / '.writer.lock'
+        lock_path.unlink()
+        with lock_path.open('a') as writer:
+            fcntl.flock(writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            result = subprocess.run([sys.executable, concat.__file__, '--verify-only',
+                                     '--output', str(self.output)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('Verification failed:', result.stderr)
+        self.assertNotIn('verification passed', result.stdout)

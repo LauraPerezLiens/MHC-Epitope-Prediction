@@ -16,11 +16,13 @@ Archive tests inject failures during compression, after archive publication and 
 
 Normal completed-output checks hash metadata and inspect feature counts, sizes, shapes and dtypes. New conversion records retain feature modification times: changed timestamps trigger feature rehashing; unchanged large payloads are not read. Quick checks cannot detect same-size feature corruption with a preserved timestamp. Historical records without timestamps receive structural feature checks only.
 
-`--verify-only --output PATH` reads all feature and metadata content and verifies SHA-256 without writing or archiving. Legacy metadata records require independent original files or archived checksum records; missing evidence is an error. Tests cover both modes, the explicit CLI, preservation of file content and exclusion of active writers.
+`--verify-only --output PATH` reads all feature and metadata content and verifies SHA-256 without writing or archiving. Legacy metadata records require independent original files or archived checksum records; missing evidence is an error. Tests cover both modes, the explicit CLI, preservation of file content, exclusion of active writers, refusal before payload reads when `.writer.lock` is missing, and a writer recreating that lock.
 
 ## Preparation and checkpoint recovery
 
 Launcher tests run only against temporary synthetic trees. They check missing/invalid splits, missing metadata even when a scaler exists, fitting only a missing synthetic scaler, preserving an existing scaler and validating concatenated data without fitting it again.
+
+Preparation-cost regressions ensure that existing-scaler checks skip full CSV parsing, explicit requests and missing scalers require it, and every metadata value is still checked. Missing files or invalid CSV headers remain errors.
 
 The CPU model test performs two optimizer steps across an actual temporary checkpoint. It restores model, optimizer, scheduler and CPU RNG state and compares the resumed step with an uninterrupted step. It does not use production checkpoints or change checkpoint-selection policy.
 
