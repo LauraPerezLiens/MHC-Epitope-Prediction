@@ -60,6 +60,10 @@ Statistics use every TRAIN occurrence without class balancing. Secondary vectors
 
 `run_shuffled_pipeline.sh` never creates splits or metadata and never uses `--force`. Missing/invalid preparation stops the launcher with an error. It validates the existing files read-only and fits only a missing scaler from separate modalities. A valid existing scaler is retained and checked against the chunk manifest. Concatenated-only inputs require their existing scaler and use compact split arrays; they do not require source CSVs. The launcher does not start training.
 
+With an existing scaler, `check_preparation.py` checks every chunk header, metadata shape and all label/split/group values, verifies the scaler manifest, and checks source CSV presence/headers without parsing all source rows. To additionally compare the complete source CSVs with metadata, pass `--check-source-csv` to the checker. That comparison is automatic and mandatory when the scaler is missing, before any fit is allowed. Concatenated-only inputs have no source CSV comparison; full cryptographic checking belongs to the concatenator's `--verify-only` mode.
+
+Cost is bounded by chunks plus the compact metadata size, not the embedding payload. At 1.45 billion rows, the generator's uint8 labels, uint8 split IDs and int64 group IDs contain about 14.5 GB of metadata (13.5 GiB); all values are still checked. Approximately 14,499 feature headers are read without scanning the roughly 10.4 TB of float32 feature values. Optional source comparison parses both complete CSVs, about 2.9 billion CSV records in total. These are schema-based estimates, not timings or measurements of the real dataset.
+
 Prepare new partitions/metadata explicitly through the [data pipeline](../../data_pipeline/scripts/data_splitting/README.md) before using the launcher with new `DATA_ROOT` and `SCALER_PATH` values. Do not run preparation against an active dataset.
 
 Datasets, scalers and training outputs are excluded from Git. See the [experiment history](../../docs/mlp_experiment_history.md) for earlier runs and the [data pipeline](../../data_pipeline/README.md) for feature preparation.

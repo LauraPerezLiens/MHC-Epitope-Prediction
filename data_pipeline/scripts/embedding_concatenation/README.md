@@ -41,7 +41,7 @@ python data_pipeline/scripts/embedding_concatenation/concatenate_primary_seconda
   --verify-only --output data/data_input_nn_shuffled_concatenate
 ```
 
-This reads every feature and metadata file, checks SHA-256, refuses incomplete datasets and respects an existing writer lock. It does not convert, archive, delete, create locks or update records. Full verification of the real dataset can read several terabytes; it is an explicit operation, not part of normal training startup. Archival always uses full verification before removing remaining sources.
+This reads every feature and metadata file, checks SHA-256 and refuses incomplete datasets. It requires the persistent `.writer.lock` and takes a shared lock before reading payloads; writers take an exclusive lock. A missing lock is an error, not permission to verify without synchronization. The verifier never creates a lock. Do not delete or replace lockfiles while any process uses the dataset. It does not convert, archive, delete, create locks or update records. Full verification of the real dataset can read several terabytes; it is an explicit operation, not part of normal training startup. Archival always uses full verification before removing remaining sources.
 
 New records store `metadata_sha256` for labels, group IDs and split IDs. Older records require source metadata or its archived `original_sha256` evidence. Missing evidence is an error in either mode; historical data are not silently certified or upgraded. Training does not require source archives, but full metadata verification of historical records may need their checksum records.
 
