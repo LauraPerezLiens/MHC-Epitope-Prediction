@@ -76,10 +76,12 @@ Run the CPU regression suite with synthetic inputs:
 python -m unittest discover -s tests -t . -v
 ```
 
-Archive tests require `zstd`. See [test coverage and limitations](tests/README.md).
+Archive tests require `zstd`. [GitHub Actions](.github/workflows/cpu-checks.yml) runs CPU tests, the synthetic example, syntax checks and focused Ruff checks in an independent minimal environment. See [test coverage](tests/README.md) and [local CI setup](env/README.md#cpu-tests-and-ci).
 
 ## Evaluation scope
 
 A positive window contains a recorded positive epitope; other windows are labeled negative without experimental confirmation. BLOSUM variants inherit the original label and structural features.
 
-The current split is by row and allows shared groups and proteins across splits. TEST STAGE loss selects checkpoints, so the reported metrics are exploratory and do not establish performance on unseen proteins. Results and comparisons are recorded in the [experiment history](docs/mlp_experiment_history.md).
+**Current phase — exploratory experiments.** The objective is to check that the network learns and the training pipeline works with augmented data. Existing row-based splits, TRAIN/TEST STAGE/ALL monitoring and checkpoint selection by TEST STAGE are intentional and remain unchanged. Shared proteins/groups and checkpoint selection mean these results are not definitive generalization metrics.
+
+**Future phase — generalization evaluation.** A separate study may use VALIDATION for checkpoint selection, a final independent TEST, group/protein holdouts and comparisons with external predictors. These are future protocols, not changes to the current experiment. Results and historical comparisons remain in the [experiment history](docs/mlp_experiment_history.md).

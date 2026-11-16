@@ -126,6 +126,7 @@ class ConcatenationTests(PipelineCase):
         marker = output.with_suffix('.json')
         record = json.loads(marker.read_text())
         del record['metadata_sha256']
+        record.pop('output_mtime_ns', None)
         marker.write_text(json.dumps(record))
 
     def test_legacy_records_verify_against_source_metadata(self):
@@ -176,3 +177,88 @@ class ConcatenationTests(PipelineCase):
         layout_path.write_text(json.dumps(layout))
         with self.assertRaisesRegex(ValueError, 'Missing recorded metadata checksum'):
             concat.verify_completed_output(self.output)
+
+    def test_quick_check_does_not_hash_unchanged_feature_payloads(self):
+        output = self.convert()
+        hashed = []
+        digest = concat.file_digest
+        def track(path):
+            hashed.append(path)
+            return digest(path)
+        with mock.patch.object(concat, 'file_digest', side_effect=track):
+            self.convert()
+        self.assertNotIn(output, hashed)
+        self.assertEqual(len(hashed), 3)  # Every metadata array is still hashed.
+
+    def test_full_mode_detects_same_size_corruption_with_preserved_mtime(self):
+        import os
+        output = self.convert()
+        stat = output.stat()
+        values = np.load(output, mmap_mode='r+')
+        values[0, 0] += 1
+        values.flush()
+        del values
+        os.utime(output, ns=(stat.st_atime_ns, stat.st_mtime_ns))
+        # Quick checks deliberately do not claim cryptographic feature integrity.
+        concat.verify_completed_output(self.output, full=False)
+        with self.assertRaisesRegex(ValueError, 'Corrupt completed output'):
+            concat.verify_completed_output(self.output)
+
+    def test_verify_only_cli_is_read_only_and_does_not_require_sources(self):
+        import subprocess
+        import sys
+        self.convert()
+        for path in self.metadata.glob('*.npy'):
+            path.unlink()
+        before = {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()}
+        result = subprocess.run([sys.executable, concat.__file__, '--verify-only',
+                                 '--output', str(self.output)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('SHA-256 verification passed', result.stdout)
+        self.assertEqual(before, {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()})
+
+    def test_verify_only_rejects_archival_before_any_write(self):
+        import subprocess
+        import sys
+        result = subprocess.run([sys.executable, concat.__file__, '--verify-only',
+                                 '--output', str(self.output), '--archive-sources'],
+                                capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('without conversion or archival', result.stderr)
+        self.assertFalse(self.output.exists())
+
+    def test_verify_only_respects_an_active_writer(self):
+        import subprocess
+        import sys
+        self.convert()
+        with (self.output / '.writer.lock').open('rb') as owner:
+            fcntl.flock(owner, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            result = subprocess.run([sys.executable, concat.__file__, '--verify-only',
+                                     '--output', str(self.output)], capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('Verification failed:', result.stderr)
+
+    def test_quick_check_rejects_missing_feature_checksum(self):
+        output = self.convert()
+        marker = output.with_suffix('.json')
+        record = json.loads(marker.read_text())
+        del record['sha256']
+        marker.write_text(json.dumps(record))
+        with self.assertRaisesRegex(ValueError, 'Missing recorded feature checksum'):
+            concat.verify_completed_output(self.output, full=False)
+
+    def test_verify_only_corruption_returns_a_clear_error_without_writes(self):
+        import subprocess
+        import sys
+        output = self.convert()
+        values = np.load(output, mmap_mode='r+')
+        values[0, 0] += 1
+        values.flush()
+        del values
+        before = {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()}
+        result = subprocess.run([sys.executable, concat.__file__, '--verify-only',
+                                 '--output', str(self.output)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('Verification failed: Corrupt completed output', result.stderr)
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual(before, {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()})

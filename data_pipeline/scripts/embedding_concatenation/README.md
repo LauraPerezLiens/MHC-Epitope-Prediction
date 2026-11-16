@@ -32,7 +32,18 @@ The output contains its own features, metadata, feature layout and provenance ma
 
 Do not train while `INCOMPLETE` exists. The final layout records verified row and chunk totals. `TRAINING READY` means concatenation is complete; source archival may continue afterwards. Restart the same command after interruption. It verifies existing outputs and reuses them, including chunks whose original Primary is already compressed.
 
-Rerunning a completed conversion verifies feature and metadata checksums before returning, even without archival; this reads all output files. New chunk records store `metadata_sha256` for labels, group IDs and split IDs. For older records, verification uses source metadata or the original hashes retained in its archive records. Missing evidence or a content mismatch stops verification. This check does not rewrite outputs or upgrade old records.
+A normal rerun checks feature counts, byte sizes, shapes and dtypes, and hashes every metadata array. New records include feature modification times; a changed timestamp triggers a feature hash check for that file. Unchanged large feature payloads are not reread. Quick checks do not detect same-size corruption with a preserved timestamp; older records without timestamps receive only structural feature checks.
+
+For full cryptographic verification, run:
+
+```bash
+python data_pipeline/scripts/embedding_concatenation/concatenate_primary_secondary.py \
+  --verify-only --output data/data_input_nn_shuffled_concatenate
+```
+
+This reads every feature and metadata file, checks SHA-256, refuses incomplete datasets and respects an existing writer lock. It does not convert, archive, delete, create locks or update records. Full verification of the real dataset can read several terabytes; it is an explicit operation, not part of normal training startup. Archival always uses full verification before removing remaining sources.
+
+New records store `metadata_sha256` for labels, group IDs and split IDs. Older records require source metadata or its archived `original_sha256` evidence. Missing evidence is an error in either mode; historical data are not silently certified or upgraded. Training does not require source archives, but full metadata verification of historical records may need their checksum records.
 
 `--max-chunks` and `--start-chunk` are benchmark options and always leave output incomplete. `--in-place` retains the legacy conversion mode; it cannot be combined with progressive archival.
 

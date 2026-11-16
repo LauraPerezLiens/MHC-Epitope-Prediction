@@ -1,0 +1,7 @@
+# CPU PyTorch is installed separately from its official wheel index.
+numpy==2.0.1
+pandas==2.3.3
+scipy==1.15.3
+scikit-learn==1.7.2
+biopython==1.86
+ruff==0.11.13
