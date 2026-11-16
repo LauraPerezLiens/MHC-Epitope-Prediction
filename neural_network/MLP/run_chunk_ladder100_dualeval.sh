@@ -2,16 +2,19 @@
 set -euo pipefail
 
 BASE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-PYTHON="${PYTHON:-/home/nap/miniconda3/envs/nap_env/bin/python}"
-DATA_ROOT="${DATA_ROOT:-${BASE_DIR}/../../data/data_input_nn_shuffled}"
-RESULTS="${RESULTS:-${BASE_DIR}/../../results/chunk_ladder100_mixed_shuffled_20261110}"
+PYTHON="${PYTHON:-python}"
+DATA_ROOT="${DATA_ROOT:-${BASE_DIR}/../../data/data_input_nn_shuffled_concatenate}"
+RESULTS="${RESULTS:-${BASE_DIR}/../../results/mlp_shuffled_concatenated_10chunks_200epochs_20261116}"
 SCALER_PATH="${SCALER_PATH:-${BASE_DIR}/standardizer_all_train_chunks.npz}"
+[[ -s "$DATA_ROOT/feature_layout.json" ]] || { echo 'Completed concatenated dataset required.' >&2; exit 1; }
 [[ ! -e "$DATA_ROOT/INCOMPLETE" ]] || { echo 'Dataset reordering incomplete.' >&2; exit 1; }
 SCRIPT="${BASE_DIR}/mlp_layernorm_shuffled_ladder100_dualeval.py"
 FEATURES=primary_secondary
-EPOCHS=100
-STEP=100
-FINAL_CHUNKS="${FINAL_CHUNKS:-$("$PYTHON" -c 'import json,sys; print(json.load(open(sys.argv[1]))["chunks"])' "$DATA_ROOT/reorder_manifest.json")}"
+EPOCHS="${EPOCHS:-200}"
+STEP="${STEP:-10}"
+FINAL_CHUNKS="${FINAL_CHUNKS:-10}"
+EVAL_EVERY="${EVAL_EVERY:-epoch}"
+"$PYTHON" -c 'import json,sys; layout=json.load(open(sys.argv[1])); assert layout.get("complete"), "Incomplete dataset"; assert 0 < int(sys.argv[2]) <= layout["chunks"], "FINAL_CHUNKS exceeds available chunks"' "$DATA_ROOT/feature_layout.json" "$FINAL_CHUNKS"
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-2}"
 export WORLD_SIZE=1 RANK=0 LOCAL_RANK=0
 export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 MALLOC_ARENA_MAX=2
@@ -21,10 +24,10 @@ mkdir -p "$RESULTS"
 exec 9>"${RESULTS}/ladder.lock"
 flock -n 9 || { echo 'Another LayerNorm ladder is already running.' >&2; exit 1; }
 
-# Start the 100-chunk stage with random weights. Later stages use this run's best.
+# Start the first stage with random weights. Optional later stages use this run's best.
 PREVIOUS_BEST=""
-[[ "$FINAL_CHUNKS" =~ ^[0-9]+$ ]] && (( FINAL_CHUNKS >= 100 )) || {
-    echo 'FINAL_CHUNKS must be an integer >= 100.' >&2; exit 1;
+[[ "$EPOCHS" =~ ^[1-9][0-9]*$ && "$STEP" =~ ^[1-9][0-9]*$ && "$FINAL_CHUNKS" =~ ^[1-9][0-9]*$ ]] && (( FINAL_CHUNKS >= STEP )) || {
+    echo 'EPOCHS and STEP must be positive integers; FINAL_CHUNKS must be an integer >= STEP.' >&2; exit 1;
 }
 
 run_stage() {
@@ -44,6 +47,7 @@ run_stage() {
     local -a cmd=("$PYTHON" -u "$SCRIPT"
         --root "$DATA_ROOT" --scaler-path "$SCALER_PATH"
         --features "$FEATURES" --epochs "$EPOCHS" --seed 42
+        --eval-every "$EVAL_EVERY"
         --learning-rate 0.001 --weight-decay 0.0001
         --scheduler-t0 20 --scheduler-tmult 1 --scheduler-min-lr 0.00001
         --max-chunks "$n" --report-every-chunks 1 --secondary-cache-size 1 --eval-batch-size 1024
@@ -77,10 +81,10 @@ run_stage() {
     PREVIOUS_BEST="$best"
 }
 
-for ((n=100; n<=FINAL_CHUNKS; n+=STEP)); do
+for ((n=STEP; n<=FINAL_CHUNKS; n+=STEP)); do
     run_stage "$n"
 done
-if (( FINAL_CHUNKS > 100 && FINAL_CHUNKS % STEP != 0 )); then
+if (( FINAL_CHUNKS % STEP != 0 )); then
     run_stage "$FINAL_CHUNKS"
 fi
 echo "LAYERNORM LADDER COMPLETE. FINAL BEST: $PREVIOUS_BEST"

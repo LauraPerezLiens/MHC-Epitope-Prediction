@@ -5,14 +5,14 @@
 /data/used_data/*
 !/data/used_data/README.md
 
-# Pretrained weights, experiment outputs and historical code copies
-/model/
+# Local model artifacts and training outputs: keep documentation
+/model/*
+!/model/README.md
 /results/*
 !/results/README.md
 
-# Operational logs: keep documentation
-/logs/*
-!/logs/README.md
+# Local operational logs
+/logs/
 
 # Large arrays, model checkpoints and archives
 *.npy
@@ -33,12 +33,15 @@
 *.tar.gz
 *.tgz
 *.zip
+*.zst
 
 # Runtime files and caches
 *.log
 *.pid
 *.lock
 *.tmp
+*.partial
+*.partial.*
 nohup.out
 __pycache__/
 *.py[cod]

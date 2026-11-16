@@ -12,7 +12,7 @@ import pandas as pd
 # CONFIGURATION
 # =============================================================================
 
-ROOT = Path("/data/nap/lperez_nn/data/data_input_nn")
+ROOT = Path(__file__).resolve().parents[4] / 'data' / 'data_input_nn'
 
 EXPECTED_DATASETS = [
     ("human", "mhc-I",  "HLA-A"),

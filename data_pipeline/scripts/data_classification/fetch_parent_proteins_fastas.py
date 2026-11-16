@@ -19,8 +19,8 @@ from urllib3.util.retry import Retry
 # CONFIGURATION
 # ======================================================
 
-DATA_RAW = Path("/home/nap/lperez_nn/data/data_raw")
-DATA_INTERMEDIATE = Path("/home/nap/lperez_nn/data/data_intermediate")
+DATA_RAW = Path(__file__).resolve().parents[3] / 'data' / 'data_raw'
+DATA_INTERMEDIATE = Path(__file__).resolve().parents[3] / 'data' / 'data_intermediate'
 DATA_INTERMEDIATE.mkdir(parents=True, exist_ok=True)
 
 SPECIES = ["human", "mouse"]

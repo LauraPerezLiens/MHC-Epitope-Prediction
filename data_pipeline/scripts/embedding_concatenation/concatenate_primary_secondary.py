@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Stream raw float32 [ProtT5 | SecondaryBERT] chunks without loading full chunks.
 
-Reads master_index.csv independently of split preparation. Labels/splits remain
-in the source tree. Sources must be complete and immutable during conversion. --in-place replaces
+Separate-output mode uses prepared metadata, concurrent CPU/I/O workers and
+independent training arrays. Optional archival verifies before removing inputs.
+The legacy --in-place mode replaces
 Primary files after full blockwise verification; do not train during conversion. Resume skips files
 with a matching completion marker; interrupted chunks are regenerated.
 """
@@ -257,11 +258,26 @@ def main():
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--output', type=Path)
     mode.add_argument('--in-place', action='store_true', help='Verify then atomically replace each original Primary NPY')
-    parser.add_argument('--block-rows', type=int, default=1024)
+    parser.add_argument('--block-rows', type=int, default=16384)
     parser.add_argument('--max-chunks', type=int, help='Limit chunks per dataset for a trial run')
+    parser.add_argument('--archive-sources', action='store_true', help='Compress and verify each consumed shuffled Primary before removing it')
+    parser.add_argument('--archive-originals', type=Path, help='After all outputs complete, archive this original dataset tree as well')
+    parser.add_argument('--zstd', default=shutil.which('zstd') or 'zstd')
+    parser.add_argument('--archive-threads', type=int, default=1)
+    parser.add_argument('--workers', type=int, default=4, help='Bounded CPU/I/O conversion workers; no GPU required')
+    parser.add_argument('--secondary-cache-dir', type=Path, help='Optional local SSD cache for immutable Secondary embeddings')
+    parser.add_argument('--start-chunk', type=int, default=0, help='Benchmark only; nonzero leaves output INCOMPLETE')
     args = parser.parse_args()
     if args.block_rows < 1 or (args.max_chunks is not None and args.max_chunks < 1):
         parser.error('block-rows and max-chunks must be positive')
+    if args.archive_threads < 1 or args.start_chunk < 0 or args.workers < 1:
+        parser.error('archive-threads must be positive; start-chunk nonnegative')
+    if args.archive_originals and not args.archive_sources:
+        parser.error('--archive-originals requires --archive-sources')
+    if args.in_place and (args.archive_sources or args.start_chunk):
+        parser.error('Archiving and trial offsets require separate output mode')
+    if not args.in_place:
+        return run_fast(args)
     root = args.root.resolve()
     output_root = root if args.in_place else args.output.resolve()
     if not args.in_place and (root == output_root or root in output_root.parents or output_root in root.parents):
@@ -381,6 +397,359 @@ def main():
             (output_root / 'INCOMPLETE').unlink()
             sync_directory(output_root)
             print('ALL CONCATENATED CHUNKS AND METADATA VERIFIED; COMPLETE', flush=True)
+
+
+
+def concatenate_chunk_fast(primary_file, group_ids, store, output, block_rows, before_replace):
+    """One group lookup per chunk, RAM staging and sequential verified output."""
+    primary = np.load(primary_file, mmap_mode='r')
+    if primary.shape != (len(group_ids), PRIMARY_DIM) or primary.dtype != np.dtype('<f4'):
+        raise ValueError(f'Invalid Primary shape/dtype: {primary_file}')
+    required = len(group_ids) * (PRIMARY_DIM + SECONDARY_DIM) * 4 + 4096
+    if shutil.disk_usage(output.parent).free < required:
+        raise OSError('Insufficient space for concatenated chunk')
+    secondary = store.get(group_ids)
+    temporary = output.with_suffix('.npy.partial')
+    try:
+        with temporary.open('wb') as handle:
+            np.lib.format.write_array_header_1_0(handle, {
+                'descr': '<f4', 'fortran_order': False,
+                'shape': (len(group_ids), PRIMARY_DIM + SECONDARY_DIM)})
+            for start in range(0, len(group_ids), block_rows):
+                end = min(start + block_rows, len(group_ids))
+                block = np.empty((end-start, PRIMARY_DIM + SECONDARY_DIM), dtype='<f4')
+                block[:, :PRIMARY_DIM] = primary[start:end]
+                block[:, PRIMARY_DIM:] = secondary[start:end]
+                if not np.isfinite(block).all():
+                    raise ValueError(f'Nonfinite features in {primary_file}')
+                block.tofile(handle)
+            handle.flush()
+            os.fsync(handle.fileno())
+        check = np.load(temporary, mmap_mode='r')
+        if check.shape != (len(group_ids), PRIMARY_DIM + SECONDARY_DIM) or check.dtype != np.dtype('<f4'):
+            raise ValueError(f'Invalid serialized output: {temporary}')
+        for start in range(0, len(group_ids), block_rows):
+            end = min(start + block_rows, len(group_ids))
+            if not np.array_equal(check[start:end, :PRIMARY_DIM], primary[start:end]):
+                raise ValueError('Primary verification failed')
+            if not np.array_equal(check[start:end, PRIMARY_DIM:], secondary[start:end]):
+                raise ValueError('Secondary verification failed')
+        del check, primary, secondary
+        before_replace(temporary)
+        os.replace(temporary, output)
+        sync_directory(output.parent)
+    finally:
+        temporary.unlink(missing_ok=True)
+        release_pages(store.global_group_ids)
+        for array in store._cache.values():
+            release_pages(array)
+
+
+
+def cache_secondary_files(store, directory, workers):
+    """Stage immutable Secondary files on a local SSD; original signatures stay authoritative."""
+    from concurrent.futures import ThreadPoolExecutor
+    directory = Path(directory).resolve()
+    directory.mkdir(parents=True, exist_ok=True)
+    owner_path = directory / '.cache_owner.json'
+    owner = {'secondary_root': str(store.root.resolve())}
+    if owner_path.exists():
+        if json.loads(owner_path.read_text()) != owner:
+            raise ValueError('Secondary cache belongs to another dataset')
+    elif any(directory.iterdir()):
+        raise ValueError('Secondary cache must be empty or owned by this dataset')
+    else:
+        write_marker(owner_path, owner)
+    sources = []
+    for filename in store.x_files:
+        p = Path(filename)
+        sources.append(p if p.is_absolute() else store.root / p)
+    required = sum(p.stat().st_size for p in sources)
+    existing = sum(p.stat().st_size for p in directory.glob('*.npy'))
+    if shutil.disk_usage(directory).free < max(0, required-existing) + 10 * 1024**3:
+        raise OSError('Insufficient local space for Secondary SSD cache plus 10 GiB reserve')
+    def stage(source):
+        target = directory / (hashlib.sha256(str(source.resolve()).encode()).hexdigest() + '.npy')
+        marker = target.with_suffix('.json')
+        source_sig = input_signature([source])[0]
+        if target.exists() and marker.exists():
+            rec = json.loads(marker.read_text())
+            if rec.get('source') == source_sig and rec.get('sha256') == file_digest(target):
+                return str(source), str(target)
+            raise ValueError(f'Stale Secondary cache: {target}')
+        tmp = target.with_suffix('.npy.partial')
+        h = hashlib.sha256()
+        try:
+            with source.open('rb') as src, tmp.open('wb') as dst:
+                for block in iter(lambda: src.read(8 * 1024 * 1024), b''):
+                    h.update(block)
+                    dst.write(block)
+                dst.flush()
+                os.fsync(dst.fileno())
+            if input_signature([source])[0] != source_sig or file_digest(tmp) != h.hexdigest():
+                raise ValueError(f'Secondary cache verification failed: {source}')
+            os.replace(tmp, target)
+            write_marker(marker, {'source': source_sig, 'sha256': h.hexdigest(), 'bytes': target.stat().st_size})
+            return str(source), str(target)
+        finally:
+            tmp.unlink(missing_ok=True)
+    print(f'SSD CACHE staging {len(sources)} files, {required/1024**3:.1f} GiB to {directory}', flush=True)
+    result = {}
+    # Cache writer lock also protects an interrupted cache from another run.
+    with (directory / '.writer.lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            for i, (source, target) in enumerate(pool.map(stage, sources), 1):
+                result[source] = target
+                if i % 10 == 0 or i == len(sources):
+                    print(f'SSD CACHE verified {i}/{len(sources)}', flush=True)
+    return result
+
+
+_worker_state = None
+
+
+def process_fast_job(job):
+    """Independent thread-local Secondary mappings; only verified outputs publish."""
+    import threading
+    import time
+    global _worker_state
+    # Initialized before worker threads are launched by run_fast.
+    started = time.monotonic()
+    primary, output, gids, signature_inputs, inputs_digest, dependencies, secondary_root, block_rows, cache_paths = job
+    marker = output.with_suffix('.json')
+    previous = json.loads(marker.read_text()) if marker.exists() else None
+    n = len(gids)
+    if previous and output.exists():
+        sig = previous['signature']
+        expected_input = sig.get('inputs_sha256')
+        valid_inputs = expected_input == inputs_digest if expected_input is not None else sig.get('inputs') == signature_inputs
+        if not valid_inputs or sig.get('rows') != n or sig.get('format') != 'primary_secondary_float32_v1':
+            raise ValueError(f'Stale output signature: {output}')
+        if primary.exists() and sig['primary'] != input_signature([primary])[0]:
+            raise ValueError(f'Primary changed: {primary}')
+        if previous.get('bytes') != output.stat().st_size or previous.get('sha256') != file_digest(output):
+            raise ValueError(f'Output checksum mismatch: {output}')
+        return primary, True, n, time.monotonic()-started
+    if output.exists():
+        raise ValueError(f'Untracked output: {output}')
+    if not primary.is_file() or primary.is_symlink():
+        raise ValueError(f'Missing or symlink Primary: {primary}')
+    state = getattr(_worker_state, 'store', None)
+    if state is None or state.root != secondary_root:
+        state = SecondaryBERTStore(secondary_root, cache_size=1024)
+        if cache_paths:
+            state.x_files = np.array([cache_paths[str(Path(f) if Path(f).is_absolute() else state.root / f)] for f in state.x_files])
+        original_open = state._open_embedding_chunk
+        def open_random(row):
+            arr = original_open(row)
+            mapping = getattr(arr, '_mmap', None)
+            if mapping is not None and hasattr(mapping, 'madvise'):
+                mapping.madvise(mmap.MADV_RANDOM)
+            return arr
+        state._open_embedding_chunk = open_random
+        _worker_state.store = state
+    primary_signature = input_signature([primary])[0]
+    sig = {'format': 'primary_secondary_float32_v1', 'rows': n,
+           'inputs_sha256': inputs_digest, 'primary': primary_signature}
+    def record(temporary):
+        if input_signature(dependencies) != signature_inputs or input_signature([primary])[0] != primary_signature:
+            raise ValueError('Inputs changed during conversion')
+        write_marker(marker, {'signature': sig, 'bytes': temporary.stat().st_size,
+                              'sha256': file_digest(temporary)})
+    concatenate_chunk_fast(primary, gids, state, output, block_rows, record)
+    return primary, False, n, time.monotonic()-started
+
+
+def run_fast(args):
+    """Bounded CPU/I/O concurrency and verified archival overlapped with conversion."""
+    import time
+    import threading
+    from collections import deque
+    from concurrent.futures import ThreadPoolExecutor
+    global _worker_state
+    _worker_state = threading.local()
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'data_archiving'))
+    from archive_inputs import archive_file, archive_tree
+    root, output_root = args.root.resolve(), args.output.resolve()
+    if root == output_root or root in output_root.parents or output_root in root.parents:
+        raise ValueError('Input/output must be separate non-nested directories')
+    if (root / 'INCOMPLETE').exists():
+        raise ValueError('Shuffle is incomplete')
+    if args.secondary_cache_dir:
+        cache_root = args.secondary_cache_dir.resolve()
+        for data_root in (root, output_root, args.archive_originals.resolve() if args.archive_originals else root):
+            if cache_root == data_root or cache_root in data_root.parents or data_root in cache_root.parents:
+                raise ValueError('Secondary cache must be separate from all dataset trees')
+    if args.archive_originals:
+        original = args.archive_originals.resolve()
+        if (original == output_root or original in output_root.parents or output_root in original.parents
+                or original == root or original in root.parents or root in original.parents):
+            raise ValueError('Original, shuffled and output roots must be separate non-nested trees')
+    if args.archive_sources:
+        reject_active_readers(root)
+    output_root.mkdir(parents=True, exist_ok=True)
+    started = time.monotonic()
+    with (root / '.concatenate.lock').open('a') as lock, (output_root / '.writer.lock').open('a') as writer:
+        fcntl.flock(lock, (fcntl.LOCK_EX if args.archive_sources else fcntl.LOCK_SH) | fcntl.LOCK_NB)
+        fcntl.flock(writer, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        layout_path = output_root / 'feature_layout.json'
+        layout = json.loads(layout_path.read_text()) if layout_path.exists() else {}
+        if layout.get('complete') and not (output_root / 'INCOMPLETE').exists():
+            if not args.archive_sources:
+                print('Output already complete; nothing to convert.', flush=True)
+                return
+            if layout.get('source_root') != str(root):
+                raise ValueError('Completed output belongs to another source root')
+            verify_completed_output(output_root)
+            finalize_archives(args, root, archive_tree)
+            return
+        (output_root / 'INCOMPLETE').write_text('Concatenation and metadata verification in progress.\n')
+        masters = sorted(root.rglob('master_index.csv'))
+        if not masters:
+            raise FileNotFoundError('No uncompressed source master_index.csv found')
+        total = converted = skipped = total_rows = scheduled = 0
+        pending, archives = deque(), deque()
+        def archive_primary(primary):
+            rec = archive_file(primary, args.zstd, args.archive_threads)
+            print(f'ARCHIVE {primary.name} ratio={rec["compressed_bytes"]/rec["original_bytes"]:.3f}', flush=True)
+        def finish_job(future, archive_pool):
+            nonlocal total, converted, skipped, total_rows
+            primary, was_skipped, n, seconds = future.result()
+            total += 1
+            total_rows += n
+            skipped += int(was_skipped)
+            converted += int(not was_skipped)
+            print(f'{"SKIP verified" if was_skipped else "WRITE + VERIFY"} {primary.name} rows={n:,} seconds={seconds:.2f}', flush=True)
+            if args.archive_sources:
+                archives.append(archive_pool.submit(archive_primary, primary))
+                # Bound the archive backlog: at most two verified source chunks
+                # wait for compression, regardless of conversion parallelism.
+                if len(archives) >= 2:
+                    archives.popleft().result()
+            if total % 10 == 0:
+                elapsed = time.monotonic()-started
+                print(f'PROGRESS chunks={total} converted={converted} skipped={skipped} elapsed={elapsed:.1f}s chunks_per_hour={total/elapsed*3600:.1f}', flush=True)
+        with ThreadPoolExecutor(max_workers=args.workers) as pool, ThreadPoolExecutor(max_workers=1) as archive_pool:
+            for master in masters:
+                secondary_root = _find_secondary_dir(master.parent.parent)
+                if secondary_root is None:
+                    raise FileNotFoundError(f'Missing Secondary store: {master}')
+                store = SecondaryBERTStore(secondary_root, cache_size=1)
+                print(f'AUDIT Secondary mapping: {secondary_root}', flush=True)
+                dependencies = [master] + validate_secondary(store, root, max(args.block_rows, 65536))
+                signature_inputs = input_signature(dependencies)
+                inputs_digest = hashlib.sha256(json.dumps(signature_inputs).encode()).hexdigest()
+                cache_paths = cache_secondary_files(store, args.secondary_cache_dir, args.workers) if args.secondary_cache_dir else {}
+                del store
+                target = output_root / master.parent.relative_to(root)
+                metadata_target = target / 'chunk_metadata'
+                metadata_target.mkdir(parents=True, exist_ok=True)
+                source_meta = master.parent / 'chunk_metadata'
+                gids_files = sorted(source_meta.glob('chunk_*_group_id.npy'))
+                if not gids_files:
+                    raise FileNotFoundError(f'No prepared metadata: {source_meta}')
+                for gid_path in gids_files:
+                    cid = int(gid_path.name.split('_')[1])
+                    if cid < args.start_chunk:
+                        continue
+                    if args.max_chunks is not None and scheduled >= args.max_chunks:
+                        break
+                    gids = np.load(gid_path)
+                    if gids.ndim != 1 or gids.dtype.kind not in 'iu' or np.any(gids < 0):
+                        raise ValueError(f'Invalid group IDs: {gid_path}')
+                    for suffix in ('y', 'group_id', 'split_id'):
+                        name = f'chunk_{cid:06d}_{suffix}.npy'
+                        a = np.load(source_meta / name, mmap_mode='r')
+                        if a.shape != (len(gids),):
+                            raise ValueError(f'Inconsistent metadata: {name}')
+                        if suffix == 'y' and not np.isin(a, [0, 1]).all():
+                            raise ValueError('Invalid labels')
+                        if suffix == 'split_id' and not np.isin(a, [0, 1, 2]).all():
+                            raise ValueError('Invalid split IDs')
+                        copy_verified(source_meta / name, metadata_target / name)
+                    primary = master.parent / f'chunk_{cid:06d}_X.npy'
+                    output = target / primary.name
+                    job = (primary, output, gids, signature_inputs, inputs_digest, dependencies, secondary_root, args.block_rows, cache_paths)
+                    pending.append(pool.submit(process_fast_job, job))
+                    scheduled += 1
+                    if len(pending) >= args.workers:
+                        finish_job(pending.popleft(), archive_pool)
+                while pending:
+                    finish_job(pending.popleft(), archive_pool)
+                if input_signature(dependencies) != signature_inputs:
+                    raise ValueError('Inputs changed during conversion')
+            while archives:
+                archives.popleft().result()
+        if args.max_chunks is not None or args.start_chunk:
+            print(f'PARTIAL TRIAL ONLY chunks={total}; output remains INCOMPLETE', flush=True)
+            return
+        provenance = root / 'reorder_manifest.json'
+        if provenance.exists():
+            expected = json.loads(provenance.read_text())
+            if expected.get('chunks') != total or expected.get('rows') != total_rows:
+                raise ValueError('Output totals differ from original shuffle manifest')
+            copy_verified(provenance, output_root / provenance.name)
+        write_marker(layout_path, {'format': 'primary_secondary_float32_v1', 'primary_dim': PRIMARY_DIM,
+                                 'secondary_dim': SECONDARY_DIM, 'source_root': str(root), 'normalized': False,
+                                 'complete': True, 'chunks': total, 'rows': total_rows,
+                                 'metadata': 'independent y/group_id/split_id arrays; source CSVs retained in verified archives'})
+        (output_root / 'INCOMPLETE').unlink()
+        sync_directory(output_root)
+        print(f'COMPLETE chunks={total:,} rows={total_rows:,} seconds={time.monotonic()-started:.1f}; TRAINING READY', flush=True)
+        if args.archive_sources:
+            finalize_archives(args, root, archive_tree)
+
+
+def verify_completed_output(root):
+    """Before removing remaining sources, revalidate every durable output record."""
+    layout = json.loads((root / 'feature_layout.json').read_text())
+    markers = sorted(root.rglob('chunk_*_X.json'))
+    if len(markers) != layout.get('chunks'):
+        raise ValueError('Completed output chunk count mismatch')
+    rows = 0
+    for marker in markers:
+        rec = json.loads(marker.read_text())
+        output = marker.with_suffix('.npy')
+        if output.stat().st_size != rec['bytes'] or file_digest(output) != rec['sha256']:
+            raise ValueError(f'Corrupt completed output: {output}')
+        n = rec['signature']['rows']
+        a = np.load(output, mmap_mode='r')
+        if a.shape != (n, PRIMARY_DIM + SECONDARY_DIM):
+            raise ValueError(f'Invalid completed shape: {output}')
+        for suffix in ('y', 'group_id', 'split_id'):
+            metadata = marker.parent / 'chunk_metadata' / marker.name.replace('_X.json', f'_{suffix}.npy')
+            if np.load(metadata, mmap_mode='r').shape != (n,):
+                raise ValueError(f'Missing completed metadata: {metadata}')
+        rows += n
+    if rows != layout.get('rows'):
+        raise ValueError('Completed row count mismatch')
+
+
+def finalize_archives(args, root, archive_tree):
+    # These are consumed shuffle/recovery scratch files, not source datasets.
+    # All final outputs are already verified and independently trainable here.
+    for name in ('_shuffle_work', '_recovery'):
+        scratch = root / name
+        if scratch.exists():
+            if scratch.is_symlink():
+                raise ValueError(f'Refusing scratch symlink: {scratch}')
+            shutil.rmtree(scratch)
+            print(f'REMOVED CONSUMED SHUFFLE SCRATCH {scratch}', flush=True)
+    if args.archive_originals:
+        original = args.archive_originals.resolve()
+        print(f'ARCHIVING ORIGINAL DATA {original}; concatenated data already ready for training', flush=True)
+        archive_tree(original, args.zstd, args.archive_threads)
+    print(f'ARCHIVING REMAINING SHUFFLE DATA {root}', flush=True)
+    archive_tree(root, args.zstd, args.archive_threads)
+    if args.secondary_cache_dir and args.secondary_cache_dir.exists():
+        cache_root = args.secondary_cache_dir.resolve()
+        owner = json.loads((cache_root / '.cache_owner.json').read_text())
+        if root not in Path(owner['secondary_root']).parents:
+            raise ValueError('Cache ownership mismatch; refusing cleanup')
+        shutil.rmtree(cache_root)
+        print(f'REMOVED TEMPORARY SSD CACHE {cache_root}', flush=True)
+    print('ALL SOURCE DATA ARCHIVED AND VERIFIED', flush=True)
 
 
 if __name__ == '__main__':

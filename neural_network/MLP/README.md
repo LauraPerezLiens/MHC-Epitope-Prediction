@@ -1,47 +1,60 @@
-# MLP on Primary and Secondary embeddings
+# MLP classifier
+
+Binary classifier using 1,024 ProtT5 and 768 SecondaryBERT features. The architecture is `1792 → 512 → 128 → 1`, with LayerNorm, ReLU and dropout 0.30. Training uses BCEWithLogitsLoss and AdamW.
 
 | File | Purpose |
 |---|---|
-| `dataset.py` | Chunk loading, Secondary lookup by group, minibatches and normalization. |
-| `fit_shuffled_scaler.py` | Fit the scaler on all TRAIN chunks; blockwise Primary and sequential Secondary weighted by TRAIN occurrences. |
-| `mlp_layernorm_shuffled_ladder100_dualeval.py` | LayerNorm training and STAGE/ALL evaluation. |
-| `run_shuffled_pipeline.sh` | Prepare splits, metadata, validation and scaling; does not start training. |
-| `run_chunk_ladder100_dualeval.sh` | Train in increments of 100 chunks, for 100 epochs per stage. |
-| `../../docs/RESUMEN_EXPERIMENTOS.md` | Experiment history and records of removed outputs. |
-| `standardizer_all_train_chunks.npz` | Current scaler fitted on TRAIN. |
-| `../../results/` | Training outputs. |
+| `dataset.py` | Chunk loading, metadata, modality lookup, sampling and normalization |
+| `fit_shuffled_scaler.py` | Fit TRAIN statistics with sequential Secondary reads and disk-backed group counts |
+| `mlp_layernorm_shuffled_ladder100_dualeval.py` | Training, fixed STAGE/ALL evaluation and checkpointing |
+| `run_chunk_ladder100_dualeval.sh` | Training launcher and optional incremental chunk stages |
+| `run_shuffled_pipeline.sh` | Split, metadata, validation and scaler preparation; does not start training |
 
-## Current layout
+## Train
 
-This directory contains the reference implementation. Training outputs go to `../../results/`. The completed scaler is `standardizer_all_train_chunks.npz`; its log is `../../logs/scaler_sequential_20261110.log`.
-
-## Commands from the project root
-
-For a future scaler calculation, when no other scaler is active and the output does not already exist:
+From the project root, activate `nap_env` and use a completed concatenated dataset and its fitted scaler:
 
 ```bash
-python neural_network/MLP/fit_shuffled_scaler.py \
-  --root data/data_input_nn_shuffled \
-  --output neural_network/MLP/standardizer_all_train_chunks.npz \
-  --block-rows 2048
-```
-
-The scaler format is compatible with `ModalityStandardizer`. It uses TRAIN only; each Secondary embedding contributes as many times as its group appears in TRAIN. Counts are temporarily stored on disk without duplicating embeddings. PRIMARY and SECONDARY messages report the two phases.
-
-To train with a completed scaler:
-
-```bash
+conda activate nap_env
 bash neural_network/MLP/run_chunk_ladder100_dualeval.sh
 ```
 
-The launcher accepts `DATA_ROOT`, `RESULTS`, `SCALER_PATH`, `PYTHON` and `CUDA_VISIBLE_DEVICES`. The default GPU is 2. TEST STAGE selects the best checkpoint; ALL provides diagnostics. Historical evaluation metrics remain exploratory.
+| Setting | Launcher default |
+|---|---|
+| Dataset | `data/data_input_nn_shuffled_concatenate/` |
+| Scaler | `neural_network/MLP/standardizer_all_train_chunks.npz` |
+| Epochs / selected chunks | 200 / 10 |
+| Batch size | 8,192, exactly 50/50 |
+| Seed / GPU | 42 / 2, single GPU |
+| Learning rate / weight decay | 0.001 / 0.0001 |
+| Cosine warm restarts | T0=20, Tmult=1, minimum LR=0.00001 |
+| Evaluation | Once per epoch; 1,024-row batches |
+| Outputs | `results/mlp_shuffled_concatenated_10chunks_200epochs_20261116/` |
 
-The current loader expects 1,024-column Primary files and separate 768-column Secondary embeddings. It requires adaptation before training on concatenated 1,792-column files.
+The selected chunks stay fixed; traversal order changes deterministically each epoch. Both modalities are standardized with the precomputed TRAIN scaler. Training reads concatenated features and metadata without opening source archives. An `INCOMPLETE` marker prevents training from unfinished data.
 
-## Preparation launcher
+Override `DATA_ROOT`, `SCALER_PATH`, `RESULTS`, `PYTHON`, `CUDA_VISIBLE_DEVICES`, `EPOCHS`, `STEP`, `FINAL_CHUNKS` or `EVAL_EVERY` as environment variables. `PYTHON` defaults to `python` from the activated environment. `STEP` controls optional increasing chunk stages; later stages load the previous stage's best weights. The filenames retain `ladder100` for compatibility; stage size is configurable.
+
+## Evaluation and checkpoints
+
+TRAIN ONLINE reports metrics during chunk updates. TRAIN/TEST STAGE evaluate fixed 50/50 samples from the selected chunks; TRAIN/TEST ALL use fixed 50/50 samples drawn across the full chunk pool. The target is 29,006 rows per class, subject to available rows. ALL does not evaluate every dataset row. Set `EVAL_EVERY=chunk` for evaluation after each chunk.
+
+TEST STAGE loss selects the best checkpoint. ALL is diagnostic. No early stopping is used. Because TEST selects checkpoints and the row-based split permits shared proteins/groups, these metrics do not establish held-out performance on unseen proteins.
+
+Each stage writes `run.log`, JSONL histories and best/last checkpoints. Intra-epoch recovery checkpoints are saved every 100 chunks; for the 10-chunk run, recovery is from the last completed epoch. Rerunning the launcher resumes available checkpoints or skips completed stages. Use a new `RESULTS` directory for an independent experiment.
+
+## Prepare a new scaler
+
+`fit_shuffled_scaler.py` requires prepared, uncompressed Primary files, metadata and a separate Secondary store. It is not a scaler fitter for the independent concatenated-only tree. The current sources are [archived](../../data/README.md); the current fitted scaler is reused for training.
+
+For a new prepared dataset, with an unused output path:
 
 ```bash
-bash neural_network/MLP/run_shuffled_pipeline.sh
+python neural_network/MLP/fit_shuffled_scaler.py   --root data/data_input_nn_shuffled_new   --output neural_network/MLP/standardizer_new.npz --block-rows 2048
 ```
 
-This uses `data_pipeline/scripts/data_splitting/`. When the scaler exists, preparation is skipped and the current split is preserved. For a new dataset, set `DATA_ROOT` and `SCALER_PATH` to new paths. Preparation does not use `.ok` markers.
+Statistics use every TRAIN occurrence without class balancing. Secondary vectors are weighted by their group's TRAIN occurrence count. The output scaler is never overwritten.
+
+`run_shuffled_pipeline.sh` performs split generation, metadata, validation and scaler fitting only when `SCALER_PATH` does not exist as a nonempty file. For new data, set both `DATA_ROOT` and `SCALER_PATH` to new paths; do not rerun preparation on the active dataset.
+
+Datasets, scalers and training outputs are excluded from Git. See the [experiment history](../../docs/mlp_experiment_history.md) for earlier runs and the [data pipeline](../../data_pipeline/README.md) for feature preparation.

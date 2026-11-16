@@ -14,8 +14,8 @@ COL='secondary_structure_spaced'
 
 def args():
  p=argparse.ArgumentParser()
- p.add_argument('--dataset-dir',type=Path,default=Path('/home/nap/lperez_nn/data/data_uniref50/bert_mlm_dataset'))
- p.add_argument('--model-dir',type=Path,default=Path('/home/nap/lperez_nn/model/secondary_bert'))
+ p.add_argument('--dataset-dir',type=Path,default=Path(__file__).resolve().parents[3] / 'data' / 'data_uniref50' / 'bert_mlm_dataset')
+ p.add_argument('--model-dir',type=Path,default=Path(__file__).resolve().parents[3] / 'model' / 'secondary_bert')
  p.add_argument('--output-json',type=Path,default=None)
  p.add_argument('--batch-size',type=int,default=256); p.add_argument('--parquet-batch-rows',type=int,default=8192)
  p.add_argument('--mlm-probability',type=float,default=.15); p.add_argument('--seed',type=int,default=42)

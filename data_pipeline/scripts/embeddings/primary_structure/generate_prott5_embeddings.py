@@ -18,8 +18,8 @@ from transformers import T5EncoderModel, T5Tokenizer
 # PATHS
 # ======================================================
 
-DATA_INTERMEDIATE = Path("/home/nap/lperez_nn/data/data_intermediate")
-DATA_INPUT_NN = Path("/data/nap/lperez_nn/data/data_input_nn")
+DATA_INTERMEDIATE = Path(__file__).resolve().parents[4] / 'data' / 'data_intermediate'
+DATA_INPUT_NN = Path(__file__).resolve().parents[4] / 'data' / 'data_input_nn'
 
 MODEL_NAME = "Rostlab/prot_t5_xl_half_uniref50-enc"
 

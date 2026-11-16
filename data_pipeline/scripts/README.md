@@ -1,6 +1,6 @@
 # Data processing steps
 
-Run documented commands from the `lperez_nn/` root with `nap_env` activated.
+Run documented commands from the `lperez_nn/` root. Use `nap_env` except for ProteinUnet prediction, which uses `proteinunet_env`; see [environment setup](../../env/README.md).
 
 | Step | Module | Purpose |
 |---|---|---|
@@ -13,7 +13,8 @@ Run documented commands from the `lperez_nn/` root with `nap_env` activated.
 | 7 | [data_shuffling](data_shuffling/README.md) | Globally shuffle rows and recover interrupted runs. |
 | 8 | [data_splitting](data_splitting/README.md) | Assign splits, prepare metadata and validate. |
 | 9 | [embedding_concatenation](embedding_concatenation/README.md) | Combine both representations. |
+| 10 | [data_archiving](data_archiving/README.md) | Compress consumed sources with full verification; overlaps conversion where safe. |
 
-Steps 3 and 4 are complementary branches. SecondaryBERT has its own pretraining workflow. The classifier scaler and launchers are in `../../neural_network/MLP/`. Concatenation produces an alternative representation that requires adapting the current loader.
+Steps 3 and 4 are complementary branches. SecondaryBERT has its own pretraining workflow. The classifier scaler and launchers are in `../../neural_network/MLP/`. The MLP loader reads concatenated chunks directly; original sources can be archived after verified conversion.
 
 Shuffling, splits, metadata and scaling are already complete for the current dataset. Do not repeat them on data used by an active process.

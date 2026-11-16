@@ -72,7 +72,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--data-dir",
         type=Path,
-        default=Path("/home/nap/lperez_nn/data/data_uniref50"),
+        default=Path(__file__).resolve().parents[3] / 'data' / 'data_uniref50',
         help="Base UniRef data directory.",
     )
 

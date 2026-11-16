@@ -1,471 +1,89 @@
-# secondaryBERT
+# SecondaryBERT pretraining
 
-## Overview
-
-This module builds and trains a BERT masked-language model using predicted protein secondary-structure sequences.
-
-The pipeline starts from the UniRef50 protein database, reduces sequence redundancy by clustering representatives at 30% sequence identity, predicts secondary structure with ProteinUnet, prepares a C/H/E masked-language-modeling dataset, and finally trains a BERT model.
-
-Although the original input database is UniRef50, sequences are clustered at 30% sequence identity using MMseqs2. The resulting representative sequence set is referred to throughout this documentation as **"UniRef30"**, although it is not the official UniRef30 database.
-
-For the UniRef30 dataset used in this project:
+Build a BERT masked-language model from ProteinUnet-predicted C/H/E sequences:
 
 ```text
-Representative sequences: 23,127,616
-Chunk size: 100,000 sequences
-Generated chunks: 232
+UniRef50 → MMseqs2 clustering → FASTA chunks → ProteinUnet
+  → prediction audit → cleaned Parquet splits → MLM training → validation
 ```
 
----
+“UniRef30” is the local name for representatives clustered at 30% identity, not an official UniRef release. The recorded build has 23,127,616 representatives in 232 FASTA chunks of up to 100,000 sequences.
 
-## Pipeline role
+Run commands from the project root. Examples use `data/data_uniref50/`; restore the [local archive](../../../data/used_data/README.md) first if needed. ProteinUnet uses the separate [proteinunet_env](../../../env/README.md) and local weights in `model/unet_c_ensemble/`. Clustering requires an MMseqs2 executable; its default path is `<data-dir>/mmseqs2/mmseqs/bin/mmseqs`, overridable with `--mmseqs-bin`.
 
-```text
-UniRef50 FASTA
-    ↓
-MMseqs2 clustering at 30% identity
-    ↓
-UniRef30 representative sequences
-    ↓
-FASTA chunking
-    ↓
-ProteinUnet secondary-structure prediction
-    ↓
-C/H/E secondary-structure dataset
-    ↓
-BERT MLM pretraining
-```
+## 1. Prepare structural sequences
 
----
-
-## Directory structure
-
-Expected data structure:
-
-```text
-/home/nap/lperez_nn/data/data_uniref50/
-├── bert_mlm_dataset/
-│   ├── all_cleaned.parquet
-│   ├── train.parquet
-│   ├── val.parquet
-│   ├── test.parquet
-│   └── vocab.txt
-│
-├── clustering/
-│   ├── uniref50_c30_cluster.tsv
-│   └── uniref50_c30_rep_seq.fasta
-│
-├── mmseqs2/
-│   └── mmseqs/
-│
-└── proteinunet_prediction/
-    ├── chunks/
-    │   ├── chunk_00001.fasta
-    │   ├── chunk_00002.fasta
-    │   └── ...
-    │
-    ├── outputs/
-    │   ├── chunk_00001.csv
-    │   ├── chunk_00001_skipped.csv
-    │   ├── chunk_00002.csv
-    │   ├── chunk_00002_skipped.csv
-    │   └── ...
-    │
-    └── missing_secondary_structure_audit.csv
-```
-
----
-
-## Scripts
-
-### 1. `cluster_uniref50_to_uniref30_mmseqs.py`
-
-Clusters UniRef50 sequences with MMseqs2 to obtain a representative sequence set at 30% sequence identity.
-
-#### Input
-
-```text
-/data_uniref50/uniref50.fasta
-```
-
-#### Output
-
-```text
-/data_uniref50/clustering/uniref50_c30_cluster.tsv
-/data_uniref50/clustering/uniref50_c30_rep_seq.fasta
-```
-
-#### Main parameters
-
-```text
---min-seq-id 0.3
---coverage 0.8
---cov-mode 1
---threads 16
-```
-
-#### Run
+| Script | Input → output | Defaults and behavior |
+|---|---|---|
+| `cluster_uniref50_to_uniref30_mmseqs.py` | `uniref50.fasta` → `clustering/uniref50_c30_rep_seq.fasta` and cluster TSV | Identity 0.3, target coverage 0.8, coverage mode 1, 16 threads |
+| `create_uniref30_fasta_chunks.py` | Representative FASTA → `proteinunet_prediction/chunks/chunk_XXXXX.fasta` | 100,000 sequences per chunk |
+| `predict_uniref30_secondary_structure.py` | One FASTA chunk → `proteinunet_prediction/outputs/chunk_XXXXX.csv` and `_skipped.csv` | Full-protein C/H/E predictions; non-standard amino acids are skipped |
+| `audit_uniref30_secondary_structure_predictions.py` | Input FASTA chunks and predictions → `missing_secondary_structure_audit.csv` | Reports missing proteins and invalid residues |
+| `build_secondary_mlm_dataset.py` | Prediction CSVs → `bert_mlm_dataset/` Parquet files and vocabulary | Excludes skipped CSVs; retains nonempty C/H/E strings with matching sequence/structure lengths |
 
 ```bash
-python3 cluster_uniref50_to_uniref30_mmseqs.py
+python data_pipeline/scripts/secondaryBERT/cluster_uniref50_to_uniref30_mmseqs.py   --data-dir data/data_uniref50
+
+python data_pipeline/scripts/secondaryBERT/create_uniref30_fasta_chunks.py   --data-dir data/data_uniref50 --sequences-per-chunk 100000
+
+conda run -n proteinunet_env python data_pipeline/scripts/secondaryBERT/predict_uniref30_secondary_structure.py   --data-dir data/data_uniref50   --model-path model/unet_c_ensemble   -i data/data_uniref50/proteinunet_prediction/chunks/chunk_00001.fasta
 ```
 
----
-
-### 2. `create_uniref30_fasta_chunks.py`
-
-Splits the UniRef30 representative FASTA file into smaller FASTA chunks.
-
-This step is kept separate from secondary-structure prediction so that chunks can be processed independently and failed chunks can be rerun without repeating the clustering or splitting steps.
-
-#### Input
-
-```text
-/data_uniref50/clustering/uniref50_c30_rep_seq.fasta
-```
-
-#### Output
-
-```text
-/data_uniref50/proteinunet_prediction/chunks/chunk_00001.fasta
-/data_uniref50/proteinunet_prediction/chunks/chunk_00002.fasta
-...
-```
-
-#### Default chunk size
-
-```text
-100,000 sequences per chunk
-```
-
-#### Run
+Repeat prediction for every chunk before auditing and building the dataset:
 
 ```bash
-python3 create_uniref30_fasta_chunks.py
+python data_pipeline/scripts/secondaryBERT/audit_uniref30_secondary_structure_predictions.py   --data-dir data/data_uniref50
+
+python data_pipeline/scripts/secondaryBERT/build_secondary_mlm_dataset.py   --data-dir data/data_uniref50
 ```
 
-Optional:
+Prediction CSVs contain `id`, `protein_id`, `sequence` and `secondary_structure`; skipped CSVs contain `protein_id`, `reason` and `details`. The audit distinguishes `non_standard_residues`, `missing_output_csv` and `missing_unknown_reason`.
 
-```bash
-python3 create_uniref30_fasta_chunks.py \
-  --sequences-per-chunk 100000
-```
+The builder writes `all_cleaned.parquet`, `train.parquet`, `val.parquet`, `test.parquet` and `vocab.txt`. Splits default to 80/10/10 with seed 42; validation size is a fraction of the full cleaned dataset. Recorded source-protein counts are 18,374,944 TRAIN, 2,296,868 validation and 2,296,869 TEST (22,968,681 total).
 
----
+## 2. Train the model
 
-### 3. `predict_uniref30_secondary_structure.py`
+`train_secondary_mlm.py` streams Parquet rows with PyArrow and selects `min(3, L // 25)` non-overlapping 25-state windows per protein. Proteins shorter than 25 contribute none. Selection is deterministic from the seed, split and source-row index. Inputs contain 27 tokens: CLS, 25 states and SEP.
 
-Predicts secondary structure for one FASTA chunk using ProteinUnet.
+The saved tokenizer is checked at startup and after saving. It must preserve uppercase symbols with this mapping:
 
-The model outputs secondary structure as a string over the alphabet:
+| Token | PAD | UNK | CLS | SEP | MASK | C | H | E |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| ID | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
 
-```text
-C H E
-```
+The special tokens are spelled `[PAD]`, `[UNK]`, `[CLS]`, `[SEP]` and `[MASK]`. `C H E C` must encode as `[2, 5, 6, 7, 5, 3]`. These checks were introduced after earlier embeddings were reported to be identical for different structural inputs.
 
-where:
-
-```text
-C = coil
-H = helix
-E = beta strand
-```
-
-ProteinUnet expects sequences containing only the 20 standard amino acids. Sequences containing non-standard residues such as `X`, `U`, `B`, `Z`, `J` or `O` are skipped and written to a separate skipped file.
-
-The prediction script writes both the successful predictions and skipped/failed proteins. The output CSV contains `id`, `protein_id`, `sequence` and `secondary_structure`, while the skipped CSV records `protein_id`, `reason` and `details`.
-
-#### Input
-
-```text
-/data_uniref50/proteinunet_prediction/chunks/chunk_XXXXX.fasta
-```
-
-#### Output
-
-```text
-/data_uniref50/proteinunet_prediction/outputs/chunk_XXXXX.csv
-/data_uniref50/proteinunet_prediction/outputs/chunk_XXXXX_skipped.csv
-```
-
-#### Run
-
-```bash
-python3 predict_uniref30_secondary_structure.py \
-  -i /home/nap/lperez_nn/data/data_uniref50/proteinunet_prediction/chunks/chunk_00001.fasta
-```
-
-Optional custom output name:
-
-```bash
-python3 predict_uniref30_secondary_structure.py \
-  -i /home/nap/lperez_nn/data/data_uniref50/proteinunet_prediction/chunks/chunk_00001.fasta \
-  -o chunk_00001.csv
-```
-
----
-
-### 4. `audit_uniref30_secondary_structure_predictions.py`
-
-Audits the ProteinUnet prediction step by comparing every input FASTA chunk against its corresponding output CSV.
-
-For each protein present in the FASTA but absent from the prediction output, the script checks whether the protein contains non-standard amino acids.
-
-#### Input
-
-```text
-/data_uniref50/proteinunet_prediction/chunks/chunk_XXXXX.fasta
-/data_uniref50/proteinunet_prediction/outputs/chunk_XXXXX.csv
-```
-
-#### Output
-
-```text
-/data_uniref50/proteinunet_prediction/missing_secondary_structure_audit.csv
-```
-
-#### Output columns
-
-```text
-chunk
-protein_id
-sequence_length
-missing_reason
-invalid_residues
-sequence
-```
-
-Possible `missing_reason` values include:
-
-```text
-non_standard_residues
-missing_output_csv
-missing_unknown_reason
-```
-
-#### Run
-
-```bash
-python3 audit_uniref30_secondary_structure_predictions.py
-```
-
----
-
-### 5. `build_secondary_mlm_dataset.py`
-
-Builds the final secondary-structure MLM dataset for BERT pretraining.
-
-This script merges all ProteinUnet prediction CSV files, removes invalid rows, checks that sequence length and secondary-structure length match, converts C/H/E strings into space-separated token sequences, and splits the dataset into train, validation and test sets.
-
-#### Input
-
-```text
-/data_uniref50/proteinunet_prediction/outputs/chunk_XXXXX.csv
-```
-
-Skipped files are ignored:
-
-```text
-chunk_XXXXX_skipped.csv
-```
-
-#### Output
-
-```text
-/data_uniref50/bert_mlm_dataset/all_cleaned.parquet
-/data_uniref50/bert_mlm_dataset/train.parquet
-/data_uniref50/bert_mlm_dataset/val.parquet
-/data_uniref50/bert_mlm_dataset/test.parquet
-/data_uniref50/bert_mlm_dataset/vocab.txt
-```
-
-#### Vocabulary
-
-```text
-[PAD]
-[UNK]
-[CLS]
-[SEP]
-[MASK]
-C
-H
-E
-```
-
-#### Default split
-
-```text
-train: 80%
-validation: 10%
-test: 10%
-random seed: 42
-```
-
-The validation size is interpreted as a fraction of the full cleaned dataset, not as a fraction of the remaining train/validation subset.
-
-#### Run
-
-```bash
-python3 build_secondary_mlm_dataset.py
-```
-
----
-
-### 6. `train_secondary_mlm.py`
-
-Trains a new `BertForMaskedLM` from the cleaned Parquet dataset. The script streams `secondary_structure_spaced` in PyArrow batches, rather than loading all proteins into memory. It validates the tokenizer at startup and after saving.
-
-#### Corrected vocabulary contract
-
-Earlier embeddings were reported to be identical across different structural inputs, and the BERT dictionary/tokenizer was revised. The current implementation enforces this exact mapping:
-
-| Token | ID |
+| Parameter | Default |
 |---|---:|
-| `[PAD]` | 0 |
-| `[UNK]` | 1 |
-| `[CLS]` | 2 |
-| `[SEP]` | 3 |
-| `[MASK]` | 4 |
-| `C` | 5 |
-| `H` | 6 |
-| `E` | 7 |
-
-`do_lower_case=False` preserves the biological symbols. The startup check requires:
-
-```text
-C H E C → [2, 5, 6, 7, 5, 3]
-```
-
-Training windows are encoded directly using the same IDs. Each input contains `[CLS]`, 25 biological states and `[SEP]`: **27 tokens**, within the model's 30-position capacity. Correct vocabulary mapping prevents different biological symbols from being lost as unknown tokens; output variability is checked separately during validation and embedding generation. The previous failure is not diagnosed solely by a model directory name.
-
-#### Inputs and window sampling
-
-Required files: `train.parquet`, `val.parquet` and `vocab.txt` under `bert_mlm_dataset/`. The validation split is used for startup data sanity checks in this training script; held-out MLM metrics are computed separately by `validate_secondary_mlm.py`.
-
-For a protein of length `L`, training selects `min(3, L // 25)` non-overlapping windows; proteins shorter than 25 positions contribute none. Starts are deterministic from the seed, split name and source-row index. This replaces the old description of taking only the first 25 positions.
-
-Dataset sizes recorded for the project build (source proteins, not sampled windows):
-
-| Split | Proteins |
-|---|---:|
-| Train | 18,374,944 |
-| Validation | 2,296,868 |
-| Test | 2,296,869 |
-| Total | 22,968,681 |
-
-#### Current defaults
-
-| Parameter | Value |
-|---|---:|
-| Vocabulary size | 8 |
 | Hidden size | 768 |
-| Transformer layers / attention heads | 12 / 12 |
-| Intermediate size | 3072 |
-| Maximum position embeddings | 30 |
-| Window size / maximum windows per protein | 25 / 3 |
+| Layers / attention heads | 12 / 12 |
+| Intermediate size / position embeddings | 3072 / 30 |
 | Batch size per rank | 256 |
 | Epochs | 1 |
 | MLM probability | 0.15 |
-| Learning rate | 1e-4 |
-| Weight decay | 0.01 |
+| Learning rate / weight decay | 1e-4 / 0.01 |
 | Warmup ratio | 0.05 |
 | Seed | 42 |
-| Parquet batch rows | 8192 |
-| DataLoader workers | 0 |
+| Parquet batch rows / DataLoader workers | 8192 / 0 |
 
-Dynamic MLM corruption uses the standard 80% mask / 10% random token / 10% unchanged policy among selected positions. Special positions are not selected as targets. Distributed training uses DDP, balanced Parquet row-group assignments and equal per-rank step budgets. Resource monitoring reports memory/GPU usage when optional monitoring dependencies are available.
+Selected MLM positions use 80% MASK, 10% random-token and 10% unchanged corruption; special positions are excluded. DDP assigns disjoint Parquet work units with balanced per-rank step budgets. Window counts are cached in `secondary_mlm_rowgroup_stats.json`.
 
-#### Run from the repository root
-
-Training, embedding generation and validation now default to `model/secondary_bert`. The legacy `secondary_bert_mlm` weights have been removed. Training saves model/tokenizer artifacts to the selected output directory; use a separate `--output-dir` for experiments to preserve the validated model.
+Use a separate output directory for new experiments to preserve the validated `model/secondary_bert`:
 
 ```bash
-python3 scripts/secondaryBERT/train_secondary_mlm.py \
-  --output-dir /home/nap/lperez_nn/model/secondary_bert
+python data_pipeline/scripts/secondaryBERT/train_secondary_mlm.py   --data-dir data/data_uniref50 --output-dir model/secondary_bert_experiment
 ```
 
-Two-GPU example:
+For two GPUs, replace `python` with `torchrun --standalone --nproc_per_node=2`. `--max-train-proteins` and `--max-val-proteins` limit source proteins, not generated windows. Training uses validation data for startup sanity checks; held-out MLM metrics are computed separately.
+
+## 3. Validate
+
+`validate_secondary_mlm.py` evaluates `val.parquet` using deterministic windows and seeded MLM corruption. It reports masked-token loss, perplexity, C/H/E precision/recall/F1, a confusion matrix, unknown/non-biological token counts and synthetic embedding variability. It supports single-process and `torchrun` execution.
 
 ```bash
-torchrun --standalone --nproc_per_node=2 \
-  scripts/secondaryBERT/train_secondary_mlm.py \
-  --output-dir /home/nap/lperez_nn/model/secondary_bert \
-  --batch-size 256
+python data_pipeline/scripts/secondaryBERT/validate_secondary_mlm.py   --dataset-dir data/data_uniref50/bert_mlm_dataset   --model-dir model/secondary_bert --max-val-proteins 100000
 ```
 
-Use a separate `--output-dir` for experiments. `--max-train-proteins` and `--max-val-proteins` limit source proteins for small runs; they do not set the number of generated windows. Row-group window counts are cached in `secondary_mlm_rowgroup_stats.json`.
+Results default to `<model-dir>/validation_metrics.json`; `--output-json` overrides the path. Omit `--max-val-proteins` to use the full validation split. These are structural reconstruction metrics, not epitope-prediction results. Recorded results are in the [model inventory](../../docs/data_and_models.md).
 
-### 7. `validate_secondary_mlm.py`
-
-Evaluates the saved model on `val.parquet`, with deterministic window sampling and seeded MLM corruption. Supports single-process and `torchrun` execution. It reports masked-token loss, perplexity, accuracy, C/H/E precision/recall/F1, a confusion matrix, unknown/non-biological token counts and a synthetic embedding variability check.
-
-```bash
-python3 scripts/secondaryBERT/validate_secondary_mlm.py \
-  --model-dir /home/nap/lperez_nn/model/secondary_bert \
-  --max-val-proteins 100000
-```
-
-By default the result is written to `<model-dir>/validation_metrics.json`; `--output-json` selects another file. Omitting the limit evaluates the full validation split.
-
-The saved project result covers 100,000 proteins and 275,119 windows: loss 0.255735, perplexity 1.291411, masked-token accuracy 0.885621 and macro-F1 0.873589. Original unknown-token count is zero and the synthetic embeddings are not all identical. These are **structural MLM metrics**, not epitope-prediction performance or final test-set results.
-
-## Execution order
-
-Run clustering, FASTA chunking, prediction for every chunk, prediction auditing and dataset construction in that order, using the commands above from this module's directory. Then run the training and validation commands from the repository root. After validation, generate classification-window embeddings using [the embeddings module](../embeddings/README.md).
-
----
-
-## Handling of non-standard amino acids
-
-ProteinUnet uses one-hot encoding over the 20 standard amino acids only:
-
-```text
-A D N R C E Q G H I L K M F P S T W Y V
-```
-
-Proteins containing residues outside this set are not passed to the model. They are written to the corresponding skipped file:
-
-```text
-proteinunet_prediction/outputs/chunk_XXXXX_skipped.csv
-```
-
-This avoids generating unreliable secondary-structure predictions for sequences that the model cannot encode.
-
----
-
-## Dataset cleaning
-
-Before BERT pretraining, the merged ProteinUnet outputs are cleaned.
-
-Rows are retained only if:
-
-```text
-secondary_structure contains only C/H/E
-sequence length == secondary_structure length
-secondary_structure is not empty
-```
-
-The cleaned dataset is saved as:
-
-```text
-bert_mlm_dataset/all_cleaned.parquet
-```
-
-Then it is split into:
-
-```text
-train.parquet
-val.parquet
-test.parquet
-```
-
----
-
-## Notes
-
-* The pipeline uses UniRef50 as the original source database.
-* After MMseqs2 clustering at 30% sequence identity, the working representative set is referred to as UniRef30.
-* ProteinUnet prediction is the main computational bottleneck.
-* FASTA chunking is intentionally separated from prediction to simplify parallel execution and reruns.
-* BERT is trained only on valid C/H/E secondary-structure strings.
-* Sequences skipped by ProteinUnet are not included in the BERT pretraining dataset.
+After validation, use the [embedding generator](../embeddings/README.md) for classification-window features.
