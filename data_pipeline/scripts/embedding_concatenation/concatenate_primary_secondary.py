@@ -8,6 +8,7 @@ Primary files after full blockwise verification; do not train during conversion.
 with a matching completion marker; interrupted chunks are regenerated.
 """
 import argparse
+from contextlib import nullcontext
 import hashlib
 import fcntl
 import json
@@ -268,7 +269,23 @@ def main():
     parser.add_argument('--workers', type=int, default=4, help='Bounded CPU/I/O conversion workers; no GPU required')
     parser.add_argument('--secondary-cache-dir', type=Path, help='Optional local SSD cache for immutable Secondary embeddings')
     parser.add_argument('--start-chunk', type=int, default=0, help='Benchmark only; nonzero leaves output INCOMPLETE')
+    parser.add_argument('--verify-only', action='store_true', help='Read-only full SHA-256 verification of a completed --output dataset')
     args = parser.parse_args()
+    if args.verify_only:
+        if (args.in_place or args.archive_sources or args.archive_originals
+                or args.secondary_cache_dir or args.max_chunks is not None or args.start_chunk):
+            parser.error('--verify-only requires --output without conversion or archival options')
+        output_root = args.output.resolve()
+        writer_lock = output_root / '.writer.lock'
+        try:
+            with (writer_lock.open('rb') if writer_lock.exists() else nullcontext()) as lock:
+                if lock is not None:
+                    fcntl.flock(lock, fcntl.LOCK_SH | fcntl.LOCK_NB)
+                verify_completed_output(output_root)
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            parser.exit(1, f'Verification failed: {exc}\n')
+        print('Full feature and metadata SHA-256 verification passed; no files changed.', flush=True)
+        return
     if args.block_rows < 1 or (args.max_chunks is not None and args.max_chunks < 1):
         parser.error('block-rows and max-chunks must be positive')
     if args.archive_threads < 1 or args.start_chunk < 0 or args.workers < 1:
@@ -560,7 +577,8 @@ def process_fast_job(job):
             raise ValueError('Inputs changed during conversion')
         write_marker(marker, {'signature': sig, 'bytes': temporary.stat().st_size,
                               'sha256': file_digest(temporary),
-                              'metadata_sha256': metadata_digests})
+                              'metadata_sha256': metadata_digests,
+                              'output_mtime_ns': temporary.stat().st_mtime_ns})
     concatenate_chunk_fast(primary, gids, state, output, block_rows, record)
     return primary, False, n, time.monotonic()-started
 
@@ -602,9 +620,9 @@ def run_fast(args):
         if layout.get('complete') and not (output_root / 'INCOMPLETE').exists():
             if args.archive_sources and layout.get('source_root') != str(root):
                 raise ValueError('Completed output belongs to another source root')
-            verify_completed_output(output_root)
+            verify_completed_output(output_root, full=args.archive_sources)
             if not args.archive_sources:
-                print('Output already complete; features and metadata verified.', flush=True)
+                print('Output already complete; quick checks passed (metadata hashes, feature size/shape and changed-file hashes). Use --verify-only for full feature hashing.', flush=True)
                 return
             finalize_archives(args, root, archive_tree)
             return
@@ -706,9 +724,21 @@ def run_fast(args):
             finalize_archives(args, root, archive_tree)
 
 
-def verify_completed_output(root):
-    """Read-only checksum verification of completed features and metadata."""
+def verify_completed_output(root, full=True):
+    """Verify metadata hashes; optionally hash every feature file (read-only).
+
+    Quick mode checks feature size/shape and rehashes files whose recorded mtime
+    changed. It cannot detect same-size corruption with a preserved timestamp.
+    """
+    root = Path(root)
     layout = json.loads((root / 'feature_layout.json').read_text())
+    if not layout.get('complete') or (root / 'INCOMPLETE').exists():
+        raise ValueError('Output dataset is incomplete')
+    if (layout.get('format') != 'primary_secondary_float32_v1'
+            or layout.get('primary_dim') != PRIMARY_DIM
+            or layout.get('secondary_dim') != SECONDARY_DIM
+            or layout.get('normalized') is not False):
+        raise ValueError('Unsupported completed feature layout')
     markers = sorted(root.rglob('chunk_*_X.json'))
     if len(markers) != layout.get('chunks'):
         raise ValueError('Completed output chunk count mismatch')
@@ -716,7 +746,14 @@ def verify_completed_output(root):
     for marker in markers:
         rec = json.loads(marker.read_text())
         output = marker.with_suffix('.npy')
-        if output.stat().st_size != rec['bytes'] or file_digest(output) != rec['sha256']:
+        stat = output.stat()
+        if not isinstance(rec.get('sha256'), str) or len(rec['sha256']) != 64:
+            raise ValueError(f'Missing recorded feature checksum: {output}')
+        if stat.st_size != rec['bytes']:
+            raise ValueError(f'Corrupt completed output: {output}')
+        timestamp_changed = (rec.get('output_mtime_ns') is not None
+                             and stat.st_mtime_ns != rec['output_mtime_ns'])
+        if (full or timestamp_changed) and file_digest(output) != rec['sha256']:
             raise ValueError(f'Corrupt completed output: {output}')
         n = rec['signature']['rows']
         a = np.load(output, mmap_mode='r')

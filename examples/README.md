@@ -20,3 +20,5 @@ python examples/synthetic_mlp.py --output /tmp/synthetic_mlp_example
 ```
 
 An existing output directory is refused. `--seed` controls generation; generated arrays are excluded from Git. See [data provenance and schema](../data_pipeline/docs/data_and_models.md) for the real dataset format.
+
+The [CPU regression tests](../tests/README.md) also perform two synthetic optimizer steps across a temporary checkpoint and verify exact recovery of model, optimizer, scheduler and RNG state. This remains separate from the inference example.
