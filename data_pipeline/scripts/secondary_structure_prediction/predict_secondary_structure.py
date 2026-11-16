@@ -26,7 +26,7 @@ os.environ["XLA_FLAGS"] = "--xla_gpu_strict_conv_algorithm_picker=false"
 # CONFIGURATION
 # ======================================================
 
-MODELS_FOLDER = Path("/home/nap/lperez_nn/model")
+MODELS_FOLDER = Path(__file__).resolve().parents[3] / 'model'
 MODEL_PATH = MODELS_FOLDER / "unet_c_ensemble"
 
 SS_LIST = ["C", "H", "E"]

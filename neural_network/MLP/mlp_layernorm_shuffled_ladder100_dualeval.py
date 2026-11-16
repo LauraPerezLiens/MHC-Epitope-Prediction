@@ -1,24 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Distributed MLP training for NAP-CNB Primary / Primary+Secondary embeddings.
-Changes relative to the previous baseline:
-- TRAIN and TEST only; TEST loss selects BEST. All epochs run.
-- Single-GPU, bounded-memory monitoring; samples and exact-AUC records stay on disk.
-- TRAIN is still exact 50/50 within each physical chunk.
-- TEST uses global 50/50 sampling across selected physical chunks.
-- Fixed monitor samples are used for BEST epoch selection; no full-data evaluation.
-- TRAIN EVAL and TEST EVAL use fixed global 50/50 samples without replacement.
-- Per-chunk TRAIN ONLINE and fixed monitors report exact ROC-AUC; epoch counters omit AUC.
-- TRAIN, VALIDATION and TEST use the same selected physical chunks; only split_id differs.
-- --seed + --max-chunks define a fixed physical-chunk subset reused across epochs.
-- TRAIN chunk order is shuffled deterministically for each epoch (seed + epoch).
-- Chunk selection and evaluation samples remain fixed; only TRAIN traversal changes.
-- Fixed global 50/50 TRAIN/TEST monitoring after each chunk; reused at epoch end.
-- Atomic recovery checkpoints every 100 chunks; RNG state is saved. If interrupted,
---resume can continue from the next unprocessed block of the same epoch.
-- A completed-epoch checkpoint is also saved.
-- Primary+Secondary loads the precomputed ALL-TRAIN-chunk standardizer; never fits it.
+"""Single-GPU LayerNorm MLP training with fixed STAGE/ALL evaluation samples.
+
+TRAIN minibatches are balanced 50/50. Selected chunks and evaluation rows stay
+fixed; chunk traversal is shuffled per epoch. The precomputed TRAIN scaler is
+loaded without fitting. TEST STAGE loss selects BEST; ALL metrics are diagnostic.
+Evaluation runs per chunk or epoch. Checkpoints retain optimizer, scheduler and
+RNG state for recovery; all requested epochs run without early stopping.
 """
 from __future__ import annotations
 import argparse
@@ -1086,7 +1074,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--root",
-        default=str(Path(__file__).resolve().parents[2] / "data" / "data_input_nn_shuffled"),
+        default=str(Path(__file__).resolve().parents[2] / "data" / "data_input_nn_shuffled_concatenate"),
     )
     parser.add_argument(
         "--features",
@@ -1098,6 +1086,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--shared-eval-dir",type=Path,default=None,
                         help="Shared global sample cache, reused across all ladder stages.")
     parser.add_argument("--epochs", type=int, default=100)
+    parser.add_argument("--eval-every", choices=("chunk", "epoch"), default="chunk",
+                        help="Evaluate the same fixed STAGE/ALL samples per chunk or once per epoch.")
     # No early stopping: always complete --epochs.
 
     parser.add_argument("--batch-size", type=int, default=8192)
@@ -1125,7 +1115,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--report-every-chunks",
         type=int,
-        default=500,
+        default=1,
         help=(
             "GLOBAL physical TRAIN chunks per training/report/checkpoint block. "
             "With 2 GPUs, 500 means about 250 chunks per rank."
@@ -1365,8 +1355,9 @@ def main() -> None:
         if args.monitor_test_chunks:
             print(f"Periodic TEST monitor    : up to {args.monitor_test_chunks:,} of the SAME selected chunks")
         else:
-            print("Per-chunk TRAIN/TEST eval: fixed STAGE and ALL 50/50 samples; disk cache")
+            print(f"TRAIN/TEST eval per {args.eval_every}: fixed STAGE and ALL 50/50 samples; disk cache")
         print(f"Output                   : {output_dir}")
+        print(f"Evaluation frequency     : {args.eval_every}")
         print(f"Resume                   : {args.resume if args.resume else 'NONE'}")
         print(
             f"Init checkpoint          : "
@@ -1613,6 +1604,24 @@ def main() -> None:
             barrier(distributed)
             train_epoch_metrics.merge(train_metrics)
             offset = block_end
+            if args.eval_every == "epoch" and offset < total_chunks:
+                job = block_jobs[0]
+                print(f"EPOCH {epoch+1}/{args.epochs} | CHUNK {offset:,}/{total_chunks:,} | "
+                      f"{datasets[job.dataset_index]['name']} chunk={job.chunk_id} | "
+                      f"train={time.time()-block_t0:.1f}s", flush=True)
+                print(format_metrics('TRAIN ONLINE (current chunk; 50/50)', train_metrics.compute()), flush=True)
+                if is_main(rank) and offset % 100 == 0:
+                    save_checkpoint(
+                        path=recovery_path, model=model, optimizer=optimizer, scheduler=scheduler,
+                        args=args, epoch_index=epoch,
+                        next_chunk_offset=offset, epoch_total_chunks=total_chunks,
+                        completed_epochs=epoch, best_val_loss=best_test_loss,
+                        best_epoch=best_epoch,
+                        train_epoch_metrics_state=train_epoch_metrics.state_dict(),
+                    )
+                del train_metrics
+                barrier(distributed)
+                continue
             train_monitor_metrics = evaluate_monitor(model, monitor_train, args, device)
             test_monitor_metrics = evaluate_monitor(model, monitor_test, args, device)
             train_all_metrics = evaluate_monitor(model, monitor_train_all, args, device)

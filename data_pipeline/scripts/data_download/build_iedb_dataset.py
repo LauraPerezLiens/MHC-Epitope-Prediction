@@ -20,7 +20,7 @@ from urllib3.util.retry import Retry
 BASE_MHC = "https://query-api.iedb.org/mhc_export"
 BASE_TCELL = "https://query-api.iedb.org/tcell_export"
 
-OUTPUT_ROOT = Path("/home/nap/lperez_nn/data/data_raw")
+OUTPUT_ROOT = Path(__file__).resolve().parents[3] / 'data' / 'data_raw'
 
 # Use a single limit for simplicity and consistency
 LIMIT = 1000

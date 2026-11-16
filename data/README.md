@@ -1,14 +1,16 @@
 # Data
 
-- `data_input_nn/`: original embeddings for 11 datasets. Secondary indices in the shuffled dataset reference these files through absolute paths.
-- `data_input_nn_shuffled/`: 1,449,852,950 globally shuffled rows in 14,499 chunks, with splits and metadata. Preserve its paths and the original embedding paths.
-- `data_input_nn_shuffled_concatenated/`: concatenated, unnormalized features with 1,792 columns. Do not use while `INCOMPLETE` exists.
-- `used_data/`: compressed and verified raw, intermediate and UniRef datasets. See its README for restoration instructions.
+Local datasets are excluded from Git. Only this README and [used_data/README.md](used_data/README.md) are versioned.
 
-## Code and outputs
+| Directory | Contents |
+|---|---|
+| `data_input_nn/` | Original embeddings for 11 datasets, archived as verified `.zst` files. |
+| `data_input_nn_shuffled/` | Shuffled source embeddings and metadata, archived after concatenation. |
+| `data_input_nn_shuffled_concatenate/` | Uncompressed concatenated features and per-chunk labels, group IDs and split IDs used by the MLP. |
+| `used_data/` | Archives of raw, intermediate and UniRef50 datasets. |
 
-MLP code and the completed `standardizer_all_train_chunks.npz` are in `../neural_network/MLP/`. The scaler log is `../logs/scaler_sequential_20261110.log`.
+The concatenated dataset contains 1,449,852,950 rows in 14,499 chunks. Each row has 1,792 unnormalized `float32` features: 1,024 from ProtT5 and 768 from SecondaryBERT. Training uses this dataset independently of the source archives. An `INCOMPLETE` marker indicates that preparation has not finished; do not train from that directory until it is removed by the preparation process.
 
-Preparation scripts are in `../data_pipeline/scripts/`, reports in `../reports/`, operational logs in `../logs/`, and the environment specification in `../env/nap_env.yml`.
+Source archives have per-file `.archive.json` checksum records; `ARCHIVED.json` marks a completed archive tree. See [archiving and restoration](../data_pipeline/scripts/data_archiving/README.md).
 
-This directory belongs to the root `lperez_nn/` repository. The root `.gitignore` excludes datasets while retaining this README and `used_data/README.md`. There is no separate Git repository here.
+See the [data pipeline](../data_pipeline/README.md) for preparation and the [MLP documentation](../neural_network/MLP/README.md) for normalization and training. Datasets and the fitted scaler are not included in a clone of this repository.

@@ -97,7 +97,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--data-dir",
         type=Path,
-        default=Path("/home/nap/lperez_nn/data/data_uniref50"),
+        default=Path(__file__).resolve().parents[3] / 'data' / 'data_uniref50',
         help="Base UniRef data directory.",
     )
 
@@ -111,7 +111,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--model-path",
         type=Path,
-        default=Path("/home/nap/lperez_nn/model/unet_c_ensemble"),
+        default=Path(__file__).resolve().parents[3] / 'model' / 'unet_c_ensemble',
         help="Path to the trained ProteinUnet model.",
     )
 

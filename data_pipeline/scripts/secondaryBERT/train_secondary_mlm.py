@@ -149,7 +149,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--data-dir",
         type=Path,
-        default=Path("/home/nap/lperez_nn/data/data_uniref50"),
+        default=Path(__file__).resolve().parents[3] / 'data' / 'data_uniref50',
     )
     parser.add_argument(
         "--dataset-dir",
@@ -159,7 +159,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("/home/nap/lperez_nn/model/secondary_bert"),
+        default=Path(__file__).resolve().parents[3] / 'model' / 'secondary_bert',
     )
     parser.add_argument("--batch-size", type=int, default=BATCH_SIZE)
     parser.add_argument("--num-epochs", type=int, default=NUM_EPOCHS)

@@ -50,9 +50,9 @@ from numpy.lib.format import open_memmap
 from transformers import BertForMaskedLM, BertTokenizer
 
 
-DATA_INTERMEDIATE = Path("/home/nap/lperez_nn/data/data_intermediate")
-DATA_INPUT_NN = Path("/data/nap/lperez_nn/data/data_input_nn")
-MODEL_DIR = Path("/home/nap/lperez_nn/model/secondary_bert")
+DATA_INTERMEDIATE = Path(__file__).resolve().parents[4] / 'data' / 'data_intermediate'
+DATA_INPUT_NN = Path(__file__).resolve().parents[4] / 'data' / 'data_input_nn'
+MODEL_DIR = Path(__file__).resolve().parents[4] / 'model' / 'secondary_bert'
 
 PROTEIN_GROUP_COL = "protein_group_id"
 GROUP_COL = "group_id"

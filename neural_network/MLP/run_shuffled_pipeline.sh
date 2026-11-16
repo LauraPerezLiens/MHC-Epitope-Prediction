@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 BASE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-PYTHON="${PYTHON:-/home/nap/miniconda3/envs/nap_env/bin/python}"
+PYTHON="${PYTHON:-python}"
 PROJECT_ROOT="$(cd -- "$BASE_DIR/../.." && pwd)"
 MLP_DIR="$BASE_DIR"
 SPLIT_DIR="$PROJECT_ROOT/data_pipeline/scripts/data_splitting"

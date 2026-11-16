@@ -1,197 +1,38 @@
-# data_classification
+# Protein retrieval and window classification
 
-## Overview
+Run these scripts in order from the project root. Default paths are resolved from the script location.
 
-This module generates the **epitope classification dataset** used for downstream modeling.
+## 1. Retrieve parent proteins
 
-It takes the deduplicated epitope events from `data_download` and:
+`fetch_parent_proteins_fastas.py` reads parent IDs from `data_raw/*/*/*/merged_unique_events.csv`, retrieves FASTA sequences from UniProt or NCBI, and tries the base accession when a full accession cannot be resolved. Only sequences composed of the 20 standard amino acids are retained.
 
-1. Retrieves and validates parent protein sequences (FASTA)
-2. Removes proteins containing non-standard amino acids
-3. Generates fixed-length sliding windows (25 aa)
-4. Labels each window as epitope / non-epitope
-5. Assigns stable dataset identifiers for downstream modules
-
----
-
-## Pipeline role
-
-This module connects:
-
-```text
-data_download → data_classification → embeddings
-```
-
-- Input → epitope events (`merged_unique_events.csv`)
-- Output → labeled 25-aa classification windows with stable dataset identifiers
-
----
-
-## Scripts
-### 1. `fetch_parent_proteins_fastas.py`
-
-Fetches protein sequences from external databases (UniProt / NCBI).
-
-#### Input
-
-```text
-data_raw/*/*/*/merged_unique_events.csv
-```
-
-#### Output
-
-```text
-data_intermediate/
-├── human_parent_protein_fasta.csv
-├── mouse_parent_protein_fasta.csv
-```
-
-#### Description
-
-- Extracts unique parent_id values
-- Identifies database:
-  - UniProt
-  - NCBI Protein
-- Retrieves FASTA sequences via API
-- Uses fallback strategy:
-  - full accession → base accession
-- Stores sequences in CSV format
-- Converts FASTA records into plain amino acid sequences
-- Removes proteins containing non-standard amino acids
-  (e.g. X, U, O, B, Z, J)
-
-#### Protein validation
-
-Only proteins composed exclusively of the 20 standard amino acids are retained:
-
-```text
-ACDEFGHIKLMNPQRSTVWY
-```
-
-Proteins containing any non-standard residue are discarded before being written to the output FASTA dataset.
-
-#### Output columns
+Outputs: `data_intermediate/human_parent_protein_fasta.csv` and `mouse_parent_protein_fasta.csv`, with columns:
 
 ```text
 protein_url | db | id_full | id_base | resolved_id | fasta
 ```
 
-### 2. `epitope_classification.py`
-
-Builds the final classification dataset.
-
-#### Input
-
-- `merged_unique_events.csv` (from `data_download`)
-- `*_parent_protein_fasta.csv` (from previous step)
-
-#### Output
-
-```text
-data_intermediate/{species}/{mhc_class}/{haplotype}/
-└── classification_{species}_{class}_{haplotype}.csv
+```bash
+python data_pipeline/scripts/data_classification/fetch_parent_proteins_fastas.py
 ```
 
-#### Description
+## 2. Generate classification windows
 
-For each protein:
+`epitope_classification.py` combines IEDB events with retrieved proteins, verifies exact epitope sequence/coordinate matches, and generates sliding 25-aa windows. Proteins without a retrieved sequence, shorter than 25 residues, or without a valid matching epitope are excluded.
 
-1. Loads full protein sequence
-2. Validates epitope positions (exact match with sequence)
-3. Generates sliding windows of 25 amino acids
-4. Labels each window:
-   - 1 → contains epitope
-   - 0 → does not contain epitope
-5. Assigns protein_group_id and group_id identifiers
+A window is positive if it fully contains a validated epitope. A separate positive example is produced for each contained epitope; other windows are labeled negative. These negatives are not experimentally verified negatives.
 
-#### Window representation
-
-Each row corresponds to a 25 amino acid window:
-```text
-protein_group_id | group_id | 25aa_seq | contains_epitope | selected_epitope | epitope_pos_score | protein_url | window_start
-```
-
-#### Dataset identifiers
-
-Each generated window receives two identifiers:
+Output: `data_intermediate/{species}/{mhc_class}/{family}/classification_*.csv`:
 
 ```text
-protein_group_id
+protein_group_id | group_id | 25aa_seq | contains_epitope
+selected_epitope | epitope_pos_score | protein_url | window_start
 ```
 
-Unique identifier assigned to each protein within the classification dataset.
+`protein_group_id` identifies a protein within a dataset; `group_id` identifies a classification example. A physical window containing multiple epitopes can have multiple group IDs. Downstream augmentation and structure mapping preserve these identifiers.
 
-```text
-group_id
-```
-
-Unique identifier assigned to every 25-aa window.
-
-These identifiers are later propagated to:
-
-- BLOSUM augmented datasets
-- Secondary structure datasets
-- Embedding datasets
-- Neural-network inputs
-
-#### Epitope position score
-
-The epitope_pos_score represents the relative position of the epitope inside the window:
-
-- `0.0` → epitope centered
-- `< 0` → shifted to the left
-- `> 0` → shifted to the right
-- Range: [-1, 1]
-
-#### Data filtering
-
-During processing:
-
-- Rows with missing values are removed
-- Epitope coordinates are validated
-- Epitopes must exactly match the protein sequence
-- Proteins without FASTA sequences are discarded
-- Proteins shorter than the window size are discarded
-- Proteins without valid epitopes after exact-match validation are discarded
-- Duplicate windows are removed
-
----
-
-## Execution order
-
-Run scripts in this order:
+`epitope_pos_score` describes the epitope's relative position in the window: zero is centered, negative is left, positive is right, within `[-1, 1]`. `window_start` is one-based. Duplicate classification rows are removed before export.
 
 ```bash
-python3 fetch_parent_proteins_fastas.py
-python3 epitope_classification.py
+python data_pipeline/scripts/data_classification/epitope_classification.py
 ```
-
----
-
-## Notes
-
-- Window size is fixed to 25 amino acids
-- Multiple windows may correspond to the same epitope
-- Dataset size can be very large due to sliding window generation
-- Exact-match validation ensures data consistency
-- Duplicate classification windows are removed before export
-
----
-
-## Important
-
-Protein validation is performed during FASTA retrieval by
-`fetch_parent_proteins_fastas.py`.
-
-As a consequence:
-
-- Proteins containing non-standard amino acids are excluded
-- All classification windows originate from validated protein sequences
-- `protein_group_id` and `group_id` remain consistent across downstream modules
-
----
-
-## Summary
-
-This module retrieves and validates parent protein sequences, removes invalid proteins, generates labeled 25-aa classification windows, and assigns stable identifiers used throughout downstream embedding and neural-network workflows.
-

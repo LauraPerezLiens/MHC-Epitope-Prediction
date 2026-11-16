@@ -1,45 +1,15 @@
 #!/usr/bin/env python3
-"""
-Chunk-based dataset utilities for the NAP-CNB MLP pipeline.
+"""Chunk loading and normalization for ProtT5 and SecondaryBERT features.
 
-Training no longer reads master_split.csv. The split preparation step must
-first generate, for every physical Primary chunk:
-
-    chunk_metadata/
-        chunk_000000_y.npy
-        chunk_000000_group_id.npy
-        chunk_000000_split_id.npy
-        ...
-
-The position in each metadata array is the row index in the corresponding
-Primary embedding chunk.
-
-Supported feature modes
------------------------
-primary
-    ProtT5 embeddings only (1024 features). No input standardization.
-
-primary_secondary
-    ProtT5 (1024) + SecondaryBERT (768) = 1792 features.
-    Primary and Secondary are standardized separately using statistics
-    estimated from exactly N TRAIN physical chunks (default: 2), then
-    concatenated.
-
-Training sampling
------------------
-For every physical TRAIN chunk:
-    1. Obtain TRAIN rows from split_id == TRAIN.
-    2. Separate positive and negative rows.
-    3. Shuffle each class without replacement.
-    4. Produce 50/50 minibatches.
-    5. If one class is exhausted, reshuffle/recycle that class.
-    6. Do not advance to the next physical chunk until every TRAIN row
-       of both classes has been seen at least once.
-
-Validation and test keep their natural class distribution.
+Per-chunk y/group_id/split_id arrays align with embedding rows. Supports separate
+modalities and completed 1,792-column concatenated files. Balanced TRAIN iterators
+recycle the smaller class; natural-distribution split iterators are also available.
+The MLP trainer loads a precomputed TRAIN scaler through ModalityStandardizer.
 """
 
 from __future__ import annotations
+
+import json
 
 from collections import OrderedDict
 import argparse
@@ -133,6 +103,21 @@ def discover_datasets(root: Union[str, Path]) -> list[dict]:
     if not root.exists():
         raise FileNotFoundError(root)
 
+    layout_path = root / "feature_layout.json"
+    concatenated = False
+    if layout_path.exists():
+        layout = json.loads(layout_path.read_text())
+        if (root / "INCOMPLETE").exists() or not layout.get("complete"):
+            raise RuntimeError(f"Concatenation is incomplete: {root}")
+        if (layout.get("format") != "primary_secondary_float32_v1"
+                or layout.get("primary_dim") != PRIMARY_DIM
+                or layout.get("secondary_dim") != SECONDARY_DIM
+                or layout.get("normalized") is not False):
+            raise ValueError(f"Unsupported concatenated feature layout: {layout_path}")
+        concatenated = True
+    elif (root / "INCOMPLETE").exists():
+        raise RuntimeError(f"Dataset preparation is incomplete: {root}")
+
     datasets = []
 
     for metadata_dir in sorted(root.rglob("chunk_metadata")):
@@ -146,7 +131,7 @@ def discover_datasets(root: Union[str, Path]) -> list[dict]:
             continue
 
         dataset_dir = primary_path.parent
-        secondary_path = _find_secondary_dir(dataset_dir)
+        secondary_path = None if concatenated else _find_secondary_dir(dataset_dir)
 
         rel = dataset_dir.relative_to(root)
         name = str(rel)
@@ -158,6 +143,7 @@ def discover_datasets(root: Union[str, Path]) -> list[dict]:
                 "primary_path": primary_path,
                 "metadata_path": metadata_dir,
                 "secondary_path": secondary_path,
+                "concatenated": concatenated,
             }
         )
 
@@ -178,7 +164,7 @@ def print_datasets(datasets: Sequence[Mapping[str, object]]) -> None:
             f"  [{i:02d}] {ds['name']}\n"
             f"       Primary   : {ds['primary_path']}\n"
             f"       Metadata  : {ds['metadata_path']}\n"
-            f"       Secondary : {sec if sec is not None else 'NOT FOUND'}"
+            f"       Secondary : {'CONCATENATED (1792 columns)' if ds.get('concatenated') else sec if sec is not None else 'NOT FOUND'}"
         )
 
 
@@ -464,6 +450,17 @@ def load_rows(
     primary_path = Path(dataset["primary_path"])
     x_file = _resolve_primary_embedding_file(primary_path, chunk_id)
     X_primary_mmap = np.load(x_file, mmap_mode="r")
+
+    if dataset.get("concatenated", False):
+        if (X_primary_mmap.ndim != 2
+                or X_primary_mmap.shape[1] != PRIMARY_DIM + SECONDARY_DIM
+                or X_primary_mmap.dtype != np.dtype("float32")):
+            raise RuntimeError(f"Invalid concatenated features: {x_file}")
+        if len(row_indices) and (row_indices.min() < 0 or row_indices.max() >= len(X_primary_mmap)):
+            raise IndexError(f"Row outside concatenated array: {x_file}")
+        # Advanced indexing makes an independent writable copy for normalization.
+        columns = slice(0, PRIMARY_DIM) if feature_mode == "primary" else slice(None)
+        return np.asarray(X_primary_mmap[row_indices, columns], dtype=np.float32)
 
     if X_primary_mmap.ndim != 2 or X_primary_mmap.shape[1] != PRIMARY_DIM:
         raise RuntimeError(
@@ -1518,7 +1515,7 @@ def _build_diagnostic_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--root",
         type=Path,
-        default=Path("/data/nap/lperez_nn/data/data_input_nn"),
+        default=Path(__file__).resolve().parents[2] / 'data' / 'data_input_nn',
     )
     parser.add_argument(
         "--dataset",

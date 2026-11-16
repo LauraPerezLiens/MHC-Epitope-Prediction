@@ -9,7 +9,7 @@ from typing import Dict
 import pandas as pd
 
 
-DATA_INTERMEDIATE = Path("/home/nap/lperez_nn/data/data_intermediate")
+DATA_INTERMEDIATE = Path(__file__).resolve().parents[3] / 'data' / 'data_intermediate'
 
 SECONDARY_FILES = {
     "human": DATA_INTERMEDIATE / "secondary_struct_human.csv",

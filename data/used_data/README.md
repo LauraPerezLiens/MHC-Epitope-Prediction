@@ -1,8 +1,8 @@
 # Archived data
 
-These archives contain previous data preparation stages and SecondaryBERT training datasets. MLP scaling and concatenation use `data_input_nn` and `data_input_nn_shuffled`, which remain at their original locations.
+Local archives of earlier preparation stages: `data_raw.tar.zst`, `data_intermediate.tar.zst` and `data_uniref50.tar.zst`. These files are excluded from Git. See the [data inventory](../README.md) for the current training dataset.
 
-Each `.tar.zst` archive is compared in full against its original directory using GNU `tar --compare` before that directory is removed. `.sha256` files support later integrity checks; `.verification.json` files record verification. Progress is recorded in `archive_20261110.log`. A `.partial` file is not a verified final archive.
+Each archive was compared against its original directory using GNU `tar --compare` before the original was removed. The accompanying `.sha256` and `.verification.json` files record checksums and verification. Files ending in `.partial` are unfinished archives.
 
 To verify an archive, run from this directory:
 

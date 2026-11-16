@@ -1,199 +1,65 @@
-# MHC Epitope Prediction | Protein Language Models & Deep Learning
+# MHC Epitope Prediction
 
-**A computational bioinformatics project for developing machine learning approaches to MHC epitope prediction, integrating protein sequence information, secondary structure representations, and large-scale data processing.**
+Research pipeline for epitope classification using protein language models and predicted secondary structure. It combines ProtT5 sequence embeddings with a SecondaryBERT model pretrained on C/H/E structural states, then trains a PyTorch MLP on the resulting features.
 
-This repository contains the data processing, feature generation, and neural network training workflows developed as part of ongoing doctoral research in computational immunology.
+Developed as part of doctoral research in computational biology and cancer immunotherapy at the Spanish National Centre for Biotechnology (CNB-CSIC).
 
-The project focuses on building and evaluating computational approaches for identifying potential immune targets, with applications in cancer immunotherapy research.
-
-**Core technologies:** Python · PyTorch · Protein Language Models · Bioinformatics · Machine Learning · GPU Computing
-
----
-
-## Project Overview
-
-Predicting immunologically relevant epitopes is an important challenge in computational immunology.
-
-This project investigates how complementary representations of protein primary and secondary structure can be integrated into neural network models for epitope classification.
-
-The workflow covers several stages:
-
-1. Acquisition and processing of immunological datasets.
-2. Protein sequence retrieval and epitope classification.
-3. Sequence-based data augmentation.
-4. Protein secondary structure prediction.
-5. Generation of primary and secondary structure embeddings.
-6. Large-scale dataset preparation and feature normalization.
-7. Neural network training and evaluation.
-
-The repository includes both experimental research code and documentation describing the methodology and development process.
-
-## Computational Workflow
+## Workflow
 
 ```text
-              Immunological data (IEDB)
-                         |
-                         v
-            Protein sequence retrieval
-                         |
-                         v
-           Epitope classification
-                         |
-                         v
-              25-aa sequence windows
-                         |
-              +----------+----------+
-              |                     |
-              v                     v
-       BLOSUM62-based         Secondary structure
-       augmentation              prediction
-              |                     |
-              v                     v
-            ProtT5             SecondaryBERT
-              |                     |
-              v                     v
-       1024-dimensional       768-dimensional
-          embeddings             embeddings
-              |                     |
-              +----------+----------+
-                         |
-                         v
-               Feature preparation
-                         |
-                         v
-             Dataset shuffling and
-             TRAIN/VALIDATION/TEST
-                    splitting
-                         |
-                         v
-              Feature normalization
-                         |
-                         v
-              Neural network training
-                         |
-                         v
-                  Evaluation
+Positive IEDB assays → parent proteins → labeled 25-aa windows
+  ├── BLOSUM62 variants → ProtT5 (1,024 features)
+  └── ProteinUnet predictions → SecondaryBERT (768 features per group)
+  → global row shuffle → TRAIN/VALIDATION/TEST splits
+  → feature concatenation → TRAIN normalization → MLP training and evaluation
 ```
 
-The repository also includes a feature-concatenation workflow. The current MLP loader processes the primary and secondary representations separately; direct training from the concatenated files requires an additional adaptation.
+SecondaryBERT has a separate pretraining workflow: UniRef50 sequences are clustered at 30% identity, processed with ProteinUnet and used for masked-language modeling.
 
-## Main Components
+The data pipeline uses chunked processing, disk-backed statistics, restartable conversion and verified source compression. The current concatenated dataset contains 1,449,852,950 rows in 14,499 chunks, with 1,792 features per row. These are augmented training examples, not independent experimental observations.
 
-### 1. Data Acquisition and Classification
+## Repository structure
 
-Immunological data are collected from the Immune Epitope Database (IEDB).
-
-The processing pipeline retrieves parent protein sequences, validates sequence information, and generates labeled protein windows for downstream classification.
-
-### 2. Data Augmentation
-
-Protein sequence windows are augmented using amino acid substitutions guided by the BLOSUM62 substitution matrix.
-
-This stage expands the training dataset and supports experiments with sequence variation.
-
-The augmented sequences inherit their original labels, which is a modeling assumption rather than independent experimental validation.
-
-### 3. Protein Representation Learning
-
-Two complementary protein representations are investigated.
-
-**Primary structure — ProtT5**
-
-Protein sequences are transformed into numerical embeddings using a pretrained protein language model.
-
-- Model: ProtT5
-- Embedding dimension: 1,024
-- Input: amino acid sequences
-
-**Secondary structure — SecondaryBERT**
-
-A separate transformer-based model is trained to learn representations of protein secondary structure.
-
-- Input: secondary structure states
-- Embedding dimension: 768
-- Training approach: masked language modeling
-
-The secondary structure workflow includes protein structure prediction, dataset construction, model training, and embedding validation.
-
-### 4. Large-Scale Data Processing
-
-The project includes custom Python workflows for processing large biological datasets.
-
-Implemented operations include:
-
-- Chunk-based dataset processing.
-- Dataset shuffling.
-- TRAIN/VALIDATION/TEST partitioning.
-- Metadata generation and validation.
-- Feature concatenation.
-- Memory-conscious feature normalization.
-
-These components support experiments with datasets that are too large to process entirely in memory.
-
-### 5. Neural Network Development
-
-The classification workflow uses multilayer perceptron (MLP) architectures implemented with PyTorch.
-
-The repository includes:
-
-- Custom dataset loading.
-- Feature standardization.
-- Layer normalization.
-- GPU-based model training.
-- Incremental training experiments.
-- Model evaluation and experiment tracking.
-
-The research is ongoing, and reported experimental results should be interpreted in the context of their respective dataset partitions and evaluation protocols.
-
-## Repository Structure
-
-| Directory | Description |
+| Directory | Contents |
 |---|---|
-| `data_pipeline/` | Data acquisition, classification, augmentation, structure prediction, and embedding generation |
-| `neural_network/MLP/` | Dataset loading, normalization, MLP training, and evaluation |
-| `docs/` | Experimental history and research documentation |
-| `env/` | Software environment specification |
-| `data/` | Documentation of locally stored datasets |
-| `reports/` | Data processing and validation reports |
-| `logs/` | Documentation of operational logs |
+| [data_pipeline/](data_pipeline/README.md) | Data acquisition, classification, augmentation, structure prediction and embeddings |
+| [neural_network/](neural_network/README.md) | Dataset loading, normalization, MLP training and evaluation |
+| [docs/](docs/mlp_experiment_history.md) | Experiment history, results and evaluation limitations |
+| [env/](env/README.md) | PyTorch and ProteinUnet environment specifications |
+| [data/](data/README.md) | Local dataset inventory and archive documentation |
+| [model/](model/README.md) | Local pretrained model inventory |
+| [reports/](reports/README.md) | Aggregate data preparation reports |
+| [results/](results/README.md) | Documentation of local training outputs |
 
-Large datasets, model weights, checkpoints, and training outputs are excluded from version control.
+Datasets, fitted scalers, model weights, training outputs and operational logs are excluded from Git. A clone contains code, documentation and the aggregate chunk-label report; it does not include the artifacts needed to run every stage.
 
-## Installation
+## Setup and training
 
-The repository provides a Conda environment specification.
+Create the main environment from the project root:
 
 ```bash
 conda env create -f env/nap_env.yml
 conda activate nap_env
 ```
 
-Some workflows require external datasets, pretrained models, substantial computational resources, and local path configuration.
+ProteinUnet inference uses a separate TensorFlow/Keras environment:
 
-Cloning the repository does not provide the complete research environment or all data required to reproduce the experiments.
+```bash
+conda env create -f env/proteinunet_env.yml
+```
 
-## Documentation
+Default data and model paths are resolved from the project location. See [environment setup](env/README.md) and [processing steps](data_pipeline/scripts/README.md) for dependencies, input preparation and commands.
 
-Detailed information is available in the corresponding modules:
+With the concatenated dataset and its fitted TRAIN scaler available, launch training with:
 
-- [Data processing pipeline](data_pipeline/README.md)
-- [Data processing steps](data_pipeline/scripts/README.md)
-- [Neural network implementation](neural_network/MLP/README.md)
-- [Experimental history](docs/RESUMEN_EXPERIMENTOS.md)
-- [Data and model inventory](data_pipeline/docs/data_and_models.md)
+```bash
+bash neural_network/MLP/run_chunk_ladder100_dualeval.sh
+```
 
-## Research Status
+The launcher defaults to 200 epochs over 10 fixed chunks, with TRAIN/TEST STAGE and ALL evaluations at each epoch end. ALL uses a fixed balanced sample across the full chunk pool. See [MLP configuration](neural_network/MLP/README.md) for overrides, checkpoints and resumption.
 
-**Status: Active research and development**
+## Evaluation scope
 
-The repository documents an evolving research workflow.
+A positive window contains a recorded positive epitope; other windows are labeled negative without experimental confirmation. BLOSUM variants inherit the original label and structural features.
 
-Current development includes large-scale data preparation, protein representation learning, and neural network experiments.
-
-Future work includes further model evaluation, methodological validation, and comparisons with established epitope prediction approaches.
-
-## Research Context
-
-Developed as part of doctoral research in computational biology and cancer immunotherapy at the Spanish National Centre for Biotechnology (CNB-CSIC).
-
-The repository documents research code and computational workflows under active development. It is not presented as a clinically validated prediction tool.
+The current split is by row and allows shared groups and proteins across splits. TEST STAGE loss selects checkpoints, so the reported metrics are exploratory and do not establish performance on unseen proteins. Results and comparisons are recorded in the [experiment history](docs/mlp_experiment_history.md).
