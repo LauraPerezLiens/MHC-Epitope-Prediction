@@ -1,4 +1,4 @@
-# NAP-CNB | Protein-Based Epitope Prediction with Deep Learning
+# MHC Epitope Prediction | Protein Language Models & Deep Learning
 
 **A computational bioinformatics project for developing machine learning approaches to MHC epitope prediction, integrating protein sequence information, secondary structure representations, and large-scale data processing.**
 
