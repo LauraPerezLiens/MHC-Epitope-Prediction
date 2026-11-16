@@ -69,3 +69,27 @@ class PreparationValidationTests(PipelineCase):
         frame.to_csv(self.primary / 'master_split.csv', index=False)
         with self.assertRaisesRegex(ValueError, 'Source rows differ'):
             preparation.validate_preparation(self.root, self.scaler, check_source_csv=True)
+
+    def test_scaler_manifest_rejects_unequal_identifier_array_lengths(self):
+        self.existing_scaler()
+        with np.load(self.scaler) as record:
+            arrays = {name: record[name].copy() for name in record.files}
+        arrays['sampled_dataset_names'] = np.append(arrays['sampled_dataset_names'], 'unexpected')
+        np.savez(self.scaler, **arrays)
+        before = self.scaler.read_bytes()
+        with self.assertRaisesRegex(ValueError, 'scaler manifest'):
+            preparation.validate_preparation(self.root, self.scaler)
+        self.assertEqual(before, self.scaler.read_bytes())
+
+    def test_noninteger_group_id_arrays_are_rejected(self):
+        self.existing_scaler()
+        path = self.metadata / 'chunk_000000_group_id.npy'
+        for invalid in (np.nan, 20.5):
+            with self.subTest(value=invalid):
+                groups = self.groups.astype(np.float64)
+                groups[0] = invalid
+                np.save(path, groups)
+                before = path.read_bytes()
+                with self.assertRaisesRegex(ValueError, 'Invalid labels, groups or split IDs'):
+                    preparation.validate_preparation(self.root, self.scaler)
+                self.assertEqual(before, path.read_bytes())
