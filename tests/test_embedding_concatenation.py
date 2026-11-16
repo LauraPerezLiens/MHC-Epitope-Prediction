@@ -1,8 +1,10 @@
 import fcntl
 import json
-from unittest import expectedFailure, mock
+import shutil
+import unittest
+from unittest import mock
 import numpy as np
-from tests.helpers import PipelineCase, concat, dataset
+from tests.helpers import PipelineCase, archive, concat, dataset
 
 
 class ConcatenationTests(PipelineCase):
@@ -78,19 +80,99 @@ class ConcatenationTests(PipelineCase):
                 self.convert()
         self.assertTrue(self.input_x.exists())
 
-    @expectedFailure
     def test_completed_shortcut_should_detect_corrupt_features(self):
-        """Known gap: run_fast skips hashing completed output without archival."""
         output = self.convert()
         values = np.load(output, mmap_mode='r+'); values[0, 0] += 1; values.flush(); del values
         with self.assertRaises(ValueError):
             self.convert()
 
-    @expectedFailure
     def test_completed_verification_should_detect_changed_label_content(self):
-        """Known gap: completed metadata validation checks shape, not content."""
         output = self.convert()
         path = output.parent / 'chunk_metadata/chunk_000000_y.npy'
         np.save(path, 1 - self.y)
         with self.assertRaises(ValueError):
+            concat.verify_completed_output(self.output)
+
+    def test_all_metadata_arrays_are_checksummed_and_verified(self):
+        output = self.convert()
+        record = json.loads(output.with_suffix('.json').read_text())
+        self.assertEqual(set(record['metadata_sha256']), {'y', 'group_id', 'split_id'})
+        for suffix in ('y', 'group_id', 'split_id'):
+            with self.subTest(suffix=suffix):
+                path = output.parent / 'chunk_metadata' / f'chunk_000000_{suffix}.npy'
+                original = path.read_bytes()
+                self.assertEqual(concat.file_digest(path), record['metadata_sha256'][suffix])
+                values = np.load(path).copy()
+                values[0] = (int(values[0]) + 1) % 3
+                np.save(path, values)
+                with self.assertRaisesRegex(ValueError, 'Metadata checksum mismatch'):
+                    self.convert()
+                path.write_bytes(original)
+
+    def test_new_metadata_records_are_independent_of_source_files(self):
+        self.convert()
+        for source in self.metadata.glob('*.npy'):
+            source.unlink()
+        concat.verify_completed_output(self.output)
+        self.convert()
+
+    def test_verification_does_not_modify_output_files(self):
+        self.convert()
+        before = {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()}
+        concat.verify_completed_output(self.output)
+        self.assertEqual(before, {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()})
+
+    def legacy_marker(self, output):
+        marker = output.with_suffix('.json')
+        record = json.loads(marker.read_text())
+        del record['metadata_sha256']
+        marker.write_text(json.dumps(record))
+
+    def test_legacy_records_verify_against_source_metadata(self):
+        output = self.convert()
+        self.legacy_marker(output)
+        concat.verify_completed_output(self.output)
+        path = output.parent / 'chunk_metadata/chunk_000000_y.npy'
+        np.save(path, 1 - self.y)
+        with self.assertRaisesRegex(ValueError, 'Metadata checksum mismatch'):
+            concat.verify_completed_output(self.output)
+
+    @unittest.skipUnless(shutil.which('zstd'), 'zstd is required for legacy archive checks')
+    def test_legacy_records_verify_against_archived_metadata(self):
+        output = self.convert()
+        self.legacy_marker(output)
+        for path in self.metadata.glob('*.npy'):
+            archive.archive_file(path)
+        concat.verify_completed_output(self.output)
+        self.convert()
+        path = output.parent / 'chunk_metadata/chunk_000000_y.npy'
+        np.save(path, 1 - self.y)
+        with self.assertRaisesRegex(ValueError, 'Metadata checksum mismatch'):
+            concat.verify_completed_output(self.output)
+
+    def test_missing_legacy_evidence_is_not_treated_as_verified(self):
+        output = self.convert()
+        self.legacy_marker(output)
+        for path in self.metadata.glob('*.npy'):
+            path.unlink()
+        with self.assertRaisesRegex(ValueError, 'Missing recorded metadata checksum'):
+            concat.verify_completed_output(self.output)
+
+    def test_incomplete_checksum_record_is_rejected(self):
+        output = self.convert()
+        marker = output.with_suffix('.json')
+        record = json.loads(marker.read_text())
+        del record['metadata_sha256']['y']
+        marker.write_text(json.dumps(record))
+        with self.assertRaisesRegex(ValueError, 'Missing recorded metadata checksum'):
+            concat.verify_completed_output(self.output)
+
+    def test_legacy_output_cannot_serve_as_its_own_source_evidence(self):
+        output = self.convert()
+        self.legacy_marker(output)
+        layout_path = self.output / 'feature_layout.json'
+        layout = json.loads(layout_path.read_text())
+        layout['source_root'] = str(self.output)
+        layout_path.write_text(json.dumps(layout))
+        with self.assertRaisesRegex(ValueError, 'Missing recorded metadata checksum'):
             concat.verify_completed_output(self.output)
