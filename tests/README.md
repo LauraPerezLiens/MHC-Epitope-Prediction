@@ -14,6 +14,18 @@ Archive tests inject failures during compression, after archive publication and 
 
 ## Completed-output integrity
 
-Completed outputs are rehashed even when no archival is requested. New per-chunk records include independent SHA-256 hashes for labels, group IDs and split IDs; tests alter each array without changing its shape and require verification to reject it.
+Normal completed-output checks hash metadata and inspect feature counts, sizes, shapes and dtypes. New conversion records retain feature modification times: changed timestamps trigger feature rehashing; unchanged large payloads are not read. Quick checks cannot detect same-size feature corruption with a preserved timestamp. Historical records without timestamps receive structural feature checks only.
 
-Legacy records without metadata hashes are checked against original source metadata or its archived `original_sha256` record. Missing independent evidence is an error. Verification does not modify outputs. These regressions run as ordinary tests without `expectedFailure`.
+`--verify-only --output PATH` reads all feature and metadata content and verifies SHA-256 without writing or archiving. Legacy metadata records require independent original files or archived checksum records; missing evidence is an error. Tests cover both modes, the explicit CLI, preservation of file content, exclusion of active writers, refusal before payload reads when `.writer.lock` is missing, and a writer recreating that lock.
+
+## Preparation and checkpoint recovery
+
+Launcher tests run only against temporary synthetic trees. They check missing/invalid splits, missing metadata even when a scaler exists, fitting only a missing synthetic scaler, preserving an existing scaler and validating concatenated data without fitting it again.
+
+Preparation-cost regressions ensure that existing-scaler checks skip full CSV parsing, explicit requests and missing scalers require it, and every metadata value is still checked. Missing files or invalid CSV headers remain errors.
+
+The CPU model test performs two optimizer steps across an actual temporary checkpoint. It restores model, optimizer, scheduler and CPU RNG state and compares the resumed step with an uninterrupted step. It does not use production checkpoints or change checkpoint-selection policy.
+
+## CI and local reproduction
+
+The [CPU workflow](../.github/workflows/cpu-checks.yml) installs a small independent environment and runs syntax checks, focused Ruff correctness rules, the unit suite and the synthetic example. See [environment setup](../env/README.md#cpu-tests-and-ci) for the exact local commands. GitHub-hosted execution is only confirmed after the workflow has actually run there.
