@@ -8,7 +8,8 @@ Binary classifier using 1,024 ProtT5 and 768 SecondaryBERT features. The archite
 | `fit_shuffled_scaler.py` | Fit TRAIN statistics with sequential Secondary reads and disk-backed group counts |
 | `mlp_layernorm_shuffled_ladder100_dualeval.py` | Training, fixed STAGE/ALL evaluation and checkpointing |
 | `run_chunk_ladder100_dualeval.sh` | Training launcher and optional incremental chunk stages |
-| `run_shuffled_pipeline.sh` | Split, metadata, validation and scaler preparation; does not start training |
+| `run_shuffled_pipeline.sh` | Validate existing preparation and fit only a missing scaler; does not start training |
+| `check_preparation.py` | Read-only checks of existing splits, metadata, feature dimensions and scaler manifest |
 
 ## Train
 
@@ -39,7 +40,9 @@ Override `DATA_ROOT`, `SCALER_PATH`, `RESULTS`, `PYTHON`, `CUDA_VISIBLE_DEVICES`
 
 TRAIN ONLINE reports metrics during chunk updates. TRAIN/TEST STAGE evaluate fixed 50/50 samples from the selected chunks; TRAIN/TEST ALL use fixed 50/50 samples drawn across the full chunk pool. The target is 29,006 rows per class, subject to available rows. ALL does not evaluate every dataset row. Set `EVAL_EVERY=chunk` for evaluation after each chunk.
 
-TEST STAGE loss selects the best checkpoint. ALL is diagnostic. No early stopping is used. Because TEST selects checkpoints and the row-based split permits shared proteins/groups, these metrics do not establish held-out performance on unseen proteins.
+The current experiment is exploratory: its purpose is to check that the network learns and the training pipeline works. TEST STAGE loss intentionally selects the best checkpoint; TRAIN, TEST STAGE and ALL monitor training behavior. ALL is diagnostic and no early stopping is used. Row-based partitions and this selection policy remain unchanged. These metrics are not a definitive evaluation on unseen proteins.
+
+A future, separate generalization study may use VALIDATION for selection, a final independent TEST, group/protein partitions and external predictors. Those protocols are not implemented or applied to current or historical experiments.
 
 Each stage writes `run.log`, JSONL histories and best/last checkpoints. Intra-epoch recovery checkpoints are saved every 100 chunks; for the 10-chunk run, recovery is from the last completed epoch. Rerunning the launcher resumes available checkpoints or skips completed stages. Use a new `RESULTS` directory for an independent experiment.
 
@@ -55,6 +58,12 @@ python neural_network/MLP/fit_shuffled_scaler.py   --root data/data_input_nn_shu
 
 Statistics use every TRAIN occurrence without class balancing. Secondary vectors are weighted by their group's TRAIN occurrence count. The output scaler is never overwritten.
 
-`run_shuffled_pipeline.sh` performs split generation, metadata, validation and scaler fitting only when `SCALER_PATH` does not exist as a nonempty file. For new data, set both `DATA_ROOT` and `SCALER_PATH` to new paths; do not rerun preparation on the active dataset.
+`run_shuffled_pipeline.sh` never creates splits or metadata and never uses `--force`. Missing/invalid preparation stops the launcher with an error. It validates the existing files read-only and fits only a missing scaler from separate modalities. A valid existing scaler is retained and checked against the chunk manifest. Concatenated-only inputs require their existing scaler and use compact split arrays; they do not require source CSVs. The launcher does not start training.
+
+With an existing scaler, `check_preparation.py` checks every chunk header, metadata shape and all label/split/group values, verifies the scaler manifest, and checks source CSV presence/headers without parsing all source rows. To additionally compare the complete source CSVs with metadata, pass `--check-source-csv` to the checker. That comparison is automatic and mandatory when the scaler is missing, before any fit is allowed. Concatenated-only inputs have no source CSV comparison; full cryptographic checking belongs to the concatenator's `--verify-only` mode.
+
+Cost is bounded by chunks plus the compact metadata size, not the embedding payload. At 1.45 billion rows, the generator's uint8 labels, uint8 split IDs and int64 group IDs contain about 14.5 GB of metadata (13.5 GiB); all values are still checked. Approximately 14,499 feature headers are read without scanning the roughly 10.4 TB of float32 feature values. Optional source comparison parses both complete CSVs, about 2.9 billion CSV records in total. These are schema-based estimates, not timings or measurements of the real dataset.
+
+Prepare new partitions/metadata explicitly through the [data pipeline](../../data_pipeline/scripts/data_splitting/README.md) before using the launcher with new `DATA_ROOT` and `SCALER_PATH` values. Do not run preparation against an active dataset.
 
 Datasets, scalers and training outputs are excluded from Git. See the [experiment history](../../docs/mlp_experiment_history.md) for earlier runs and the [data pipeline](../../data_pipeline/README.md) for feature preparation.

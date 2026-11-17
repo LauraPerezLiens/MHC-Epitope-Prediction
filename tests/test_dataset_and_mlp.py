@@ -1,8 +1,10 @@
+from types import SimpleNamespace
+from unittest import mock
 import numpy as np
 import torch
 from tests.helpers import PipelineCase, dataset
 from neural_network.MLP.fit_shuffled_scaler import fit_sequential
-from mlp_layernorm_shuffled_ladder100_dualeval import MLP
+from mlp_layernorm_shuffled_ladder100_dualeval import MLP, save_checkpoint
 
 
 class DatasetTests(PipelineCase):
@@ -53,3 +55,40 @@ class DatasetTests(PipelineCase):
         self.assertTrue(all(torch.isfinite(p.grad).all() for p in model.parameters() if p.grad is not None))
         optimizer.step()
         self.assertFalse(torch.equal(before, model.network[0].weight))
+
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+            optimizer, T_0=20, T_mult=1, eta_min=.00001)
+        scheduler.step(1)
+        path = self.temp / 'checkpoint.pt'
+        args = SimpleNamespace(features='primary_secondary', dropout=.30, seed=42)
+        with mock.patch.object(torch.cuda, 'is_available', return_value=False):
+            save_checkpoint(path, model, optimizer, scheduler, args,
+                            epoch_index=0, next_chunk_offset=1,
+                            epoch_total_chunks=1, completed_epochs=1)
+        checkpoint = torch.load(path, map_location='cpu', weights_only=False)
+        self.assertEqual(checkpoint['completed_epochs'], 1)
+        self.assertEqual(checkpoint['selection_metric'], 'stage_fixed_50_50_test_loss')
+        restored = MLP(input_dim=1792).cpu()
+        restored_optimizer = torch.optim.AdamW(restored.parameters(), lr=.001)
+        restored_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+            restored_optimizer, T_0=20, T_mult=1, eta_min=.00001)
+        restored.load_state_dict(checkpoint['model_state_dict'])
+        restored_optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        restored_scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        for key, value in model.state_dict().items():
+            self.assertTrue(torch.equal(value, restored.state_dict()[key]), key)
+        losses = []
+        for network, opt, schedule in [(model, optimizer, scheduler),
+                                       (restored, restored_optimizer, restored_scheduler)]:
+            torch.set_rng_state(checkpoint['torch_rng_state'])
+            opt.zero_grad(set_to_none=True)
+            next_loss = torch.nn.BCEWithLogitsLoss()(network(inputs), labels)
+            self.assertTrue(torch.isfinite(next_loss).item())
+            next_loss.backward()
+            opt.step()
+            schedule.step(2)
+            losses.append(next_loss.item())
+        self.assertEqual(losses[0], losses[1])
+        self.assertEqual(scheduler.state_dict(), restored_scheduler.state_dict())
+        for key, value in model.state_dict().items():
+            self.assertTrue(torch.equal(value, restored.state_dict()[key]), key)

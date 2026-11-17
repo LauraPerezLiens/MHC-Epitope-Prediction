@@ -1,5 +1,11 @@
 # MLP experiment history
 
+## Experimental scope
+
+The current phase is exploratory: test whether the network learns and whether training works with augmented data. Row-based partitions, TRAIN/TEST STAGE/ALL monitoring and selection by TEST STAGE are intentional. The historical results below are not a final estimate of generalization.
+
+A future, separate evaluation may select checkpoints with VALIDATION, reserve TEST for final assessment, separate groups/proteins and compare external predictors. That protocol is not implemented here and does not revise historical partitions or selection criteria.
+
 Historical compilation: 26 October 2026. Historical update: 28 October 2026. Archive removal: 10 November 2026. Globally shuffled/concatenated experiments recorded: 17 November 2026.
 Sections 1–13 preserve the original historical snapshot; section 14 records the later status and data preparation in progress at that time. This document is a snapshot, not a report of 100 completed epochs for every experiment.
 Historical values were reconstructed from archived JSONL histories. BatchNorm figures come from the technical record retained before its outputs were deleted.
