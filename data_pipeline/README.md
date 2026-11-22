@@ -27,6 +27,7 @@ UniRef50 → MMseqs2 clustering at 30% identity → FASTA chunks
 |---|---|
 | [data_download](scripts/data_download/README.md) | Download and deduplicate positive IEDB events |
 | [data_classification](scripts/data_classification/README.md) | Retrieve parent proteins and label windows |
+| [global_epitope_labels](scripts/global_epitope_labels/README.md) | Aggregate exact original sequence annotations across the 11 MHC families |
 | [data_augmentation](scripts/data_augmentation/README.md) | Generate single-substitution BLOSUM62 variants |
 | [secondary_structure_prediction](scripts/secondary_structure_prediction/README.md) | Predict protein structure and map it to windows |
 | [secondaryBERT](scripts/secondaryBERT/README.md) | Build structural datasets, pretrain and validate BERT |

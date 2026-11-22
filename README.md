@@ -4,6 +4,56 @@ Research pipeline for epitope classification using protein language models and p
 
 Developed as part of doctoral research in computational biology and cancer immunotherapy at the Spanish National Centre for Biotechnology (CNB-CSIC).
 
+## NAP-CNB v2 status
+
+Use the metadata-only interface to inspect the published v2 selection, embeddings, dataset views, splits and D1.
+
+```bash
+python -B -m data_pipeline.nap_cnb_v2 --help
+python -B -m data_pipeline.nap_cnb_v2 status
+python -B -m data_pipeline.nap_cnb_v2 --root /path/to/repository status --json
+```
+
+The default repository root is derived from the module location. `status --root PATH` also accepts an explicit root after the subcommand. From another working directory, make the code repository available on `PYTHONPATH`. The `-B` flag prevents Python from creating bytecode caches during module startup.
+
+| State | Meaning |
+|---|---|
+| `CERTIFIED` | The lightweight checks passed and prior certification evidence was found. |
+| `PRESENT` | The artifact and its metadata are present, with insufficient certification evidence. |
+| `MISSING` | A required artifact or reference is absent. |
+| `INCONSISTENT` | Accessible metadata disagrees or violates its contract. |
+| `UNKNOWN` | The bounded checks could not determine the state. |
+| `NOT AVAILABLE` | Outside the current release. D2 is optional and is not built. |
+
+Exit codes are `0` for a completed query without required-component errors, `1` for a required component that is missing, inconsistent or unknown, and `2` for invalid arguments, an invalid root or a query-level failure. Results describe file presence and prior evidence. The command does not run full integrity checks, inspect embedding matrices or start pipeline jobs. [Current data contracts](docs/nap_cnb_v2_dataset_organization.md)
+
+### Quick contract checks
+
+```bash
+python -B -m data_pipeline.nap_cnb_v2 validate-selection
+python -B -m data_pipeline.nap_cnb_v2 validate-datasets
+python -B -m data_pipeline.nap_cnb_v2 validate-splits
+python -B -m data_pipeline.nap_cnb_v2 validate-d1 --json
+```
+
+All four commands accept `--root` before or after the subcommand and `--json`. `PASS` means the required quick checks passed. `FAIL` indicates a missing reference or inconsistent metadata. `INCOMPLETE` means a required check could not finish. `SKIPPED` identifies checks outside this mode. Exit codes are `0` for PASS, `1` for FAIL or INCOMPLETE, and `2` for argument or startup errors.
+
+Dataset and split checks use the existing PyArrow environment to decode footer bytes only, with a 1 MiB cap per footer. Signature checks read individual small files up to 256 KiB. Larger payloads, row-level joins, assignment regeneration and embedding integrity checks are outside the quick commands.
+
+### Specialized quick checks
+
+```bash
+python -B -m data_pipeline.nap_cnb_v2 validate-prott5
+python -B -m data_pipeline.nap_cnb_v2 validate-secondarybert
+python -B -m data_pipeline.nap_cnb_v2 validate-structures
+```
+
+These commands honor the same `--root`, `--json` and exit codes. ProtT5 checks inventory footers, NPY headers and coverage of recorded batch receipts. SecondaryBERT checks certified category counts, inventory footers, catalog schemas, historical paths and receipts, and one new reference. Structures compares overlay and exclusion footers against the selection and recovery evidence. Certified SQLite catalogs are opened in immutable read-only mode after checking closure evidence, journal format and absence of sidecars. A catalog with sidecars or a changing snapshot is reported as `INCOMPLETE`. The commands do not read vector payloads, decompress historical blocks or recheck coordinates.
+
+### Training preflight
+
+`python -B -m data_pipeline.nap_cnb_v2 train --model lr --data original --label global --dry-run` resolves dataset metadata, feature references, splits and the selected historical profile. The v2 selector supports balanced LR and balanced MLP. The explicit engine hook uses balanced TRAIN and natural-prevalence VALIDATION and TEST. Launching from the CLI is disabled and both full TRAIN scalers are pending. [Training guide and compatibility matrix](docs/NAP_CNB_v2_training_guide.md)
+
 ## Workflow
 
 ```text

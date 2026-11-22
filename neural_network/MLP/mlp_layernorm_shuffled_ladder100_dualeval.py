@@ -18,6 +18,7 @@ import os
 import tempfile
 import random
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
@@ -101,6 +102,15 @@ class MLP(nn.Module):
         )
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.network(x).squeeze(1)
+class LogisticRegression(nn.Module):
+    """One affine logit; sigmoid is applied only when computing probabilities."""
+    def __init__(self, input_dim: int):
+        super().__init__()
+        self.network = nn.Sequential(nn.Linear(input_dim, 1))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.network(x).squeeze(1)
+
 # -----------------------------------------------------------------------------
 # Chunk jobs
 # -----------------------------------------------------------------------------
@@ -233,6 +243,9 @@ class StreamingBinaryMetrics:
     ) -> None:
         scores = logits.detach().float().cpu().numpy().reshape(-1)
         y = targets.detach().cpu().numpy().astype(np.uint8, copy=False).reshape(-1)
+        self.update_arrays(scores, y, loss_sum)
+
+    def update_arrays(self, scores: np.ndarray, y: np.ndarray, loss_sum: float) -> None:
         pred = scores >= 0.0
         pos = y == 1
         neg = ~pos
@@ -335,8 +348,10 @@ class DiskBinaryMetrics(StreamingBinaryMetrics):
     record_dtype = np.dtype([('score','<f4'),('label','u1')])
     sort_memory_bytes = 2 * 1024 * 1024
     io_records = 32768
-    def __init__(self, auc_bins=4096):
+    def __init__(self, auc_bins=4096, *, directory=None):
         super().__init__(auc_bins)
+        if directory is not None:
+            self.directory = directory
         fd,self.db_path=tempfile.mkstemp(prefix='auc_',suffix='.bin',dir=self.directory)
         self.stream=os.fdopen(fd,'r+b')
     def _store(self, ys, scores):
@@ -490,11 +505,18 @@ def build_disk_eval_plan(datasets, jobs, seed, split, root):
 # -----------------------------------------------------------------------------
 # Batch loading
 # -----------------------------------------------------------------------------
+def _chunk_metadata(dataset, chunk_id):
+    source = dataset.get("row_source")
+    if source is not None:
+        return source.load_chunk_metadata(dataset, chunk_id, mmap=True)
+    return load_chunk_metadata(dataset, chunk_id, mmap=True)
+
+
 def _train_rows_by_class(
     dataset: Mapping[str, object],
     chunk_id: int,
 ) -> tuple[Mapping[str, np.ndarray], np.ndarray, np.ndarray]:
-    meta = load_chunk_metadata(dataset, chunk_id, mmap=True)
+    meta = _chunk_metadata(dataset, chunk_id)
     train_rows = np.flatnonzero(meta["split_id"] == TRAIN).astype(np.int64, copy=False)
     if len(train_rows) == 0:
         empty = np.empty(0, dtype=np.int64)
@@ -549,7 +571,9 @@ def _load_chunk_rows(
     sorted_rows = rows[order]
     restore = np.argsort(order)
     gids = np.asarray(meta["group_id"][sorted_rows], dtype=np.int64)
-    X_sorted = load_rows(
+    source = dataset.get("row_source")
+    loader = source.load_rows if source is not None else load_rows
+    X_sorted = loader(
         dataset=dataset,
         chunk_id=chunk_id,
         row_indices=sorted_rows,
@@ -815,11 +839,7 @@ def iter_selected_test_chunk_batches(
     if len(selected_rows) == 0:
         return
 
-    meta = load_chunk_metadata(
-        dataset,
-        chunk_id,
-        mmap=True,
-    )
+    meta = _chunk_metadata(dataset, chunk_id)
 
     for start in range(0, len(selected_rows), batch_size):
         rows = selected_rows[start:start + batch_size]
@@ -854,6 +874,41 @@ def to_device_batch(
 # -----------------------------------------------------------------------------
 # Training / test
 # -----------------------------------------------------------------------------
+def prefetch_training_batches(batches, feature_mode, standardizer):
+    """Prepare one CUDA batch ahead, keeping the sampler on a single thread."""
+    def prepare_next():
+        batch = next(batches, None)
+        if batch is None:
+            return None
+        X, y = batch
+        X = transform_input(X, feature_mode, standardizer)
+        return (
+            torch.from_numpy(np.ascontiguousarray(X)).pin_memory(),
+            torch.from_numpy(np.ascontiguousarray(y, dtype=np.float32)).pin_memory(),
+            y.astype(np.uint8, copy=False).reshape(-1),
+        )
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        pending = executor.submit(prepare_next)
+        while (batch := pending.result()) is not None:
+            pending = executor.submit(prepare_next)
+            yield batch
+
+
+def flush_training_metrics(metrics, pending):
+    if not pending:
+        return
+    scores, targets, losses = zip(*pending)
+    host_scores = torch.cat(scores).cpu().numpy()
+    host_losses = torch.stack(losses).cpu().tolist()
+    offset = 0
+    for y, loss in zip(targets, host_losses):
+        end = offset + len(y)
+        metrics.update_arrays(host_scores[offset:end], y, loss * len(y))
+        offset = end
+    pending.clear()
+
+
 def train_block(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
@@ -874,6 +929,9 @@ def train_block(
     jobs = shard_block(block_jobs, rank, world_size)
     metrics = StreamingBinaryMetrics(args.auc_bins)
     secondary_stores: dict = {}
+    # The v2 row reader owns a synchronous, thread-affine SQLite connection.
+    use_cuda = device.type == "cuda" and not any(ds.get("row_source") is not None for ds in datasets)
+    pending_metrics = []
     # Some chunks generate more minibatches than others. DDP join prevents a
     # rank that finishes first from hanging while the other rank completes.
     join_context = (
@@ -884,7 +942,7 @@ def train_block(
     with join_context:
         for job in jobs:
             dataset = datasets[job.dataset_index]
-            for X, y in iter_balanced_chunk_batches(
+            batches = iter_balanced_chunk_batches(
                 dataset=dataset,
                 chunk_id=job.chunk_id,
                 split=TRAIN,
@@ -897,10 +955,19 @@ def train_block(
                 secondary_stores=secondary_stores,
                 datasets=datasets,
                 all_jobs=all_jobs,
-            ):
-                X_t, y_t = to_device_batch(
-                    X, y, args.features, standardizer, device
-                )
+            )
+            if use_cuda:
+                batches = prefetch_training_batches(batches, args.features, standardizer)
+            for batch in batches:
+                if use_cuda:
+                    X, y, labels = batch
+                    X_t = X.to(device=device, dtype=torch.float32, non_blocking=True)
+                    y_t = y.to(device=device, non_blocking=True)
+                else:
+                    X, y = batch
+                    X_t, y_t = to_device_batch(
+                        X, y, args.features, standardizer, device
+                    )
 
                 optimizer.zero_grad(set_to_none=True)
 
@@ -909,12 +976,16 @@ def train_block(
 
                 loss.backward()
                 optimizer.step()
-                metrics.update(
-                    logits=logits,
-                    targets=y_t,
-                    loss_sum=float(loss.detach().item()) * len(y),
-                )
+                if use_cuda:
+                    pending_metrics.append((
+                        logits.detach().float().reshape(-1), labels, loss.detach(),
+                    ))
+                    if len(pending_metrics) == 16:
+                        flush_training_metrics(metrics, pending_metrics)
+                else:
+                    metrics.update(logits, y_t, float(loss.detach().item()) * len(y))
                 del X, y, X_t, y_t, logits, loss
+        flush_training_metrics(metrics, pending_metrics)
     metrics.synchronize(device, distributed)
     return metrics
 @torch.inference_mode()
@@ -931,9 +1002,11 @@ def evaluate_split(
     world_size: int,
     device: torch.device,
     sampling_plan: Optional[Mapping[ChunkJob, np.ndarray]] = None,
+    *,
+    natural: bool = False,
 ) -> dict[str, float]:
 
-    """Evaluate fixed 50/50 samples with dropout off and per-sample LayerNorm."""
+    """Evaluate fixed historical samples or all rows of a split in v2 mode."""
     was_training = model.training
     eval_model = model.module if isinstance(model, DDP) else model
     # Use identical running statistics on every rank during evaluation.
@@ -941,7 +1014,7 @@ def evaluate_split(
         for buffer in eval_model.buffers():
             dist.broadcast(buffer, src=0)
     eval_model.eval()
-    if sampling_plan is None:
+    if sampling_plan is None and not natural:
         sampling_plan = build_global_balanced_eval_plan(
             datasets=datasets, eval_jobs=eval_jobs, seed=args.seed, split=split,
         )
@@ -949,7 +1022,7 @@ def evaluate_split(
     # Preserve the existing DDP distribution.
     jobs = list(eval_jobs[rank::world_size])
 
-    metrics = DiskBinaryMetrics(args.auc_bins)
+    metrics = DiskBinaryMetrics(args.auc_bins, directory=args.output_dir if natural else None)
 
     secondary_stores: dict = {}
 
@@ -957,10 +1030,12 @@ def evaluate_split(
 
         dataset = datasets[job.dataset_index]
 
+        selected = (np.flatnonzero(_chunk_metadata(dataset, job.chunk_id)["split_id"] == split)
+                    if natural else sampling_plan[job])
         batch_iterator = iter_selected_test_chunk_batches(
             dataset=dataset,
             chunk_id=job.chunk_id,
-            selected_rows=sampling_plan[job],
+            selected_rows=selected,
             feature_mode=args.features,
             batch_size=args.eval_batch_size,
             secondary_cache_size=args.secondary_cache_size,
@@ -1038,15 +1113,18 @@ def save_checkpoint(
       \\- at the next epoch (completed_epochs == epoch_index + 1).
     """
     raw_model = model.module if isinstance(model, DDP) else model
+    v2_contract = getattr(args, "v2_checkpoint_contract", None)
     temporary_path = Path(str(path) + ".tmp")
     torch.save(
         {
             "checkpoint_version": 4,
-            "selection_metric": "stage_fixed_50_50_test_loss",
+            "selection_metric": "validation_loss" if v2_contract is not None else "stage_fixed_50_50_test_loss",
+            **({"selection_split": "VALIDATION", "v2_contract": v2_contract} if v2_contract is not None else {}),
             "torch_rng_state": torch.get_rng_state(),
             "cuda_rng_state": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else [],
             "chunk_order": "shuffle_per_epoch_v1",
-            "normalization": "layernorm",
+            "normalization": "none" if getattr(args, "model_type", "mlp") == "logistic" else "layernorm",
+            "model_type": getattr(args, "model_type", "mlp"),
             "train_epoch_metrics_state": train_epoch_metrics_state,
             "model_state_dict": raw_model.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
@@ -1070,8 +1148,10 @@ def save_checkpoint(
 # -----------------------------------------------------------------------------
 # Arguments / main
 # -----------------------------------------------------------------------------
-def parse_args() -> argparse.Namespace:
+def parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--model-type", choices=("mlp", "logistic"), default="mlp")
+    parser.add_argument("--checkpoint-every", type=int, default=100)
     parser.add_argument(
         "--root",
         default=str(Path(__file__).resolve().parents[2] / "data" / "data_input_nn_shuffled_concatenate"),
@@ -1162,7 +1242,7 @@ def parse_args() -> argparse.Namespace:
         default=False,
         help="Optional diagnostic only: run TEST every epoch. Keep disabled for model selection.",
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 def build_monitor_cache(datasets, jobs, split, args, standardizer):
     """Fixed rows from every nonempty chunk, globally balanced without replacement."""
@@ -1254,33 +1334,77 @@ def build_monitor_cache(datasets, jobs, split, args, standardizer):
           f"| negative={positive:,}", flush=True)
     return cache_path
 
+def iter_monitor_batches(cache, batch_size, input_dim):
+    import pickle
+
+    features = np.empty((batch_size, input_dim), dtype=np.float32)
+    labels = np.empty(batch_size, dtype=np.float32)
+    n = 0
+    with Path(cache).open("rb") as stream:
+        while True:
+            try:
+                X, y = pickle.load(stream)
+            except EOFError:
+                break
+            start = 0
+            while start < len(y):
+                take = min(batch_size - n, len(y) - start)
+                features[n:n + take] = X[start:start + take]
+                labels[n:n + take] = y[start:start + take]
+                n += take
+                start += take
+                if n == batch_size:
+                    yield torch.from_numpy(features), torch.from_numpy(labels)
+                    n = 0
+    if n:
+        yield torch.from_numpy(features[:n]), torch.from_numpy(labels[:n])
+
+
+def cache_monitor_batches(caches, args, device):
+    if args.model_type != "logistic" or device.type != "cuda":
+        return caches
+    size = sum(Path(cache).stat().st_size for cache in set(caches))
+    free, _ = torch.cuda.mem_get_info(device)
+    if size > free // 4:
+        print("[MONITOR] Using disk cache to leave GPU memory available.", flush=True)
+        return caches
+
+    cached = {}
+    try:
+        for cache in dict.fromkeys(caches):
+            cached[cache] = tuple(
+                (X.to(device), y.to(device))
+                for X, y in iter_monitor_batches(
+                    cache, args.eval_batch_size, input_dimension(args.features),
+                )
+            )
+    except torch.cuda.OutOfMemoryError:
+        cached.clear()
+        print("[MONITOR] GPU cache allocation failed; using disk cache.", flush=True)
+        return caches
+
+    print(f"[MONITOR] Fixed evaluation batches cached on GPU ({size / 2**20:,.0f} MiB on disk).", flush=True)
+    return tuple(cached[cache] for cache in caches)
+
+
 @torch.inference_mode()
 def evaluate_monitor(model, cache, args, device):
     was_training = model.training
-    model.eval(); metrics = StreamingBinaryMetrics(args.auc_bins)
-    import pickle
-    features=np.empty((args.eval_batch_size,model.network[0].in_features),dtype=np.float32)
-    labels=np.empty(args.eval_batch_size,dtype=np.float32)
-    n=0
-    def consume(count):
-        xb=torch.from_numpy(features[:count]).to(device)
-        yb=torch.from_numpy(labels[:count]).to(device)
-        logits=model(xb)
-        loss=nn.functional.binary_cross_entropy_with_logits(logits,yb,reduction='sum')
-        metrics.update(logits,yb,float(loss.item()))
-    with Path(cache).open('rb') as stream:
-        while True:
-            try:X,y=pickle.load(stream)
-            except EOFError:break
-            start=0
-            while start<len(y):
-                take=min(args.eval_batch_size-n,len(y)-start)
-                features[n:n+take]=X[start:start+take];labels[n:n+take]=y[start:start+take]
-                n+=take;start+=take
-                if n==args.eval_batch_size:consume(n);n=0
-        if n:consume(n)
-    model.train(was_training)
+    model.eval()
+    metrics = StreamingBinaryMetrics(args.auc_bins)
+    batches = cache if isinstance(cache, tuple) else iter_monitor_batches(
+        cache, args.eval_batch_size, model.network[0].in_features,
+    )
+    try:
+        for X, y in batches:
+            xb, yb = X.to(device), y.to(device)
+            logits = model(xb)
+            loss = nn.functional.binary_cross_entropy_with_logits(logits, yb, reduction="sum")
+            metrics.update(logits, yb, float(loss.item()))
+    finally:
+        model.train(was_training)
     return metrics.compute()
+
 
 def rollback_monitor_history(path,epoch_index,chunk_offset):
     path=Path(path)
@@ -1301,8 +1425,20 @@ def rollback_monitor_history(path,epoch_index,chunk_offset):
         print(f'[RESUME] Archived {removed} replayed monitor records to {backup.name}',flush=True)
     else:temporary.unlink()
 
-def main() -> None:
-    args = parse_args()
+def main(args=None, *, data_source=None) -> None:
+    args = parse_args() if args is None else args
+    v2 = data_source is not None
+    if v2:
+        if args.resume is not None or args.init_checkpoint is not None or args.max_chunks is not None:
+            raise ValueError("v2 expects a new run over its entire input view")
+        if args.features != "primary_secondary":
+            raise ValueError("v2 requires both feature modalities")
+        contract = data_source.training_contract()
+        if contract["sampling"] != "exact_50_50":
+            raise ValueError("v2 requires the historical exact 50/50 TRAIN sampler")
+        if contract["model"] != args.model_type or contract["seed"] != args.seed:
+            raise ValueError("v2 source and engine configuration disagree")
+        args = argparse.Namespace(**{**vars(args), "v2_checkpoint_contract": contract})
     if args.eval_target_per_class<=0:raise ValueError("--eval-target-per-class must be positive")
     validate_feature_mode(args.features)
     if args.batch_size <= 0 or args.batch_size % 2 != 0:
@@ -1311,8 +1447,8 @@ def main() -> None:
         raise ValueError("--eval-batch-size must be > 0.")
     if args.epochs <= 0:
         raise ValueError("--epochs must be > 0.")
-    if args.report_every_chunks != 1:
-        raise ValueError("Per-chunk monitoring requires --report-every-chunks 1.")
+    if args.checkpoint_every <= 0:
+        raise ValueError("--checkpoint-every must be positive.")
     if args.report_every_chunks <= 0:
         raise ValueError("--report-every-chunks must be > 0.")
     if args.monitor_test_chunks < 0:
@@ -1326,11 +1462,18 @@ def main() -> None:
     seed_everything(args.seed, rank)
     output_dir = Path(args.output_dir).resolve()
     if is_main(rank):
-        output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=not v2)
     barrier(distributed)
-    DiskBinaryMetrics.directory = str(output_dir)
-    datasets = discover_datasets(args.root)
-    all_jobs = build_chunk_jobs(datasets)
+    if not v2:
+        DiskBinaryMetrics.directory = str(output_dir)
+    if v2:
+        datasets = [{"name": contract["view"], "row_source": data_source}]
+        all_jobs = [ChunkJob(0, index) for index in range(data_source.chunk_count)]
+        if not all_jobs:
+            raise ValueError("v2 source has no row groups")
+    else:
+        datasets = discover_datasets(args.root)
+        all_jobs = build_chunk_jobs(datasets)
     fixed_train_jobs = select_fixed_jobs(
         all_jobs=all_jobs,
         seed=args.seed,
@@ -1339,9 +1482,11 @@ def main() -> None:
     )
     # TEST uses the same physical chunks but only TEST-labelled rows.
     fixed_test_jobs_selected = list(fixed_train_jobs)
-    if is_main(rank):
+    if v2:
+        print(f"{args.model_type.upper()} | v2: TRAIN exact 50/50, VALIDATION selection, final TEST", flush=True)
+    elif is_main(rank):
         print("=" * 100)
-        print(f"MLP LAYERNORM | TRAIN ONLINE + TRAIN EVAL + TEST EVAL | {args.epochs} epochs | BEST by TEST STAGE loss")
+        print(f"{args.model_type.upper()} | TRAIN ONLINE + TRAIN EVAL + TEST EVAL | {args.epochs} epochs | BEST by TEST STAGE loss")
         print("=" * 100)
         print(f"Datasets                 : {len(datasets)}")
         print(f"Physical chunks          : {len(all_jobs):,}")
@@ -1369,17 +1514,16 @@ def main() -> None:
         print("All splits are read from these SAME physical chunks:")
         print(f"Selected {len(fixed_train_jobs):,} physical chunks (details omitted).")
         print()
-    standardizer = prepare_standardizer(
+    standardizer = data_source.standardizer if v2 else prepare_standardizer(
         args=args,
         datasets=datasets,
         distributed=distributed,
         rank=rank,
     )
     barrier(distributed)
-    model = MLP(
-        input_dim=input_dimension(args.features),
-        dropout=args.dropout,
-    ).to(device)
+    model = (LogisticRegression(input_dimension(args.features))
+             if args.model_type == "logistic" else
+             MLP(input_dim=input_dimension(args.features), dropout=args.dropout)).to(device)
     if distributed:
         model = DDP(
             model,
@@ -1399,10 +1543,11 @@ def main() -> None:
     T_mult=args.scheduler_tmult,
     eta_min=args.scheduler_min_lr,
     )
-    recovery_path = output_dir / f"recovery_mlp_{args.features}.pt"
-    last_path = output_dir / f"last_mlp_{args.features}.pt"
-    best_path = output_dir / f"best_mlp_{args.features}.pt"
-    history_path = output_dir / f"history_mlp_{args.features}.jsonl"
+    model_tag = "lr" if args.model_type == "logistic" else "mlp"
+    recovery_path = output_dir / f"recovery_{model_tag}_{args.features}.pt"
+    last_path = output_dir / f"last_{model_tag}_{args.features}.pt"
+    best_path = output_dir / f"best_{model_tag}_{args.features}.pt"
+    history_path = output_dir / f"history_{model_tag}_{args.features}.jsonl"
     raw_model = model.module if isinstance(model, DDP) else model
     # Resume position.
     start_epoch = 0
@@ -1426,6 +1571,8 @@ def main() -> None:
             map_location=device,
             weights_only=False,
         )
+        if checkpoint.get("model_type", "mlp") != args.model_type:
+            raise RuntimeError("Checkpoint model type differs; start a new run.")
         if checkpoint.get("features") != args.features:
             raise RuntimeError(
                 f"Checkpoint features={checkpoint.get('features')!r}, "
@@ -1464,6 +1611,8 @@ def main() -> None:
             map_location=device,
             weights_only=False,
         )
+        if checkpoint.get("model_type", "mlp") != args.model_type:
+            raise RuntimeError("Checkpoint model type differs; start a new run.")
         if checkpoint.get("features") != args.features:
             raise RuntimeError(
                 f"Checkpoint features={checkpoint.get('features')!r}, "
@@ -1545,13 +1694,17 @@ def main() -> None:
         info=json.loads(cache.with_suffix('.ready.json').read_text())
         print(f'[EVAL SET {label}] positive={info["n"]//2:,} | negative={info["n"]//2:,} | n={info["n"]:,}',flush=True)
         return cache
-    shared=args.shared_eval_dir or output_dir.parent/'shared_global_eval'
-    monitor_train=prepare_eval('TRAIN STAGE',fixed_train_jobs,output_dir/'eval_stage')
-    monitor_test=prepare_eval('TEST STAGE',fixed_train_jobs,output_dir/'eval_stage')
-    monitor_train_all=prepare_eval('TRAIN ALL',all_jobs,shared)
-    monitor_test_all=prepare_eval('TEST ALL',all_jobs,shared)
-    print('[BEST] Selected only by TEST STAGE loss; ALL metrics are diagnostics. '
-          'No additional full-data evaluation at epoch end.',flush=True)
+    if not v2:
+        shared=args.shared_eval_dir or output_dir.parent/'shared_global_eval'
+        monitor_train=prepare_eval('TRAIN STAGE',fixed_train_jobs,output_dir/'eval_stage')
+        monitor_test=prepare_eval('TEST STAGE',fixed_train_jobs,output_dir/'eval_stage')
+        monitor_train_all=prepare_eval('TRAIN ALL',all_jobs,shared)
+        monitor_test_all=prepare_eval('TEST ALL',all_jobs,shared)
+        monitor_train, monitor_test, monitor_train_all, monitor_test_all = cache_monitor_batches(
+            (monitor_train, monitor_test, monitor_train_all, monitor_test_all), args, device,
+        )
+        print('[BEST] Selected only by TEST STAGE loss; ALL metrics are diagnostics. '
+              'No additional full-data evaluation at epoch end.',flush=True)
     if args.resume is not None and 'torch_rng_state' in checkpoint:
         torch.set_rng_state(checkpoint['torch_rng_state'].cpu())
         if torch.cuda.is_available() and checkpoint.get('cuda_rng_state'):
@@ -1604,13 +1757,16 @@ def main() -> None:
             barrier(distributed)
             train_epoch_metrics.merge(train_metrics)
             offset = block_end
+            if v2:
+                del train_metrics
+                continue
             if args.eval_every == "epoch" and offset < total_chunks:
                 job = block_jobs[0]
                 print(f"EPOCH {epoch+1}/{args.epochs} | CHUNK {offset:,}/{total_chunks:,} | "
                       f"{datasets[job.dataset_index]['name']} chunk={job.chunk_id} | "
                       f"train={time.time()-block_t0:.1f}s", flush=True)
-                print(format_metrics('TRAIN ONLINE (current chunk; 50/50)', train_metrics.compute()), flush=True)
-                if is_main(rank) and offset % 100 == 0:
+                print(format_metrics('TRAIN ONLINE (current block; 50/50)', train_metrics.compute()), flush=True)
+                if is_main(rank) and offset % args.checkpoint_every == 0:
                     save_checkpoint(
                         path=recovery_path, model=model, optimizer=optimizer, scheduler=scheduler,
                         args=args, epoch_index=epoch,
@@ -1631,7 +1787,7 @@ def main() -> None:
                   f"{datasets[job.dataset_index]['name']} chunk={job.chunk_id} | "
                   f"train+eval={time.time()-block_t0:.1f}s", flush=True)
             online_metrics = train_metrics.compute()
-            print(format_metrics('TRAIN ONLINE (current chunk; 50/50)', online_metrics), flush=True)
+            print(format_metrics('TRAIN ONLINE (current block; 50/50)', online_metrics), flush=True)
             print(format_metrics(f'TRAIN EVAL STAGE ({total_chunks:,} chunks; fixed 50/50)', train_monitor_metrics), flush=True)
             print(format_metrics(f'TEST EVAL STAGE ({total_chunks:,} chunks; fixed 50/50)', test_monitor_metrics), flush=True)
             print(format_metrics(f'TRAIN EVAL ALL ({len(all_jobs):,} chunks; fixed 50/50)', train_all_metrics),flush=True)
@@ -1644,7 +1800,7 @@ def main() -> None:
                 'train_eval_stage': train_monitor_metrics,'test_eval_stage': test_monitor_metrics,
                 'train_eval_all': train_all_metrics,'test_eval_all': test_all_metrics,
                 'stage_chunks': total_chunks,'all_chunks':len(all_jobs)})
-            if is_main(rank) and offset < total_chunks and offset % 100 == 0:
+            if is_main(rank) and offset < total_chunks and offset % args.checkpoint_every == 0:
                 # Keep recovery checkpoints without per-block terminal output.
                 save_checkpoint(
                     path=recovery_path, model=model, optimizer=optimizer, scheduler=scheduler,
@@ -1656,32 +1812,40 @@ def main() -> None:
                 )
             del train_metrics
             barrier(distributed)
-        # The last chunk already evaluated these exact weights on both fixed samples.
-        train_eval_metrics = train_monitor_metrics
-        full_test_metrics = test_monitor_metrics
-        current_test_loss = float(full_test_metrics["loss"])
-        if is_main(rank):
+        if v2:
+            full_test_metrics = evaluate_split(
+                model, criterion, standardizer, datasets, all_jobs, VALIDATION,
+                args, distributed, rank, world_size, device, natural=True)
+            if not full_test_metrics["n"]:
+                raise ValueError("v2 VALIDATION is empty")
+            current_test_loss = float(full_test_metrics["loss"])
+        else:
+            # The last chunk already evaluated these exact weights on both fixed samples.
+            train_eval_metrics = train_monitor_metrics
+            full_test_metrics = test_monitor_metrics
+            current_test_loss = float(full_test_metrics["loss"])
+            if is_main(rank):
 
-            n_positive = (
-                full_test_metrics["tp"] + full_test_metrics["fn"]
-            )
-
-            n_negative = (
-                full_test_metrics["tn"] + full_test_metrics["fp"]
-            )
-
-            print(
-                f"[TEST BALANCE] "
-                f"positive={int(n_positive):,} | "
-                f"negative={int(n_negative):,} | "
-                f"total={int(full_test_metrics['n']):,}",
-                flush=True,
-            )
-
-            if n_positive != n_negative:
-                raise RuntimeError(
-                    "TEST is not balanced 50/50."
+                n_positive = (
+                    full_test_metrics["tp"] + full_test_metrics["fn"]
                 )
+
+                n_negative = (
+                    full_test_metrics["tn"] + full_test_metrics["fp"]
+                )
+
+                print(
+                    f"[TEST BALANCE] "
+                    f"positive={int(n_positive):,} | "
+                    f"negative={int(n_negative):,} | "
+                    f"total={int(full_test_metrics['n']):,}",
+                    flush=True,
+                )
+
+                if n_positive != n_negative:
+                    raise RuntimeError(
+                        "TEST is not balanced 50/50."
+                    )
         improved = (
             math.isfinite(current_test_loss)
             and current_test_loss < best_test_loss
@@ -1693,7 +1857,8 @@ def main() -> None:
 
         if best_epoch == 0:
             raise RuntimeError(
-                "TEST loss is not finite; cannot select BEST checkpoint."
+                "VALIDATION loss is not finite; cannot select BEST checkpoint." if v2
+                else "TEST loss is not finite; cannot select BEST checkpoint."
             )
 
         epoch_train_metrics = train_epoch_metrics.compute()
@@ -1726,11 +1891,15 @@ def main() -> None:
                 f"{elapsed / 3600:.2f} h"
             )
             print(format_metrics("TRAIN ONLINE (epoch aggregate; 50/50; AUC not accumulated)", epoch_train_metrics))
-            print(format_metrics("TRAIN EVAL STAGE (fixed 50/50; exact AUC)", train_eval_metrics))
-            print(format_metrics("TEST EVAL STAGE (fixed 50/50; exact AUC)", full_test_metrics))
-            print(format_metrics("TRAIN EVAL ALL (fixed 50/50; exact AUC)", train_all_metrics))
-            print(format_metrics("TEST EVAL ALL (fixed 50/50; exact AUC)", test_all_metrics))
-            print(f"BEST | epoch={best_epoch} | test_loss={best_test_loss:.6f}")
+            if v2:
+                print(format_metrics("VALIDATION (natural distribution)", full_test_metrics))
+                print(f"BEST | epoch={best_epoch} | validation_loss={best_test_loss:.6f}")
+            else:
+                print(format_metrics("TRAIN EVAL STAGE (fixed 50/50; exact AUC)", train_eval_metrics))
+                print(format_metrics("TEST EVAL STAGE (fixed 50/50; exact AUC)", full_test_metrics))
+                print(format_metrics("TRAIN EVAL ALL (fixed 50/50; exact AUC)", train_all_metrics))
+                print(format_metrics("TEST EVAL ALL (fixed 50/50; exact AUC)", test_all_metrics))
+                print(f"BEST | epoch={best_epoch} | test_loss={best_test_loss:.6f}")
             print("=" * 100, flush=True)
             if improved:
                 save_checkpoint(
@@ -1748,7 +1917,7 @@ def main() -> None:
                     epochs_without_improvement=epochs_without_improvement,
                 )
                 print(
-                    f"[BEST] Test loss improved -> {best_test_loss:.6f} "
+                    f"[BEST] {'Validation' if v2 else 'Test'} loss improved -> {best_test_loss:.6f} "
                     f"(epoch {best_epoch}) | saved: {best_path}",
                     flush=True,
                 )
@@ -1766,27 +1935,35 @@ def main() -> None:
                 best_epoch=best_epoch,
                 epochs_without_improvement=epochs_without_improvement,
             )
-            append_history(
-                history_path,
-                {
-                    "type": "epoch_end",
-                    "evaluation_scope": "stage_and_all_fixed_50_50",
-                    "stage_chunks":total_chunks,"all_chunks":len(all_jobs),
-                    "train_eval_stage":train_eval_metrics,"test_eval_stage":full_test_metrics,
-                    "train_eval_all":train_all_metrics,"test_eval_all":test_all_metrics,
-                    "epoch": epoch + 1,
-                    "elapsed_seconds": elapsed,
-                    "train": epoch_train_metrics,
-                    "train_online": epoch_train_metrics,
-                    "train_eval": train_eval_metrics,
-                    "test_eval": full_test_metrics,
-                    "test": full_test_metrics,
-                    "best_test_loss": best_test_loss,
-                    "best_epoch": best_epoch,
-                    "learning_rate": current_lr,
+            if v2:
+                append_history(history_path, {
+                    "type": "epoch_end", "epoch": epoch + 1, "train": epoch_train_metrics,
+                    "validation": full_test_metrics, "best_epoch": best_epoch,
+                    "best_validation_loss": best_test_loss, "learning_rate": current_lr,
                     "next_learning_rate": next_lr,
-                },
-            )
+                })
+            else:
+                append_history(
+                    history_path,
+                    {
+                        "type": "epoch_end",
+                        "evaluation_scope": "stage_and_all_fixed_50_50",
+                        "stage_chunks":total_chunks,"all_chunks":len(all_jobs),
+                        "train_eval_stage":train_eval_metrics,"test_eval_stage":full_test_metrics,
+                        "train_eval_all":train_all_metrics,"test_eval_all":test_all_metrics,
+                        "epoch": epoch + 1,
+                        "elapsed_seconds": elapsed,
+                        "train": epoch_train_metrics,
+                        "train_online": epoch_train_metrics,
+                        "train_eval": train_eval_metrics,
+                        "test_eval": full_test_metrics,
+                        "test": full_test_metrics,
+                        "best_test_loss": best_test_loss,
+                        "best_epoch": best_epoch,
+                        "learning_rate": current_lr,
+                        "next_learning_rate": next_lr,
+                    },
+                )
             print(f"[CHECKPOINT] Completed epoch saved: {last_path}", flush=True)
             recovery_path.unlink(missing_ok=True)
             train_epoch_metrics.close(remove=True)
@@ -1796,6 +1973,16 @@ def main() -> None:
         if device.type == "cuda":
             torch.cuda.empty_cache()
     barrier(distributed)
+    if v2:
+        selected = torch.load(best_path, map_location=device, weights_only=False)
+        raw_model.load_state_dict(selected["model_state_dict"])
+        final = evaluate_split(model, criterion, standardizer, datasets, all_jobs, TEST,
+                               args, distributed, rank, world_size, device, natural=True)
+        if not final["n"]:
+            raise ValueError("v2 TEST is empty")
+        append_history(history_path, {"type": "final_test", "best_epoch": selected["best_epoch"],
+                                      "checkpoint": best_path.name, "test": final})
+        print(format_metrics("FINAL TEST (natural distribution)", final), flush=True)
     if distributed:
         dist.destroy_process_group()
 if __name__ == "__main__":

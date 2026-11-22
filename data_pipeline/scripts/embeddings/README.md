@@ -1,5 +1,7 @@
 # Protein embeddings
 
+Para las primarias originales de NAP-CNB v2, consultar el [pipeline ProtT5 v2 y su piloto](../../../docs/nap_cnb_v2_prott5.md).
+
 Generate float32 features for the [MLP classifier](../../../neural_network/MLP/README.md). Primary embeddings describe augmented amino acid windows; secondary embeddings describe the original structural window shared by a group. Join by dataset and identifiers, not row order.
 
 | Property | ProtT5 | SecondaryBERT |

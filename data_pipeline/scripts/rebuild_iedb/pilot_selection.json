@@ -1,0 +1,41 @@
+{
+  "HLA-A": [
+    "www.uniprot.org/uniprot/A0A075B734",
+    "www.uniprot.org/uniprot/A0A087WTF2",
+    "www.uniprot.org/uniprot/P49327",
+    "www.uniprot.org/uniprot/P13284",
+    "www.uniprot.org/uniprot/Q92841",
+    "www.uniprot.org/uniprot/P01591",
+    "www.uniprot.org/uniprot/P01008",
+    "www.uniprot.org/uniprot/P01860-1",
+    "www.uniprot.org/uniprot/Q92538",
+    "www.uniprot.org/uniprot/Q4VC44",
+    "www.uniprot.org/uniprot/P00519"
+  ],
+  "HLA-B": [
+    "www.uniprot.org/uniprot/A0A075B734",
+    "www.uniprot.org/uniprot/A0A087WTJ2",
+    "www.uniprot.org/uniprot/O43432"
+  ],
+  "HLA-DP": [
+    "www.uniprot.org/uniprot/O00255",
+    "www.uniprot.org/uniprot/O15131",
+    "www.uniprot.org/uniprot/A0A096LP25"
+  ],
+  "HLA-DQ": [
+    "www.uniprot.org/uniprot/A0A087WZ13",
+    "www.uniprot.org/uniprot/A0A0B4J1Y9",
+    "www.uniprot.org/uniprot/A0A075B6P5"
+  ],
+  "H2-K": [
+    "www.uniprot.org/uniprot/A0A075B5R1",
+    "www.uniprot.org/uniprot/A0A0G2JG52",
+    "www.uniprot.org/uniprot/A0A075B5K0"
+  ],
+  "H2-IA": [
+    "www.uniprot.org/uniprot/A0A075B5L2",
+    "www.uniprot.org/uniprot/A0A075B5R4",
+    "www.uniprot.org/uniprot/A0A075B5T2",
+    "www.uniprot.org/uniprot/A0A075B5T3"
+  ]
+}
