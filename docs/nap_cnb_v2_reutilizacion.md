@@ -1,5 +1,7 @@
 # NAP-CNB v2 con reutilización de datos existentes
 
+Este documento conserva el estudio de reutilización previo a la certificación. Los contratos publicados de embeddings, vistas, splits y D1 están en la [organización del dataset original](nap_cnb_v2_dataset_organization.md).
+
 ## Inventario
 
 Los tamaños indican ocupación en disco redondeada, salvo las cifras de los archivos individuales. El volumen `/data/nap` tenía 21.865.994.649.600 bytes libres, unos 19,89 TiB. Los recuentos proceden de footers Parquet, manifiestos y auditorías previas. No se extrajeron archivos ni se recorrieron corpus completos.

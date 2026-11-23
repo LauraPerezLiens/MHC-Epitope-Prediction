@@ -1,6 +1,6 @@
 # Organización de NAP-CNB v2
 
-Se inventariaron **51 scripts Python** en `data_pipeline/scripts/`. La fase 3B añadió el generador v2 a `embeddings/primary_structure/`, junto al generador histórico, y dos pruebas sintéticas en un único archivo. Los cambios se limitaron a código funcional, configuración del piloto y documentación.
+En el inventario histórico de fase 3B se registraron **51 scripts Python** en `data_pipeline/scripts/`. La fase 3B añadió el generador v2 a `embeddings/primary_structure/`, junto al generador histórico, y dos pruebas sintéticas en un único archivo. Los cambios se limitaron a código funcional, configuración del piloto y documentación.
 
 ## Estructura que ya funciona
 
@@ -22,7 +22,6 @@ Evitar carpetas de código por fase. Mantener la estructura funcional y consolid
 
 | Script | Clase | Motivo y condición |
 |---|:---:|---|
-
 | [check_group_splits.py](../data_pipeline/scripts/check_group_splits.py) | B | Verificación reutilizable de integridad y procedencia. Mantener la interfaz actual mientras haya consumidores. |
 | [check_sampled_modalities.py](../data_pipeline/scripts/check_sampled_modalities.py) | B | Verificación reutilizable de integridad y procedencia. Mantener la interfaz actual mientras haya consumidores. |
 | [data_archiving/archive_inputs.py](../data_pipeline/scripts/data_archiving/archive_inputs.py) | A | Publica y verifica archivos comprimidos usados por lectores históricos. |

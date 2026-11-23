@@ -26,9 +26,9 @@ def distances(a, b):
     }
 
 
-def write_csv(path, rows):
+def write_csv(path, rows, fields):
     with path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         writer.writerows(rows)
 
@@ -40,8 +40,12 @@ def run(dataset, sample, output):
     if any(output.resolve().is_relative_to(root.resolve()) for root in (dataset, sample)):
         raise ValueError("Use a separate output directory.")
     groups = defaultdict(list)
-    for row in pq.read_table(sample / "proposed_provenance.parquet").to_pylist():
+    provenance = pq.read_table(sample / "proposed_provenance.parquet")
+    for row in provenance.to_pylist():
         groups[row["original_seq"]].append(row)
+    observation_fields = [*provenance.column_names, "family", "protein_url", "window_start",
+                          "clean_ss", "secondary_model_fingerprint"]
+    del provenance
     cases = {seq: rows for seq, rows in groups.items() if len({
         (row["representative_source_dataset_id"], row["representative_source_row_index"]) for row in rows
     }) > 1}
@@ -149,10 +153,16 @@ def run(dataset, sample, output):
             "secondary_cosine_min": min(p["secondary_cosine"] for p in differing),
             "secondary_cosine_max": max(p["secondary_cosine"] for p in differing),
         })
-    write_csv(output / "observations.csv", observations)
-    write_csv(output / "pairwise.csv", comparisons)
+    pair_fields = [
+        "original_seq", "family_a", "group_a", "family_b", "group_b", "clean_ss_a", "clean_ss_b",
+        "structural_positions_different", "same_model_fingerprint",
+        *(f"{mode}_{metric}" for mode in ("primary", "secondary")
+          for metric in ("exact", "max_abs", "euclidean", "cosine")),
+    ]
+    write_csv(output / "observations.csv", observations, observation_fields)
+    write_csv(output / "pairwise.csv", comparisons, pair_fields)
     write_json(output / "summary.json", {"cases": summaries, "secondary_processing": models})
-    report = ["# Seis secuencias con representaciones diferentes", "",
+    report = ["# Secuencias con representaciones diferentes", "",
               f"Se verificaron {len(observations)} apariciones y {len(comparisons)} pares en los bloques originales. "
               "Las métricas descriptivas se calcularon en float64 sobre los valores almacenados. "
               "La igualdad se comprobó sin tolerancia.", ""]

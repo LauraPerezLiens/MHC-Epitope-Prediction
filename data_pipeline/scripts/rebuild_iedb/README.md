@@ -39,7 +39,7 @@ python -m data_pipeline.scripts.rebuild_iedb.rebuild \
   --full --output results/iedb_rebuild_v2_simple_full
 ```
 
-La CLI lee el archivo IEDB y las referencias configuradas en `--archive`, `--fasta`, `--prior` y `--old`. Consulta las referencias o entidades que falten en caché. La reanudación usa el mismo comando y directorio, con las mismas entradas. El destino v2 debe ser distinto de los originales y de cualquier ejecución v1.
+La CLI lee el archivo IEDB y las referencias configuradas en `--archive`, `--fasta`, `--prior` y `--old`. Consulta las referencias o entidades que falten en caché. La reanudación usa el mismo comando y directorio, con las mismas entradas. Para un destino nuevo, `--verify-input-content` registra SHA-256 del contenido de las entradas comprobadas y exige las mismas huellas al reanudar. Las ejecuciones antiguas con firmas de tamaño y fecha conservan su modo original. El destino v2 debe ser distinto de los originales y de cualquier ejecución v1.
 
 ## Fase 1 con estructura secundaria archivada
 

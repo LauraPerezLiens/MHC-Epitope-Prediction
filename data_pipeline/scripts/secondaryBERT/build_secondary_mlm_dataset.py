@@ -23,6 +23,7 @@ Outputs:
 import argparse
 import logging
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -286,7 +287,8 @@ def main() -> None:
     input_dir = args.input_dir or data_dir / "proteinunet_prediction" / "outputs"
     output_dir = args.output_dir or data_dir / "bert_mlm_dataset"
 
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if output_dir.exists() or output_dir.is_symlink():
+        raise FileExistsError(f"Choose a new dataset directory: {output_dir}")
 
     if not input_dir.is_dir():
         raise NotADirectoryError(f"Input directory not found: {input_dir}")
@@ -312,8 +314,6 @@ def main() -> None:
     test_path = output_dir / "test.parquet"
     vocab_path = output_dir / "vocab.txt"
 
-    df.to_parquet(all_cleaned_path, index=False)
-
     train_df, val_df, test_df = split_dataset(
         df=df,
         test_size=args.test_size,
@@ -321,11 +321,15 @@ def main() -> None:
         random_state=args.random_state,
     )
 
-    train_df.to_parquet(train_path, index=False)
-    val_df.to_parquet(val_path, index=False)
-    test_df.to_parquet(test_path, index=False)
-
-    write_vocab(vocab_path)
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    with TemporaryDirectory(prefix=".mlm_dataset_", dir=output_dir.parent) as temporary:
+        stage = Path(temporary) / output_dir.name
+        stage.mkdir()
+        for frame, target in ((df, all_cleaned_path), (train_df, train_path),
+                              (val_df, val_path), (test_df, test_path)):
+            frame.to_parquet(stage / target.name, index=False)
+        write_vocab(stage / vocab_path.name)
+        stage.rename(output_dir)
 
     total_rows = len(df)
 

@@ -154,13 +154,14 @@ def run(args):
                 exported += len(selected)
                 per_source[rel] += len(selected)
             print(f'EXPORT {rel} contradictory_rows={per_source[rel]:,}', flush=True)
-    os.replace(partial, args.output / 'contradictions.csv')
     unique, conflicts, conflict_rows = db.execute('''SELECT COUNT(*),
         COALESCE(SUM(negative>0 AND positive>0),0),
         COALESCE(SUM(CASE WHEN negative>0 AND positive>0 THEN negative+positive ELSE 0 END),0)
         FROM counts''').fetchone()
     if exported != conflict_rows:
+        partial.unlink()
         raise ValueError(f'Export count mismatch: {exported} != {conflict_rows}')
+    os.replace(partial, args.output / 'contradictions.csv')
     summary = {'status': 'completed', 'criterion': 'identical_25aa_sequence_opposite_labels',
                'embeddings_compared': False, 'sources': len(files),
                'original_rows': db.execute('SELECT SUM(rows) FROM completed').fetchone()[0],

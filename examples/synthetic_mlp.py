@@ -23,6 +23,10 @@ from mlp_layernorm_shuffled_ladder100_dualeval import MLP  # noqa: E402
 ROWS = 100
 CHUNK_ROWS = 50
 FEATURES = PRIMARY_DIM + SECONDARY_DIM
+SYNTHETIC_SPLITS = np.concatenate((
+    np.repeat([TRAIN, VALIDATION, TEST], [40, 5, 5]),
+    np.repeat([TRAIN, TEST, VALIDATION], [40, 5, 5]),
+)).astype(np.uint8)
 
 
 def generate(root: Path, seed: int) -> None:
@@ -37,16 +41,12 @@ def generate(root: Path, seed: int) -> None:
     groups = np.arange(ROWS, dtype=np.int64)
     features[:, 0] = groups  # Synthetic row marker for checking metadata alignment.
     labels = (groups % 2).astype(np.int8)
-    splits = np.concatenate((
-        np.repeat([TRAIN, VALIDATION, TEST], [40, 5, 5]),
-        np.repeat([TRAIN, TEST, VALIDATION], [40, 5, 5]),
-    )).astype(np.uint8)
     (root / 'INCOMPLETE').touch()
     for chunk, start in enumerate(range(0, ROWS, CHUNK_ROWS)):
         section = slice(start, start + CHUNK_ROWS)
         prefix = f'chunk_{chunk:06d}'
         np.save(primary / f'{prefix}_X.npy', features[section])
-        for name, values in [('y', labels), ('group_id', groups), ('split_id', splits)]:
+        for name, values in [('y', labels), ('group_id', groups), ('split_id', SYNTHETIC_SPLITS)]:
             np.save(metadata / f'{prefix}_{name}.npy', values[section])
     layout = dict(format='primary_secondary_float32_v1', primary_dim=PRIMARY_DIM,
                   secondary_dim=SECONDARY_DIM, normalized=False, complete=True,
@@ -82,6 +82,8 @@ def check(root: Path, seed: int) -> None:
         raise ValueError('Unexpected feature shape, dtype or nonfinite values')
     if not np.array_equal(np.sort(group_ids), np.arange(ROWS)):
         raise ValueError('Missing or duplicated synthetic rows')
+    if not np.array_equal(split, SYNTHETIC_SPLITS[group_ids]):
+        raise ValueError("Synthetic split assignment does not match row identifiers")
     for split_id, expected in [(TRAIN, 80), (VALIDATION, 10), (TEST, 10)]:
         selected = y[split == split_id]
         if len(selected) != expected or np.count_nonzero(selected == 1) != expected // 2:

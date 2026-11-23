@@ -1,9 +1,11 @@
 """Balanced LR must use the same sampler and evaluation engine as MLP."""
+from argparse import Namespace
 import json
 import shutil
 from pathlib import Path
 import subprocess
 import sys
+from tempfile import TemporaryDirectory
 import unittest
 
 import numpy as np
@@ -11,10 +13,57 @@ import torch
 
 from tests.helpers import PipelineCase, PROJECT, dataset
 from mlp_layernorm_shuffled_ladder100_dualeval import (
-    LogisticRegression, build_chunk_jobs, iter_balanced_chunk_batches,
+    DiskBinaryMetrics, LogisticRegression, StreamingBinaryMetrics, build_chunk_jobs,
+    build_monitor_cache, iter_balanced_chunk_batches,
 )
 
 SCRIPT = PROJECT/'neural_network/logistic_regression/train.py'
+
+
+class SharedBinaryMetricsTests(unittest.TestCase):
+    def test_loss_weights_observations_and_confusion_uses_zero_logit(self):
+        metrics = StreamingBinaryMetrics()
+        metrics.update_arrays(np.array([0.0]), np.array([0], dtype=np.uint8), 1.0)
+        metrics.update_arrays(np.array([-1.0, 2.0, -2.0]), np.array([0, 1, 1], dtype=np.uint8), 9.0)
+        result = metrics.compute()
+        for key, expected in {
+            "n": 4, "loss": 2.5, "tp": 1, "tn": 1, "fp": 1, "fn": 1,
+            "accuracy": 0.5, "balanced_accuracy": 0.5, "precision": 0.5,
+            "recall": 0.5, "f1": 0.5, "roc_auc": 0.5,
+        }.items():
+            with self.subTest(metric=key):
+                self.assertEqual(result[key], expected)
+
+    def test_global_auc_includes_cross_chunk_pairs_and_signed_zero_ties(self):
+        chunks = (
+            (torch.tensor([0.0, 1.0]), torch.tensor([0.0, 1.0])),
+            (torch.tensor([-1.0, -0.0]), torch.tensor([0.0, 1.0])),
+        )
+        global_metrics = StreamingBinaryMetrics()
+        per_chunk = []
+        with TemporaryDirectory() as tmp:
+            disk = DiskBinaryMetrics(directory=tmp)
+            try:
+                for logits, labels in chunks:
+                    local = StreamingBinaryMetrics()
+                    local.update(logits, labels, 2.0)
+                    per_chunk.append(local.roc_auc())
+                    global_metrics.merge(local)
+                    disk.update(logits, labels, 2.0)
+                self.assertEqual(np.mean(per_chunk), 1.0)
+                self.assertEqual(global_metrics.roc_auc(), 0.875)
+                self.assertEqual(disk.roc_auc(), 0.875)
+            finally:
+                disk.close(remove=True)
+
+    def test_single_class_without_predicted_positives_marks_undefined_metrics(self):
+        metrics = StreamingBinaryMetrics()
+        metrics.update_arrays(np.array([-1.0, -2.0]), np.zeros(2, dtype=np.uint8), 0.4)
+        result = metrics.compute()
+        self.assertEqual(result["n"], 2)
+        self.assertEqual(result["accuracy"], 1.0)
+        for key in ("roc_auc", "precision", "recall", "balanced_accuracy"):
+            self.assertTrue(np.isnan(result[key]), key)
 
 
 class BalancedLogisticRegressionTests(PipelineCase):
@@ -35,6 +84,31 @@ class BalancedLogisticRegressionTests(PipelineCase):
             np.array(['mixed']*chunks), np.arange(chunks)).save(scaler)
         return scaler
 
+    def test_historical_test_monitor_is_fixed_and_balanced_without_replacement(self):
+        scaler = self.prepare(chunks=2)
+        datasets = dataset.discover_datasets(self.output)
+        jobs = build_chunk_jobs(datasets)
+        manifests = []
+        for name in ("monitor_a", "monitor_b"):
+            root = self.temp / name
+            root.mkdir()
+            args = Namespace(eval_target_per_class=2, seed=42, output_dir=root,
+                             features="primary_secondary", scaler_path=scaler, secondary_cache_size=1)
+            cache = build_monitor_cache(datasets, jobs, dataset.TEST, args,
+                                        dataset.ModalityStandardizer.load(scaler))
+            manifest = json.loads((root / "monitor_rows_split_2.json").read_text())
+            manifests.append(manifest)
+            labels = []
+            for job, entry in zip(jobs, manifest, strict=True):
+                rows = entry["rows"]
+                self.assertEqual(len(rows), len(set(rows)))
+                meta = dataset.load_chunk_metadata(datasets[job.dataset_index], job.chunk_id)
+                self.assertTrue(np.all(meta["split_id"][rows] == dataset.TEST))
+                labels.extend(meta["y"][rows])
+            self.assertEqual(np.bincount(labels).tolist(), [2, 2])
+            self.assertEqual(json.loads(cache.with_suffix(".ready.json").read_text())["n"], 4)
+        self.assertEqual(*manifests)
+
     def test_sampler_covers_source_rows_and_is_exactly_balanced(self):
         self.prepare()
         datasets = dataset.discover_datasets(self.output)
@@ -43,13 +117,16 @@ class BalancedLogisticRegressionTests(PipelineCase):
             datasets[0], 0, dataset.TRAIN, 'primary_secondary', 4,
             42, 0, 0, 1, {}, datasets, jobs))
         self.assertEqual(len(batches), 2)
-        seen = []
+        expected_labels = dict(zip(self.x[:4, 0], (0, 1, 0, 0)))
+        seen = set()
         for x, y in batches:
             self.assertEqual(int(y.sum()), 2)
             self.assertEqual(len(y), 4)
-            seen.extend(x[:, 0])
-        for row in range(4):
-            self.assertIn(self.x[row, 0], seen)
+            for feature, label in zip(x[:, 0], y, strict=True):
+                self.assertIn(feature, expected_labels)
+                self.assertEqual(label, expected_labels[feature])
+                seen.add(feature)
+        self.assertEqual(seen, expected_labels.keys())
         model = LogisticRegression(1792)
         self.assertEqual(sum(p.numel() for p in model.parameters()), 1793)
         self.assertEqual(sum(isinstance(m, torch.nn.Linear) for m in model.modules()), 1)

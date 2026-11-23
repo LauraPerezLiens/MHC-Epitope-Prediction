@@ -29,7 +29,7 @@ python -m data_pipeline.scripts.global_epitope_labels.build \
   --output results/global_epitope_labels_sample_20261118
 ```
 
-The full run is an explicit invocation with a separate destination.
+The full run is an explicit invocation. The path below identifies the historical catalog. Choose a new destination for a separate build.
 
 ```bash
 python -m data_pipeline.scripts.global_epitope_labels.build \
@@ -37,7 +37,7 @@ python -m data_pipeline.scripts.global_epitope_labels.build \
   --output data/global_epitope_labels
 ```
 
-Use `--sources` to supply an alternative source root with the same family layout. A rerun with the same arguments resumes completed SQLite batches and reuses fully written Parquet files. An interrupted export restarts the affected file. The final validation pass runs from the start and checks source file paths, sizes, and modification times against the saved manifest. The output directory is locked during writes. A different input manifest, batch size, or sample scope requires a new directory.
+Use `--sources` to supply an alternative source root with the same family layout. A rerun with the same arguments resumes completed SQLite batches and reuses fully written Parquet files. An interrupted export restarts the affected file. The final validation pass runs from the start and checks source file paths, sizes, and modification times against the saved manifest. Those metadata checks can miss same-size edits with a restored timestamp. The output directory is locked during writes. A different input manifest, batch size, or sample scope requires a new directory.
 
 Add `--ram-index` for hosts with spare memory to reduce SQLite I/O. This keeps the working index in memory and commits a transactional snapshot to disk at the end of each family and every 20 newly processed batches. Restart uses the last committed snapshot and replays subsequent input batches. The audit also uses in-memory indexes in this mode. Allow **4 GiB of process RAM** as a planning estimate for this option.
 

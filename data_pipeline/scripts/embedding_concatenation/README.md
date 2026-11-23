@@ -10,6 +10,8 @@ The shuffle, split and compact `chunk_metadata/` must already be complete and va
 
 ## 2. Convert and archive progressively
 
+This historical example includes source archival. Apply it to an inactive working tree. `--archive-sources` and `--archive-originals` remove verified originals, and `--in-place` replaces the primary matrices.
+
 ```bash
 python -u data_pipeline/scripts/embedding_concatenation/concatenate_primary_secondary.py \
   --root data/data_input_nn_shuffled \

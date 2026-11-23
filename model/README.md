@@ -9,6 +9,6 @@ Only this README is versioned. Weights, tokenizers, model configurations and loc
 
 ProteinUnet prediction uses `proteinunet_env`; SecondaryBERT uses `nap_env`. See [environment setup](../env/README.md).
 
-Scripts default to these directories relative to the project location. Keep SecondaryBERT weights, configuration and tokenizer together. ProtT5 is loaded through Hugging Face rather than from either directory above.
+Scripts default to these directories relative to the project location. Keep SecondaryBERT weights, configuration and tokenizer together. The historical ProtT5 generator loads its checkpoint through Hugging Face. The v2 generator loads a local checkpoint specified by `--checkpoint` and checks the files against `--hashes`. These hashes establish checkpoint file identity. Historical vector–sequence correspondence requires separate evidence.
 
 See the [model inventory](../data_pipeline/docs/data_and_models.md) for architecture details and recorded validation results.

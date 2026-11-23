@@ -33,6 +33,25 @@ class BlockReaderTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "max_bytes"):
                     reader.read(RowRange(10, 0, 3))
 
+    def test_oversized_range_does_not_open_or_evict_blocks(self):
+        class RecordingReader(BlockReader):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.opened = []
+
+            def _open(self, block):
+                self.opened.append(block.block_id)
+                return super()._open(block)
+
+        other = Block(20, self.path, self.values.shape, self.values.dtype.str)
+        with RecordingReader([self.block, other], max_bytes=12, max_open=1) as reader:
+            reader.read(RowRange(10, 0, 1))
+            with self.assertLogs("data_pipeline.block_reader", "ERROR"):
+                with self.assertRaisesRegex(ValueError, "max_bytes"):
+                    reader.read(RowRange(20, 0, 3))
+            reader.read(RowRange(10, 1, 1))
+            self.assertEqual(reader.opened, [10])
+
     def test_resume_from_committed_offset(self):
         with BlockReader([self.block], max_bytes=18) as reader:
             with self.assertRaisesRegex(RuntimeError, "interrupted"):

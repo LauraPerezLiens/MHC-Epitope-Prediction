@@ -65,6 +65,8 @@ def assign_row_splits(labels, seed: int, chunk_id: int,
     """Shuffle row positions per class; group identifiers are not inputs."""
     validate_ratios(train, validation, test)
     labels = np.asarray(labels)
+    if labels.ndim != 1:
+        raise ValueError("Labels must be one-dimensional")
     if not np.isin(labels, [0, 1]).all():
         raise ValueError('Labels must be 0 or 1')
     rng = np.random.default_rng(np.random.SeedSequence([seed, chunk_id]))

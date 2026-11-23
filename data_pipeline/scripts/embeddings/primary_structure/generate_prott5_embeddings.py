@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from __future__ import annotations
+
 import argparse
 import logging
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
 import numpy as np
 import pandas as pd
 import torch
-from transformers import T5EncoderModel, T5Tokenizer
+if TYPE_CHECKING:
+    from transformers import T5EncoderModel, T5Tokenizer
 
 
 # ======================================================
@@ -118,6 +121,7 @@ def spaced_sequence(seq: str) -> str:
 
 def load_model_and_tokenizer() -> Tuple[T5Tokenizer, T5EncoderModel, torch.device]:
     """Load ProtT5 tokenizer and encoder model."""
+    from transformers import T5EncoderModel, T5Tokenizer
 
     logging.info("Loading model: %s", MODEL_NAME)
 
@@ -224,7 +228,8 @@ def build_output_dir(csv_path: Path) -> Path:
         / f"{csv_path.stem}_ProtT5_chunks"
     )
 
-    out_dir.mkdir(parents=True, exist_ok=True)
+    # A legacy chunk has no receipt proving that its companion files are complete.
+    out_dir.mkdir(parents=True, exist_ok=False)
 
     return out_dir
 
@@ -307,18 +312,9 @@ def process_csv_in_chunks(
     out_dir = build_output_dir(csv_path)
     master_index_path = out_dir / "master_index.csv"
 
-    if master_index_path.exists():
-        master_index_path.unlink()
-
     reader = pd.read_csv(csv_path, chunksize=CHUNK_SIZE)
 
     for chunk_id, df in enumerate(reader):
-        prefix = out_dir / f"chunk_{chunk_id:06d}_X.npy"
-
-        if prefix.exists():
-            logging.info("Skipping chunk_%06d because output already exists", chunk_id)
-            continue
-
         logging.info("-" * 60)
         logging.info("Chunk %06d", chunk_id)
         logging.info("-" * 60)

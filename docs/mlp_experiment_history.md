@@ -2,9 +2,9 @@
 
 ## Experimental scope
 
-The current phase is exploratory: test whether the network learns and whether training works with augmented data. Row-based partitions, TRAIN/TEST STAGE/ALL monitoring and selection by TEST STAGE are intentional. The historical results below are not a final estimate of generalization.
+These historical experiments were exploratory: test whether the network learns and whether training works with augmented data. Row-based partitions, TRAIN/TEST STAGE/ALL monitoring and selection by TEST STAGE are intentional. The historical results below are not a final estimate of generalization.
 
-A future, separate evaluation may select checkpoints with VALIDATION, reserve TEST for final assessment, separate groups/proteins and compare external predictors. That protocol is not implemented here and does not revise historical partitions or selection criteria.
+The separate [v2 hook](NAP_CNB_v2_training_guide.md) selects by VALIDATION loss and reserves TEST for final assessment. It rejects checkpoint resumption and initialization. Certified D1 groups original observations by exact primary sequence. Protein-level independence and homology remain separate questions, and D2 augmentation remains planned. The historical runs retain their original partition and selection criteria.
 
 Historical compilation: 26 October 2026. Historical update: 28 October 2026. Archive removal: 10 November 2026. Globally shuffled/concatenated experiments recorded: 17 November 2026.
 Sections 1–13 preserve the original historical snapshot; section 14 records the later status and data preparation in progress at that time. This document is a snapshot, not a report of 100 completed epochs for every experiment.
@@ -123,7 +123,7 @@ A separate copy of the shuffled training implementation loaded the full scaler w
 
 The 10- and 20-chunk stages completed 100 epochs. The 30-chunk stage stopped during epoch 21, with 20 epochs completed. Compared with shuffling and the 2-chunk scaler:
 
-- 10 chunks: loss 0.002078 → 0.003005; accuracy 99.9502% → 99.9336%.
+- 10 chunks: loss 0.002078 → 0.003006; accuracy 99.9502% → 99.9336%.
 - 20 chunks: loss 0.002680 → 0.002944; accuracy 99.9121% → 99.9167%.
 
 Therefore, **using the full scaler did not produce a uniform improvement**: loss was higher in both comparable stages, while accuracy improved slightly with 20 chunks. One seed and small differences do not establish general superiority. The partial 30-chunk stage is not treated as completed.
@@ -228,6 +228,8 @@ Last TEST metrics visible in that monitor:
 These are the last monitor's values, not a best-checkpoint selection or final results. The local/global performance gap persists. The new preparation aims to distribute data from different sources across chunks; it does not yet demonstrate that this intervention improves model metrics.
 
 ### What was running at that snapshot
+
+The commands and paths in this section record the historical setup. For the current repository layout see the [pipeline guide](../data_pipeline/scripts/README.md).
 
 `reorder_chunks.py` was running from the project root in `nap_env`:
 
@@ -912,6 +914,8 @@ The 100-chunk run has its best TEST STAGE loss at its final planned epoch, so it
 
 Decision: retain this record, discontinue these particular runs as useful model candidates, and prepare their experiment-specific outputs for later removal. No original dataset, scaler, source embeddings, training implementation, active contradiction search or current data-check results are included in that future output cleanup.
 
+In the later audited full-tree MLP/LR comparison, TEST STAGE and TEST ALL each had 58,012 unique rows with 36 shared. That measurement applies to those manifests. Sample memberships for the deleted runs in this section are unavailable. The documented training–evaluation gap is consistent with overfitting; the records do not isolate label conflicts, chunk composition or another mechanism as the cause.
+
 ### Removed artifact inventory and source fingerprints
 
 The following run directories (including checkpoints and evaluation caches), their execution logs and associated PID files were removed at the user’s request on 17 November 2026. The datasets, scaler, training code and current data-check outputs were retained. Approximate disk use observed: 1.5 GiB for 10 chunks and 1.6 GiB each for 50 and 100 chunks.
@@ -924,7 +928,7 @@ The following run directories (including checkpoints and evaluation caches), the
 - `logs/mlp_shuffled_concatenated_100chunks_10epochs_20261116.log` and `logs/mlp_shuffled_concatenated_100chunks_10epochs_20261116.pid`
 - `logs/mlp_shuffled_concatenated_50chunks_20epochs_continuation_20261116.pid` (continuation PID file).
 
-SHA-256 fingerprints below identify the inspected sources; they are not backups. This section preserves all 101 epoch-end TEST trajectories, compact TRAIN trajectories and complete best/last fixed-evaluation metrics. It does not preserve every intermediate metric, model weights, raw logits or evaluation sample membership after a future deletion.
+SHA-256 fingerprints below identify the inspected sources; they are not backups. This section preserves all 101 epoch-end TEST trajectories, compact TRAIN trajectories and complete best/last fixed-evaluation metrics. It does not preserve every intermediate metric, model weights, raw logits or evaluation sample membership after the recorded deletion.
 
 | Source | SHA-256 |
 | --- | --- |

@@ -48,6 +48,8 @@ El predictor usa la secuencia de la proteína codificada one-hot, rellena a 1.02
 
 ## Lectura, particiones y experimentos
 
+Esta sección conserva la propuesta de fase 4A. Las secciones 4C y 4D describen las particiones y el contrato de D1 publicados posteriormente.
+
 1. Proponer grupos globales como componentes conectados por identidad de proteína de origen y por hash de secuencia proteica completa. Resolver versiones y alias con las referencias verificadas. Medir adicionalmente cuántas claves de primaria exacta aparecen en varios componentes, y evaluar aristas de identidad de ventana y agrupamiento de homólogos antes de fijar el criterio. Inspeccionar el tamaño del mayor componente antes de decidir cómo equilibrar los conjuntos.
 2. Asignar componentes enteros, con objetivo 80/10/10, semilla, algoritmo versionado y balance aproximado por filas, familia y clase. Mantener juntas las ventanas solapadas. Todo registro derivado deberá heredar la asignación de su padre. Reservar el test principal a originales y usar las mismas observaciones para todas las comparaciones. Verificar disjunción de grupos, proteínas y claves conforme al criterio elegido. Ningún split quedó construido en esta fase.
 3. Filtrar lógicamente por especie, MHC, proteína, grupo o etiqueta antes de muestrear. Barajar IDs de filas mediante permutación reproducible de bloques y de los IDs dentro de cada bloque con semilla y época. Guardar versión, semilla, bloque y cursor para reanudar. Resolver referencias por lotes, agrupar internamente las lecturas por shard o archivo y restaurar el orden del lote con la posición de cada solicitud. Leer ProtT5 por mmap y evaluar agrupación, lectura por lotes y caché de SecondaryBERT durante la preparación del consumo. El piloto midió 4,73 s por bloque comprimido de SecondaryBERT de mediana. La representación conjunta de 1.792 dimensiones se puede formar en memoria al cargar el lote.
@@ -81,7 +83,7 @@ La clave de la base es `(parent_url, parent_accession, parent_version, parent_sh
 
 La etiqueta global es una agregación de evidencia. Una primaria positiva en el índice global puede seguir siendo negativa operacional en una observación familiar. Se conservan las distintas estructuras secundarias asociadas a una misma primaria. Para evaluar en el futuro una vista de una sola fila por primaria, se puede definir y versionar por adelantado un criterio de procedencia estructural, seguido por número de proteínas distintas que aportan la estructura y desempate lexicográfico. La elección, si se realiza, se valida contra la vista que conserva todas las estructuras. Las proteínas y familias de cada representación se consultan en el catálogo base.
 
-### Grupos históricos y futuras particiones
+### Grupos históricos y criterio propuesto en 4B
 
 `group_id` se asignaba por fila de ventana original dentro de cada archivo de clasificación, y las filas derivadas conservaban ese valor. La clave histórica que evita colisiones es `(legacy_source_file, group_id)`. La reconstrucción enlaza por familia, URL normalizada con la misma semántica de fase 1, coordenada y secuencia exacta. Las coincidencias múltiples quedan registradas como candidatas. La etiqueta histórica es un dato de trazabilidad y la etiqueta canónica se toma siempre de la selección. Una ventana sin enlace histórico conserva su `window_id` como clave v2. Así se preserva la correspondencia cuando una base deduplicada reúne varios grupos.
 

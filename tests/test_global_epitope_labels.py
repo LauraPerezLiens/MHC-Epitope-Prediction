@@ -61,7 +61,12 @@ class GlobalEpitopeLabelTests(unittest.TestCase):
         self.assertEqual(summary["rows_changed"], 2)
         self.assertEqual(summary["cross_family_evidence"],
                          {"exactly_1": 1, "exactly_2": 1, "exactly_3": 0, "more_than_3": 1})
-        rows = pq.read_table(self.output / "rows/human_mhc-I_HLA-B.parquet").to_pylist()
+        table = pq.read_table(self.output / "rows/human_mhc-I_HLA-B.parquet")
+        for column in ("contains_epitope", "global_contains_epitope"):
+            self.assertEqual(table.schema.field(column).type, pa.int8())
+        rows = table.to_pylist()
+        self.assertEqual([(r["contains_epitope"], r["global_contains_epitope"]) for r in rows],
+                         [(0, 1), (1, 1), (0, 0), (1, 1)])
         self.assertEqual([r["source_row_index"] for r in rows], [0, 1, 2, 3])
         self.assertEqual(rows[0]["source_file"], "human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B.csv")
         self.assertEqual(rows[0]["contains_epitope"], 0)
@@ -72,6 +77,26 @@ class GlobalEpitopeLabelTests(unittest.TestCase):
         self.assertEqual(rows[0]["epitope_pos_score"], "0.0100")
         self.assertEqual(rows[0]["extra"], "context, original")
         self.assertEqual({p: p.read_bytes() for p in self.originals}, self.originals)
+
+    def test_empty_csv_reports_missing_required_columns(self):
+        path = next(iter(self.originals))
+        path.write_bytes(b"")
+        with self.assertRaisesRegex(ValueError, f"Required classification columns missing: .*{path.name}"):
+            build.input_config(self.sources, 2, None)
+
+    def test_invalid_label_tokens_are_rejected_before_counting(self):
+        path = self.sources / "human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A.csv"
+        with path.open(newline="") as handle:
+            rows = list(csv.reader(handle))
+        for label in ("", "-1", "256", "1.0", "true", "NaN", "Inf"):
+            with self.subTest(label=label):
+                rows[1][1] = label
+                with path.open("w", newline="") as handle:
+                    csv.writer(handle).writerows(rows)
+                config = build.input_config(self.sources, 2, None)
+                source = next(source for source in config["sources"] if source["mhc_family"] == "HLA-A")
+                with self.assertRaisesRegex(ValueError, "Malformed sequence, label or CSV record"):
+                    list(build.frames(config, source))
 
     def test_resume_and_audit_detect_tampering(self):
         with patch.object(build, "export_unique", side_effect=RuntimeError("interrupted")):

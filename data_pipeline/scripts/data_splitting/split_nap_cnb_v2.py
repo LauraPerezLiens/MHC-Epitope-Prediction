@@ -42,7 +42,8 @@ def indexes(keys, catalog):
 
 def assign(sequences, seed):
     key = seed.to_bytes(8, "little")
-    require(pc.all(pc.equal(pc.binary_length(sequences), 25)).as_py(), "Unexpected primary length")
+    require(sequences.null_count == 0 and pc.all(pc.equal(pc.binary_length(sequences), 25)).as_py(),
+            "Expected nonnull primary keys of 25 bytes")
     data = memoryview(sequences.buffers()[2])
     offset = int(np.frombuffer(sequences.buffers()[1], dtype="<i4")[sequences.offset])
     count = len(sequences)
@@ -54,8 +55,8 @@ def assign(sequences, seed):
 
 
 def distribution(splits, labels, weights=None):
-    if weights is None:
-        weights = np.ones(len(splits), dtype=np.int32)
+    require(np.isin(splits, (0, 1, 2)).all(), "Expected split codes 0, 1 or 2")
+    require(np.isin(labels, (0, 1)).all(), "Expected binary labels")
     result = np.bincount(splits * 2 + labels, weights=weights, minlength=6).astype(np.int64).reshape(3, 2)
     return {name: {"negative": int(n), "positive": int(p), "rows": int(n + p)}
             for name, (n, p) in zip(NAMES, result)}

@@ -65,8 +65,10 @@ def run(args):
     spec=importlib.util.spec_from_file_location('augmentation',ROOT/'data_pipeline/scripts/data_augmentation/generate_blosum62_variants.py')
     augmentation=importlib.util.module_from_spec(spec);spec.loader.exec_module(augmentation)
     manifest=json.loads((args.root/'reorder_manifest.json').read_text())
-    z=np.load(args.scaler);mean=z['primary_mean'].astype(np.float64);scale=z['primary_scale'].astype(np.float64)
-    if mean.shape!=(1024,) or scale.shape!=(1024,) or not np.isfinite(scale).all() or (scale<=0).any():
+    with np.load(args.scaler, allow_pickle=False) as scaler:
+        mean = scaler['primary_mean'].astype(np.float64)
+        scale = scaler['primary_scale'].astype(np.float64)
+    if mean.shape!=(1024,) or scale.shape!=(1024,) or not np.isfinite(mean).all() or not np.isfinite(scale).all() or (scale<=0).any():
         raise ValueError('Invalid Primary scaler')
     rng=np.random.default_rng(args.seed);mutations=[];controls=[];sampled=[]
     for source in manifest['sources']:

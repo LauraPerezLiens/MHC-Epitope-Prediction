@@ -1,5 +1,6 @@
 import gzip
 import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -7,7 +8,74 @@ from unittest.mock import patch
 
 import pyarrow.parquet as pq
 
-from data_pipeline.scripts.rebuild_iedb import rebuild
+from data_pipeline.scripts.rebuild_iedb import final_selection, rebuild
+
+
+class PublicationTests(unittest.TestCase):
+    def test_content_verified_resume_and_legacy_compatibility(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            raw, fasta = root / "raw", root / "fasta"
+            raw.mkdir()
+            fasta.mkdir()
+            archive = raw / "input.zst"
+            archive.write_bytes(b"original")
+            for organism in rebuild.SPECIES:
+                (fasta / f"{organism}_parent_protein_fasta.csv").write_text("header")
+            args = (root / "strict", archive, fasta, None, {}, root / "old")
+            legacy_args = (root / "legacy", *args[1:])
+            with patch.object(rebuild, "extract", side_effect=InterruptedError("fixture")) as extract:
+                for _ in range(2):
+                    with self.assertRaises(InterruptedError):
+                        rebuild.run(*args, verify_input_content=True)
+                with self.assertRaisesRegex(ValueError, "verification"):
+                    rebuild.run(*args)
+                with self.assertRaises(InterruptedError):
+                    rebuild.run(*legacy_args)
+                with self.assertWarnsRegex(RuntimeWarning, "metadata"):
+                    with self.assertRaises(InterruptedError):
+                        rebuild.run(*legacy_args)
+                with self.assertRaisesRegex(ValueError, "new versioned output"):
+                    rebuild.run(*legacy_args, verify_input_content=True)
+                before = archive.stat()
+                for modified in (b"larger payload", b"modified"):
+                    archive.write_bytes(modified)
+                    os.utime(archive, ns=(before.st_atime_ns, before.st_mtime_ns))
+                    with self.assertRaisesRegex(ValueError, "changed"):
+                        rebuild.run(*args, verify_input_content=True)
+                archive.write_bytes(b"original")
+                os.utime(archive, ns=(before.st_atime_ns, before.st_mtime_ns))
+                config = args[0] / "config.json"
+                manifest = json.loads(config.read_text())
+                manifest["input_sha256"].pop(str(archive))
+                config.write_text(json.dumps(manifest))
+                with self.assertRaisesRegex(ValueError, "changed"):
+                    rebuild.run(*args, verify_input_content=True)
+                self.assertEqual(extract.call_count, 4)
+
+    def test_rebuild_rejects_output_inside_optional_inputs(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name, options in (
+                ("structures", {"structure_dir": root / "structures"}),
+                ("curated", {"local_caches": (root / "curated",)}),
+            ):
+                with self.subTest(input=name):
+                    output = root / name / "output"
+                    with self.assertRaisesRegex(ValueError, "separate from all input directories"):
+                        rebuild.run(output, root / "raw" / "archive.zst", root / "fasta",
+                                    None, {}, root / "old", **options)
+                    self.assertFalse(output.exists())
+
+    def test_selection_report_accepts_family_without_positives(self):
+        counts = dict(windows=1, positive_windows=0, excluded=0, excluded_positive=0,
+                      excluded_negative=0, positive_final=0, negative_final=1, matched=1,
+                      recovered=0)
+        with TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            (output / "selection.json").write_text("{}")
+            final_selection.write_report(output, {"validation": {}}, {"example": counts}, counts)
+            self.assertNotIn("**example** perdió", (output / "final_selection_report.md").read_text())
 
 
 FAMILY = "HLA-A"
@@ -101,6 +169,11 @@ class RebuildIEDBTest(unittest.TestCase):
         self.assertEqual(stats["windows"], len(SEQUENCE) - 24)
         self.assertEqual(stats["positive_windows"], 11)
         windows = self.read("families")
+        self.assertEqual(
+            [(row["window_start"], row["window_end"], row["sequence"], row["contains_epitope"]) for row in windows],
+            [(start, start + 24, SEQUENCE[start - 1:start + 24], int(1 <= start <= 11))
+             for start in range(1, len(SEQUENCE) - 23)],
+        )
         self.assertEqual(windows[10]["sequence"], SEQUENCE[10:35])
         self.assertEqual((windows[10]["window_start"], windows[10]["window_end"]), (11, 35))
         self.assertEqual(windows[10]["contains_epitope"], 1)

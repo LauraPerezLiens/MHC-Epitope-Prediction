@@ -31,7 +31,7 @@ The [download](../scripts/data_download/build_iedb_dataset.py), [protein retriev
 
 See [data](../../data/README.md) and [archive restoration](../../data/used_data/README.md) before rerunning generation scripts. Historical scripts use `data/data_raw/`, `data/data_intermediate/` and `data/data_uniref50/`; those directories are currently archived. Default data and model paths are resolved from the project location. Existing CLI path options select external storage when needed.
 
-## Dataset artifacts
+## Historical dataset artifacts
 
 | Artifact | Producer | Contents |
 |---|---|---|
@@ -48,11 +48,11 @@ See [data](../../data/README.md) and [archive restoration](../../data/used_data/
 
 Human datasets cover MHC-I HLA-A/B/C and MHC-II HLA-DP/DQ/DR. Mouse datasets cover MHC-I H2-D/K/L and MHC-II H2-IA/IE. These labels aggregate families, not individual alleles.
 
-IDs are local to each classification dataset. A window containing multiple epitopes can produce multiple examples and group IDs. The current MLP split allows shared groups and proteins across splits; see [split generation](../scripts/data_splitting/README.md).
+IDs are local to each classification dataset. A window containing multiple epitopes can produce multiple examples and group IDs. The historical row split allows shared groups and proteins across splits; see [split generation](../scripts/data_splitting/README.md).
 
 ## Example generation and identifiers
 
-Classification uses one-residue sliding windows of 25 amino acids, after validating epitope coordinates against the parent sequence. A window receives label 1 if it fully contains a recorded positive epitope, otherwise 0. These negatives are not experimentally verified negatives. Several contained epitopes can produce several examples for one physical window.
+Historical classification uses one-residue sliding windows of 25 amino acids, after validating epitope coordinates against the parent sequence. A window receives label 1 if it fully contains a recorded positive epitope, otherwise 0. These negatives are not experimentally verified negatives. Several contained epitopes can produce several examples for one physical window.
 
 BLOSUM62 augmentation retains the original sequence plus one highest-scoring alternative substitution per position: 26 rows per valid 25-aa example. Variants inherit the label and the original group's structural embedding; structures are not predicted independently for each mutant.
 
@@ -68,9 +68,9 @@ BLOSUM62 augmentation retains the original sequence plus one highest-scoring alt
 
 The source-row fields live in the shuffled master CSVs, now retained in verified source archives. The independent training tree contains the copied source-level `reorder_manifest.json` and compact per-chunk `y`, `group_id` and `split_id` arrays, not the full original-row provenance table. Join source data by dataset and identifiers, not by the physical row order of independently generated modalities.
 
-## Stored schema and row order
+## Historical stored schema and row order
 
-The completed training dataset has 1,449,852,950 rows in 14,499 chunks of up to 100,000 rows. Features are unnormalized `float32` NPY arrays; column order is `[ProtT5: 0–1023 | SecondaryBERT: 1024–1791]`. For each `chunk_XXXXXX_X.npy`, position `i` corresponds to position `i` in `chunk_metadata/chunk_XXXXXX_y.npy`, `..._group_id.npy` and `..._split_id.npy`.
+The historical concatenated training dataset has 1,449,852,950 rows in 14,499 chunks of up to 100,000 rows. Features are unnormalized `float32` NPY arrays; column order is `[ProtT5: 0–1023 | SecondaryBERT: 1024–1791]`. For each `chunk_XXXXXX_X.npy`, position `i` corresponds to position `i` in `chunk_metadata/chunk_XXXXXX_y.npy`, `..._group_id.npy` and `..._split_id.npy`.
 
 The shuffle manifest records seed 42, 1,024 buckets, chunk size, source mappings, offsets and final counts. Concatenation preserves shuffled row order. Split IDs are TRAIN=0, VALIDATION=1 and TEST=2; assignment is approximately 80/10/10 by row and label within each physical chunk. Groups and proteins may occur in multiple splits. The MLP uses fixed selected chunks, changes traversal order each epoch and balances TRAIN minibatches without rewriting the stored data.
 
@@ -86,7 +86,19 @@ The shuffle manifest records seed 42, 1,024 buckets, chunk size, source mappings
 | `*.archive.json` and `ARCHIVED.json` | Per-file original/archive SHA-256 records and completed archive-tree marker; decompressed content is verified before source removal |
 | `*.tar.zst.sha256` and `*.verification.json` | Historical raw/intermediate/UniRef archive checksums and records of full GNU tar comparison against original directories |
 
-Full `--verify-only` verification checks feature and metadata content; normal completed-output checks hash metadata, inspect feature size/shape/type and hash features with changed recorded timestamps. Quick checks are not a complete feature-content verification. Legacy records without metadata hashes require original source metadata or its archive checksum records; an output cannot supply its own independent source evidence. Checksums establish consistency with recorded local artifacts, not the identity of an unrecorded upstream release. See [source archiving](../scripts/data_archiving/README.md) for restoration. The concatenated training tree is independent of the source archives; those archives are needed to recover detailed source-row provenance.
+Full `--verify-only` verification checks feature and metadata content; normal completed-output checks hash metadata, inspect feature size/shape/type and hash features with changed recorded timestamps. Quick checks are not a complete feature-content verification. Legacy records without metadata hashes require original source metadata or its archive checksum records; an output cannot supply its own independent source evidence. Checksums establish consistency with recorded local artifacts. An exchange of historical ProtT5 rows before the first recorded hash can pass conversion and SHA-256 verification. The original index resolves a physical position. Independent evidence is needed to link each historical vector to its original sequence. See [source archiving](../scripts/data_archiving/README.md) for restoration. The concatenated training tree is independent of the source archives; those archives are needed to recover detailed source-row provenance.
+
+## Certified D1 and planned D2
+
+D1 uses original observations. Reconstruction checks one-based inclusive coordinates and 25-residue windows. The base view retains local labels. D1 takes the maximum local label for each exact primary sequence and applies it to each distinct primary–secondary representation. In the historical global-label catalog, zero positive evidence is represented by numeric 0 and status `unlabeled`.
+
+The D1 assignment uses the exact primary key and seed 42. Every representation of that key shares a split. Protein overlap, overlapping windows and homology can still create dependence across splits. D2 is planned and requires a versioned original–variant link and explicit label and split inheritance.
+
+The stored D1 modalities are separate. ProtT5 resolves a 1,024-value vector via the ordinal in the inventory identified by its SHA-256. SecondaryBERT resolves a 768-value vector via the exact structural key. The reader joins them in that order into 1,792 float32 values. Metadata checks examine contracts and references within their stated scope. They leave exhaustive row joins, historical vector identity and biological validation outside that scope.
+
+Structural recovery checks the source reference, coordinates, C/H/E crop and expected counts. It publishes through a staging directory and final rename. Each invocation requires a new output location. A controlled failure before rename was tested. Abrupt termination and detecting a different valid position with the same count remain open.
+
+See [D1 organization](../../docs/nap_cnb_v2_dataset_organization.md) and the [v2 training guide](../../docs/NAP_CNB_v2_training_guide.md).
 
 ## Public availability
 
@@ -103,6 +115,14 @@ A [synthetic example](../../examples/README.md) generates artificial data for lo
 | `Rostlab/prot_t5_xl_half_uniref50-enc` | ProtT5 encoder/tokenizer loaded through Hugging Face by the primary embedding generator |
 
 SecondaryBERT must preserve uppercase C/H/E with token IDs 5/6/7. The embedding checker rejects references to the legacy `secondary_bert_mlm` directory. See [SecondaryBERT training](../scripts/secondaryBERT/README.md) for tokenizer checks and model output selection.
+
+## Classifier evaluation
+
+LR produces one affine logit. The MLP uses hidden layers of 512 and 128 units with LayerNorm, ReLU and dropout, then produces one logit. Both use binary cross-entropy with logits in the shared engine. The historical balanced LR and MLP share the TRAIN-only scaler and balanced sampler. The historical MLP selects BEST by loss on TEST STAGE. Historical checkpoints support recovery with known compatibility limits.
+
+The v2 hook selects by VALIDATION loss and evaluates TEST at the end. It rejects `--resume` and `--init-checkpoint`. The v2 CLI plans runs in dry-run mode. The scaler for a v2 view is fitted to its TRAIN population.
+
+Natural LR reports histogram-based average precision. A synthetic score collision yielded AP 0.5 where exact ranking yielded 1.0. This example describes the approximation, with the observed error specific to that fixture.
 
 ## Recorded validation
 

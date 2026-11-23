@@ -109,6 +109,21 @@ class StatusTest(unittest.TestCase):
         self.write(name, "different size")
         self.assertEqual(cli.status(self.root)["global_dataset"]["status"], "INCONSISTENT")
 
+    def test_selection_stat_signature_scope(self):
+        path = self.root / cli.SELECTION.parent / "family.parquet"
+        original = path.stat()
+        path.write_text("changed")
+        os.utime(path, ns=(original.st_atime_ns, original.st_mtime_ns + 1_000_000_000))
+        self.assertEqual(cli.status(self.root)["selection"]["status"], "INCONSISTENT")
+        os.utime(path, ns=(original.st_atime_ns, original.st_mtime_ns))
+        self.assertEqual(cli.status(self.root)["selection"]["status"], "CERTIFIED")
+        replacement = path.with_suffix(".tmp")
+        replacement.write_text("another")
+        os.utime(replacement, ns=(original.st_atime_ns, original.st_mtime_ns))
+        replacement.replace(path)
+        self.assertNotEqual(path.stat().st_ino, original.st_ino)
+        self.assertEqual(cli.status(self.root)["selection"]["status"], "CERTIFIED")
+
     def test_read_only_with_audit_hook(self):
         guard = """
 import os, runpy, sys

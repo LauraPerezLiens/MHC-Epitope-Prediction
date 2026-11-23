@@ -55,6 +55,10 @@ class LogisticRegressionTests(PipelineCase):
         features = np.load(self.output/self.input_x.relative_to(self.root), mmap_mode='r+')
         features[5] *= -1
         features.flush()
+        labels_path = (self.output / self.input_x.relative_to(self.root)).parent / "chunk_metadata/chunk_000000_y.npy"
+        labels = np.load(labels_path)
+        labels[5] = 1 - labels[5]
+        np.save(labels_path, labels)
         other = self.temp/'lr_other_test'
         other_cmd = list(cmd)
         other_cmd[other_cmd.index('--output')+1] = str(other)
@@ -82,6 +86,22 @@ class LogisticRegressionTests(PipelineCase):
         self.assertEqual(result['accuracy'], .5)
         self.assertEqual(result['roc_auc_histogram'], .75)
         self.assertAlmostEqual(result['average_precision_histogram'], 5/6)
+
+    def test_histogram_average_precision_accumulates_across_chunks(self):
+        metrics = lr.Metrics()
+        with self.assertRaisesRegex(ValueError, "no rows"):
+            metrics.result()
+        metrics.update(torch.tensor([]), torch.tensor([]), 0.0)
+        metrics.update(torch.tensor([0.0002]), torch.tensor([1.]), 1.0)
+        self.assertEqual(metrics.result()["average_precision_histogram"], 1.0)
+        self.assertIsNone(metrics.result()["roc_auc_histogram"])
+        metrics.update(torch.tensor([0.0001]), torch.tensor([0.]), 3.0)
+        result = metrics.result()
+        self.assertEqual(result["rows"], 2)
+        self.assertEqual(result["loss"], 2.0)
+        # The positive has the higher score, so exact AP is 1. Both scores
+        # land in the same bin, which treats them as tied and yields AP 1/2.
+        self.assertEqual(result["average_precision_histogram"], 0.5)
 
     @unittest.skipUnless(torch.cuda.device_count() >= 2, 'Requires multiple CUDA GPUs')
     def test_multi_gpu_cli_and_portable_checkpoint(self):

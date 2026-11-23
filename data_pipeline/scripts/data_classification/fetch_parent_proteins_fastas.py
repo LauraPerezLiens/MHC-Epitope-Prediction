@@ -5,6 +5,7 @@ import csv
 import logging
 import re
 import sys
+from tempfile import NamedTemporaryFile
 import time
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
@@ -21,7 +22,6 @@ from urllib3.util.retry import Retry
 
 DATA_RAW = Path(__file__).resolve().parents[3] / 'data' / 'data_raw'
 DATA_INTERMEDIATE = Path(__file__).resolve().parents[3] / 'data' / 'data_intermediate'
-DATA_INTERMEDIATE.mkdir(parents=True, exist_ok=True)
 
 SPECIES = ["human", "mouse"]
 
@@ -351,7 +351,15 @@ def save_species_outputs(
         ],
     )
 
-    fasta_df.to_csv(fasta_out, index=False, encoding="utf-8")
+    fasta_out.parent.mkdir(parents=True, exist_ok=True)
+    with NamedTemporaryFile(dir=fasta_out.parent, prefix=f".{fasta_out.name}.",
+                            suffix=".partial", delete=False) as handle:
+        staged = Path(handle.name)
+    try:
+        fasta_df.to_csv(staged, index=False, encoding="utf-8")
+        staged.replace(fasta_out)
+    finally:
+        staged.unlink(missing_ok=True)
 
     logging.info("[%s] FASTA CSV saved: %s", species, fasta_out)
 

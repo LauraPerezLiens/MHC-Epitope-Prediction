@@ -28,6 +28,7 @@ import csv
 import logging
 import os
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Generator, Tuple
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -205,10 +206,16 @@ def predict_window_probabilities(
 
     prediction = np.asarray(prediction)
 
-    if prediction.ndim == 3:
+    if prediction.ndim == 3 and prediction.shape[0] == 1:
         prediction = prediction[0]
 
-    return prediction[:len(sequence)]
+    if (prediction.ndim != 2 or prediction.shape[1] != len(SS_LIST)
+            or not len(sequence) <= len(prediction) <= WINDOW_SIZE):
+        raise ValueError(f"Invalid prediction shape: {prediction.shape}")
+    result = prediction[:len(sequence)]
+    if not np.isfinite(result).all():
+        raise ValueError("Invalid prediction: non-finite values")
+    return result
 
 
 def probabilities_to_secondary_structure(probabilities: np.ndarray) -> str:
@@ -316,7 +323,9 @@ def main() -> None:
         output_name = args.output
 
     output_csv = outputs_dir / output_name
-    skipped_csv = outputs_dir / output_name.replace(".csv", "_skipped.csv")
+    if output_csv.suffix != ".csv":
+        raise ValueError("Output filename must end in .csv")
+    skipped_csv = output_csv.with_name(f"{output_csv.stem}_skipped.csv")
 
     outputs_dir.mkdir(parents=True, exist_ok=True)
 
@@ -344,87 +353,100 @@ def main() -> None:
     n_failed = 0
     n_ok = 0
 
-    with output_csv.open("w", newline="") as out_handle, skipped_csv.open(
-        "w", newline=""
-    ) as skipped_handle:
+    seen = set()
+    with TemporaryDirectory(prefix=".uniref_prediction_", dir=output_csv.parent) as temporary:
+        staged_output = Path(temporary) / output_csv.name
+        staged_skipped = Path(temporary) / skipped_csv.name
+        with staged_output.open("w", newline="") as out_handle, staged_skipped.open(
+            "w", newline=""
+        ) as skipped_handle:
 
-        writer = csv.writer(out_handle)
-        skipped_writer = csv.writer(skipped_handle)
+            writer = csv.writer(out_handle)
+            skipped_writer = csv.writer(skipped_handle)
 
-        writer.writerow(["id", "protein_id", "sequence", "secondary_structure"])
-        skipped_writer.writerow(["protein_id", "reason", "details"])
+            writer.writerow(["id", "protein_id", "sequence", "secondary_structure"])
+            skipped_writer.writerow(["protein_id", "reason", "details"])
 
-        for n_total, (header, sequence) in enumerate(parse_fasta(input_fasta), start=1):
-            protein_id = header.split()[0]
-            invalid_residues = get_invalid_residues(sequence)
+            for n_total, (header, sequence) in enumerate(parse_fasta(input_fasta), start=1):
+                fields = header.split()
+                if not fields:
+                    raise ValueError(f"Missing protein ID at FASTA record {n_total}")
+                protein_id = fields[0]
+                if protein_id in seen:
+                    raise ValueError(f"Duplicate protein ID: {protein_id}")
+                seen.add(protein_id)
+                invalid_residues = get_invalid_residues(sequence)
 
-            if invalid_residues:
-                n_skipped_invalid += 1
-                skipped_writer.writerow(
-                    [
-                        protein_id,
-                        "non_standard_residues",
-                        ",".join(invalid_residues),
-                    ]
-                )
-                continue
+                if invalid_residues:
+                    n_skipped_invalid += 1
+                    skipped_writer.writerow(
+                        [
+                            protein_id,
+                            "non_standard_residues",
+                            ",".join(invalid_residues),
+                        ]
+                    )
+                    continue
 
-            if len(sequence) > WINDOW_SIZE:
-                n_long += 1
+                if len(sequence) > WINDOW_SIZE:
+                    n_long += 1
 
-            try:
-                secondary_structure = predict_secondary_structure(sequence, model)
+                try:
+                    secondary_structure = predict_secondary_structure(sequence, model)
 
-            except Exception as error:
-                n_failed += 1
-                logging.warning("Prediction failed for %s: %s", protein_id, error)
-                skipped_writer.writerow(
-                    [
-                        protein_id,
-                        "prediction_failed",
-                        str(error),
-                    ]
-                )
-                continue
+                except Exception as error:
+                    n_failed += 1
+                    logging.warning("Prediction failed for %s: %s", protein_id, error)
+                    skipped_writer.writerow(
+                        [
+                            protein_id,
+                            "prediction_failed",
+                            str(error),
+                        ]
+                    )
+                    continue
 
-            if not secondary_structure:
-                n_failed += 1
-                skipped_writer.writerow(
-                    [
-                        protein_id,
-                        "empty_prediction",
-                        "Predicted secondary structure is empty",
-                    ]
-                )
-                continue
+                if not secondary_structure:
+                    n_failed += 1
+                    skipped_writer.writerow(
+                        [
+                            protein_id,
+                            "empty_prediction",
+                            "Predicted secondary structure is empty",
+                        ]
+                    )
+                    continue
 
-            if len(secondary_structure) != len(sequence):
-                n_failed += 1
-                details = (
-                    f"sequence_length={len(sequence)}; "
-                    f"secondary_structure_length={len(secondary_structure)}"
-                )
-                logging.warning("Length mismatch for %s: %s", protein_id, details)
-                skipped_writer.writerow(
-                    [
-                        protein_id,
-                        "length_mismatch",
-                        details,
-                    ]
-                )
-                continue
+                if len(secondary_structure) != len(sequence):
+                    n_failed += 1
+                    details = (
+                        f"sequence_length={len(sequence)}; "
+                        f"secondary_structure_length={len(secondary_structure)}"
+                    )
+                    logging.warning("Length mismatch for %s: %s", protein_id, details)
+                    skipped_writer.writerow(
+                        [
+                            protein_id,
+                            "length_mismatch",
+                            details,
+                        ]
+                    )
+                    continue
 
-            n_ok += 1
-            writer.writerow([n_ok, protein_id, sequence, secondary_structure])
+                n_ok += 1
+                writer.writerow([n_ok, protein_id, sequence, secondary_structure])
 
-            if n_total % 100 == 0:
-                logging.info(
-                    "Processed=%d | OK=%d | skipped_invalid=%d | failed=%d",
-                    n_total,
-                    n_ok,
-                    n_skipped_invalid,
-                    n_failed,
-                )
+                if n_total % 100 == 0:
+                    logging.info(
+                        "Processed=%d | OK=%d | skipped_invalid=%d | failed=%d",
+                        n_total,
+                        n_ok,
+                        n_skipped_invalid,
+                        n_failed,
+                    )
+
+        staged_skipped.replace(skipped_csv)
+        staged_output.replace(output_csv)
 
     logging.info("Total proteins read: %d", n_total)
     logging.info("Proteins longer than %d residues: %d", WINDOW_SIZE, n_long)

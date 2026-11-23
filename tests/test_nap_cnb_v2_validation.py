@@ -15,6 +15,73 @@ except ImportError:
 
 
 class ValidationTest(unittest.TestCase):
+    @unittest.skipIf(pq is None, "PyArrow is unavailable to build fixtures")
+    def test_parquet_footer_rejects_duplicate_columns(self):
+        path = self.root / "duplicate.parquet"
+        pq.write_table(pa.Table.from_arrays([pa.array(["first"]), pa.array(["second"])],
+                                          names=["sequence", "sequence"]), path)
+        with self.assertRaisesRegex(ValueError, "Duplicate Parquet column"):
+            cli.footer_contract(cli.Component(self.root, path), path, ("sequence", {}),
+                                1, path.stat().st_size)
+
+    @unittest.skipIf(pq is None, "PyArrow is unavailable to build fixtures")
+    def test_parquet_footer_rejects_invalid_leading_magic(self):
+        relative = cli.VIEWS / "fixture.parquet"
+        size = self.footer(relative, ("sequence", {}), 2)
+        path = self.root / relative
+        original = path.read_bytes()
+        path.write_bytes(b"FAIL" + original[4:])
+        self.assertEqual(path.stat().st_size, size)
+        with self.assertRaisesRegex(ValueError, "Invalid Parquet header"):
+            cli.read_footer(cli.Component(self.root, relative), relative)
+
+    def test_selection_rejects_noninteger_schema_version(self):
+        for version in (True, 1.0):
+            with self.subTest(version=version):
+                self.write(cli.SELECTION, {**self.selection, "schema_version": version})
+                self.assert_outcome("validate-selection", "FAIL")
+
+    @unittest.skipIf(pq is None, "PyArrow is unavailable to build fixtures")
+    def test_footer_scope_with_content_and_schema_mutations(self):
+        relative = cli.VIEWS / "fixture.parquet"
+        path = self.root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        component = cli.Component(self.root, relative)
+        schema = ("id", {"label": "int8", "split": "uint8"})
+        valid = pa.table({"id": ["a", "b"], "label": pa.array([0, 1], type=pa.int8()),
+                          "split": pa.array([0, 2], type=pa.uint8())})
+        for name, table in {
+            "exchanged rows": valid.take([1, 0]),
+            "duplicate row": valid.take([0, 0]),
+            "identifier": valid.set_column(0, "id", pa.array(["a", "c"])),
+            "label": valid.set_column(1, "label", pa.array([0, 3], type=pa.int8())),
+            "split": valid.set_column(2, "split", pa.array([0, 3], type=pa.uint8())),
+            "null label": valid.set_column(1, "label", pa.array([0, None], type=pa.int8())),
+            "column order": valid.select(["split", "id", "label"]),
+        }.items():
+            with self.subTest(name=name):
+                pq.write_table(table, path, row_group_size=1)
+                self.assertEqual(pq.read_metadata(path).num_row_groups, 2)
+                footer = cli.footer_contract(component, relative, schema, 2, path.stat().st_size)
+                self.assertEqual(footer["footer_rows"], 2)
+        for name, table in {
+            "missing": valid.drop(["id"]),
+            "additional": valid.append_column("extra", pa.array([0, 0])),
+            "boolean": valid.set_column(1, "label", pa.array([True, False])),
+            "float": valid.set_column(2, "split", pa.array([0., 2.])),
+            "negative signed": valid.set_column(2, "split", pa.array([-1, 0], type=pa.int8())),
+        }.items():
+            with self.subTest(name=name):
+                pq.write_table(table, path)
+                with self.assertRaisesRegex(ValueError, "Incompatible Parquet schema"):
+                    cli.footer_contract(component, relative, schema, 2, path.stat().st_size)
+        pq.write_table(valid.slice(0, 1), path)
+        with self.assertRaisesRegex(ValueError, "Footer rows"):
+            cli.footer_contract(component, relative, schema, 2, path.stat().st_size)
+        path.write_bytes(path.read_bytes()[:-1])
+        with self.assertRaisesRegex(ValueError, "Invalid Parquet trailer"):
+            cli.read_footer(component, relative)
+
     def setUp(self):
         fixture = status_tests.StatusTest()
         fixture.setUp()
@@ -186,7 +253,8 @@ class ValidationTest(unittest.TestCase):
         self.d1_manifest()
         result = self.assert_outcome("validate-d1", "PASS")
         self.assertEqual(result["checks"][0]["details"]["dimensions"]["combined"], 1792)
-        for change in ({"schema_version": 2}, {"observations": 10},
+        for change in ({"schema_version": 2}, {"schema_version": True}, {"schema_version": 1.0},
+                       {"observations": 10},
                        {"embeddings": {**self.d1["embeddings"], "ProtT5": {
                            **self.d1["embeddings"]["ProtT5"], "dimension": 512}}}):
             self.write(cli.D1, {**self.d1, **change})

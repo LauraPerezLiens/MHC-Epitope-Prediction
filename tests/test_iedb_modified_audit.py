@@ -1,4 +1,10 @@
+import gzip
 import sqlite3
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
+
+from data_pipeline.scripts.iedb_modified_audit import audit
 import unittest
 
 from data_pipeline.scripts.iedb_modified_audit.audit import classify, key
@@ -6,6 +12,17 @@ from data_pipeline.scripts.iedb_modified_audit.impact import duplicates
 
 
 class ModifiedAuditTests(unittest.TestCase):
+    def test_ingest_row_mismatch_does_not_commit_completion(self):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            with gzip.open(root / "event_assay_provenance.csv.gz", "wt") as stream:
+                stream.write("family,kind,source_file,record_index\n")
+            (root / "summary.json").write_text('{"families": [{"mhc_records": 1}]}')
+            with patch.object(audit, "DOWNLOAD", root), audit.closing(audit.database(root)) as db:
+                with self.assertRaisesRegex(ValueError, "Ingest row count mismatch"):
+                    audit.ingest(db)
+                self.assertIsNone(db.execute("SELECT 1 FROM checkpoints").fetchone())
+
     def test_plus_is_not_a_chemical_annotation(self):
         self.assertEqual(classify({"modification":"","corrected_sequence":""}),"uncertain")
         self.assertEqual(classify({"modification":"Oxidation","corrected_sequence":"ACDEF"}),"modified")

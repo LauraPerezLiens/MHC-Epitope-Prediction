@@ -63,7 +63,9 @@ def input_config(root, batch_rows, row_limit):
         relative = Path(organism, mhc_class, family, filename)
         path = root / relative
         with path.open(newline="", encoding="utf-8-sig") as handle:
-            header = next(csv.reader(handle))
+            header = next(csv.reader(handle), [])
+        if not header:
+            raise ValueError(f"Required classification columns missing: {path}")
         if columns is None:
             columns = header
         if header != columns or len(set(header)) != len(header):

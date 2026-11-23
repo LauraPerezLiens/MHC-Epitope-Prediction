@@ -42,9 +42,9 @@ TRAIN ONLINE reports metrics during chunk updates. TRAIN/TEST STAGE evaluate fix
 
 The current experiment is exploratory: its purpose is to check that the network learns and the training pipeline works. TEST STAGE loss intentionally selects the best checkpoint; TRAIN, TEST STAGE and ALL monitor training behavior. ALL is diagnostic and no early stopping is used. Row-based partitions and this selection policy remain unchanged. These metrics are not a definitive evaluation on unseen proteins.
 
-A future, separate generalization study may use VALIDATION for selection, a final independent TEST, group/protein partitions and external predictors. Those protocols are not implemented or applied to current or historical experiments.
+The separate [v2 hook](../../docs/NAP_CNB_v2_training_guide.md) selects using VALIDATION loss and evaluates TEST at the end. It does not support checkpoint resumption. Group/protein disjointness and comparison with external predictors remain separate study designs.
 
-Each stage writes `run.log`, JSONL histories and best/last checkpoints. Intra-epoch recovery checkpoints are saved every 100 chunks; for the 10-chunk run, recovery is from the last completed epoch. Rerunning the launcher resumes available checkpoints or skips completed stages. Use a new `RESULTS` directory for an independent experiment.
+Each stage writes `run.log`, JSONL histories and best/last checkpoints. Intra-epoch recovery checkpoints are saved every 100 chunks; for the 10-chunk run, recovery is from the last completed epoch. Rerunning the historical launcher resumes available checkpoints or skips stages marked complete. The marker checks checkpoint presence, so keep the dataset, scaler and configuration fixed when reusing a result directory. Use a new `RESULTS` directory for an independent experiment.
 
 ## Prepare a new scaler
 

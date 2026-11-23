@@ -39,7 +39,7 @@ def accumulate(counts, groups, splits):
         raise ValueError('Invalid split_id')
     if len(groups) and (groups.min() < 0 or groups.max() >= len(counts)):
         raise ValueError('group_id outside manifest bounds')
-    keys, n = np.unique(groups.astype(np.int64) * 3 + splits, return_counts=True)
+    keys, n = np.unique(groups.astype(np.int64) * 3 + splits.astype(np.int64), return_counts=True)
     counts[keys // 3, keys % 3] += n.astype(np.uint64)
 
 

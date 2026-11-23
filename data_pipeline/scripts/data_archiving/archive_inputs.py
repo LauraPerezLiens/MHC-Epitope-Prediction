@@ -20,7 +20,7 @@ def digest(path):
 
 def signature(path):
     st = path.stat()
-    return [st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns]
+    return [st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns, st.st_ctime_ns]
 
 
 def atomic_json(path, record):
@@ -68,6 +68,7 @@ def archive_file(path, zstd='zstd', threads=1):
     before = signature(path)
     original_hash = digest(path)
     if target.exists():
+        verified_archive = signature(target)
         if decompressed_digest(target, zstd) != original_hash:
             raise ValueError(f'Existing archive differs from original: {target}')
     else:
@@ -78,24 +79,34 @@ def archive_file(path, zstd='zstd', threads=1):
         temporary = Path(name)
         try:
             subprocess.run([zstd, '-q', '-f', '-1', f'-T{threads}', str(path), '-o', str(temporary)], check=True)
+            staged_archive = signature(temporary)
             if decompressed_digest(temporary, zstd) != original_hash:
                 raise ValueError(f'Archive verification failed: {path}')
             with temporary.open('rb') as f:
                 os.fsync(f.fileno())
             if signature(path) != before:
                 raise ValueError(f'Original changed during archiving: {path}')
+            if signature(temporary) != staged_archive:
+                raise ValueError(f'Archive changed during verification: {temporary}')
             os.replace(temporary, target)
+            verified_archive = signature(target)
+            # Rename can update ctime, so compare the other fields across it.
+            if verified_archive[:4] != staged_archive[:4]:
+                raise ValueError(f'Archive changed during publication: {target}')
             sync_dir(path.parent)
         finally:
             temporary.unlink(missing_ok=True)
     if signature(path) != before:
         raise ValueError(f'Original changed during archiving: {path}')
+    # ctime guards the live source; preserve the existing receipt schema.
     record = {'original_bytes': before[2], 'original_sha256': original_hash,
-              'compressed_bytes': target.stat().st_size, 'archive_sha256': digest(target),
-              'source_signature': before, 'format': 'verified_zstd_v1'}
+              'compressed_bytes': verified_archive[2], 'archive_sha256': digest(target),
+              'source_signature': before[:4], 'format': 'verified_zstd_v1'}
     atomic_json(record_path, record)
     if signature(path) != before:
         raise ValueError(f'Original changed before removal: {path}')
+    if signature(target) != verified_archive:
+        raise ValueError(f'Archive changed before removal: {target}')
     path.unlink()
     sync_dir(path.parent)
     return record

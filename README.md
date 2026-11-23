@@ -4,6 +4,8 @@ Research pipeline for epitope classification using protein language models and p
 
 Developed as part of doctoral research in computational biology and cancer immunotherapy at the Spanish National Centre for Biotechnology (CNB-CSIC).
 
+[Documentation and architecture](docs/README.md)
+
 ## NAP-CNB v2 status
 
 Use the metadata-only interface to inspect the published v2 selection, embeddings, dataset views, splits and D1.
@@ -54,7 +56,7 @@ These commands honor the same `--root`, `--json` and exit codes. ProtT5 checks i
 
 `python -B -m data_pipeline.nap_cnb_v2 train --model lr --data original --label global --dry-run` resolves dataset metadata, feature references, splits and the selected historical profile. The v2 selector supports balanced LR and balanced MLP. The explicit engine hook uses balanced TRAIN and natural-prevalence VALIDATION and TEST. Launching from the CLI is disabled and both full TRAIN scalers are pending. [Training guide and compatibility matrix](docs/NAP_CNB_v2_training_guide.md)
 
-## Workflow
+## Historical workflow
 
 ```text
 Positive IEDB assays → parent proteins → labeled 25-aa windows
@@ -132,6 +134,6 @@ Archive tests require `zstd`. [GitHub Actions](.github/workflows/cpu-checks.yml)
 
 A positive window contains a recorded positive epitope; other windows are labeled negative without experimental confirmation. BLOSUM variants inherit the original label and structural features.
 
-**Current phase — exploratory experiments.** The objective is to check that the network learns and the training pipeline works with augmented data. Existing row-based splits, TRAIN/TEST STAGE/ALL monitoring and checkpoint selection by TEST STAGE are intentional and remain unchanged. Shared proteins/groups and checkpoint selection mean these results are not definitive generalization metrics.
+**Historical protocol — exploratory experiments.** The objective is to check that the network learns and the training pipeline works with augmented data. Existing row-based splits, TRAIN/TEST STAGE/ALL monitoring and checkpoint selection by TEST STAGE are intentional and remain unchanged. Shared proteins/groups and checkpoint selection mean these results are not definitive generalization metrics.
 
-**Future phase — generalization evaluation.** A separate study may use VALIDATION for checkpoint selection, a final independent TEST, group/protein holdouts and comparisons with external predictors. These are future protocols, not changes to the current experiment. Results and historical comparisons remain in the [experiment history](docs/mlp_experiment_history.md).
+**v2 evaluation.** The v2 hook selects checkpoints using VALIDATION and evaluates TEST after selection. D1 assigns splits by exact primary sequence. Protein-level holdouts, homology checks and comparisons with external predictors remain separate study questions. Results and historical comparisons remain in the [experiment history](docs/mlp_experiment_history.md).

@@ -77,7 +77,7 @@ Una futura ejecución paralela puede repartir intervalos disjuntos de shards y r
 
 ## SecondaryBERT
 
-La auditoría previa verificó 1.819.032 estructuras únicas y 49.083.724 ventanas. Quedan 28.404 cadenas únicas pendientes. La siguiente generación de SecondaryBERT puede acotarse a esas claves exactas. La relación con ProtT5 y las etiquetas se resuelve por cada modalidad antes de considerar concatenación. [Auditoría de embeddings](../results/nap_cnb_v2_embedding_audit/embedding_audit_report.md)
+La auditoría inicial verificó 1.819.032 estructuras únicas y 49.083.724 ventanas. Quedaron entonces 28.404 claves pendientes. La [fase 3C cerrada](nap_cnb_v2_secondarybert.md) documenta su cobertura posterior. La relación con ProtT5 y las etiquetas se resuelve por cada modalidad antes de considerar concatenación. [Auditoría de embeddings](../results/nap_cnb_v2_embedding_audit/embedding_audit_report.md)
 
 [Informe del piloto](../results/nap_cnb_v2_prott5/pilot_report.md) · [Inventario y propuesta de organización](nap_cnb_v2_organizacion.md)
 

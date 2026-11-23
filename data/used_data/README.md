@@ -10,7 +10,7 @@ To verify an archive, run from this directory:
 sha256sum -c data_raw.tar.zst.sha256
 ```
 
-To restore a directory, run from the project root after confirming that the destination directory does not already exist:
+Verify the archive checksum first. Restore from the project root after confirming that the destination directory does not already exist. Extraction writes files directly; an error can leave a partial destination.
 
 ```bash
 tar --use-compress-program=zstd --keep-old-files -xf data/used_data/data_raw.tar.zst -C data

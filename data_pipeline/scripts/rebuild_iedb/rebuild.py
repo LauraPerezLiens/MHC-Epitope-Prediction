@@ -18,6 +18,7 @@ import subprocess
 import tarfile
 from threading import Lock, local
 import time
+import warnings
 
 from Bio.Align import PairwiseAligner
 import pyarrow as pa
@@ -1014,11 +1015,26 @@ def signature(path):
     return [str(path.resolve()), stat.st_size, stat.st_mtime_ns]
 
 
-def run(output, archive, fasta, prior, selection, old, structure_dir=None, local_caches=()):
+def input_content_hashes(manifest):
+    records = [manifest["archive"], *manifest["fasta"], *manifest.get("structure_inputs", {}).values()]
+    hashes = {}
+    for record in records:
+        path = Path(record[0])
+        checksum = hashlib.sha256()
+        with path.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                checksum.update(chunk)
+        if signature(path) != record:
+            raise ValueError(f"Input changed during content verification: {path}")
+        hashes[str(path)] = checksum.hexdigest()
+    return hashes
+
+
+def run(output, archive, fasta, prior, selection, old, structure_dir=None, local_caches=(),
+        *, verify_input_content=False):
     output = output.resolve()
-    protected = [archive.parent, fasta, old]
-    if prior:
-        protected.append(prior)
+    protected = [archive.parent, fasta, old, *local_caches]
+    protected.extend(path for path in (prior, structure_dir) if path is not None)
     if any(output.is_relative_to(path.resolve()) or path.resolve().is_relative_to(output) for path in protected):
         raise ValueError("Output must be separate from all input directories")
     scope = {family: None if urls is None else sorted(urls) for family, urls in selection.items()}
@@ -1033,13 +1049,22 @@ def run(output, archive, fasta, prior, selection, old, structure_dir=None, local
     output.mkdir(parents=True, exist_ok=True)
     with output_lock(output):
         cfg = output / "config.json"
-        if cfg.exists():
-            if json.loads(cfg.read_text()) != manifest:
-                raise ValueError("Inputs or scope changed. Use a new versioned output.")
-        else:
-            if set(output.iterdir()) - {output / ".run.lock", output / "config.json.partial"}:
-                raise ValueError("Use a new output directory.")
+        existing = json.loads(cfg.read_text()) if cfg.exists() else None
+        if existing is not None:
+            recorded_verification = "input_sha256" in existing
+            if recorded_verification != verify_input_content:
+                raise ValueError("Input content verification mode differs. Use the original mode or a new versioned output.")
+        elif set(output.iterdir()) - {output / ".run.lock", output / "config.json.partial"}:
+            raise ValueError("Use a new output directory.")
+        if verify_input_content:
+            manifest["input_sha256"] = input_content_hashes(manifest)
+        if existing is None:
             write_json(cfg, manifest)
+        elif existing != manifest:
+            raise ValueError("Inputs or scope changed. Use a new versioned output.")
+        elif not verify_input_content:
+            warnings.warn("Resuming with historical metadata signatures. Input content has not been verified.",
+                          RuntimeWarning, stacklevel=2)
         started = time.monotonic()
         (output / "checkpoints").mkdir(exist_ok=True)
         raw_stats = extract(archive, output, selection)
@@ -1051,6 +1076,8 @@ def run(output, archive, fasta, prior, selection, old, structure_dir=None, local
         for family in selection:
             validation[family] = reconcile_family(output, family, structures)
             print("RECONCILED", family, validation[family], flush=True)
+        if verify_input_content and input_content_hashes(manifest) != manifest["input_sha256"]:
+            raise ValueError("Input content changed during reconstruction")
         finalize(output, old, selection, family_stats, validation, raw_stats, started,
                  structural=structures is not None)
 
@@ -1085,6 +1112,8 @@ def main():
     parser.add_argument("--old", type=Path, default=ROOT / "data/global_epitope_labels")
     parser.add_argument("--structure-dir", type=Path)
     parser.add_argument("--curated-cache", type=Path, action="append", default=[])
+    parser.add_argument("--verify-input-content", action="store_true",
+                        help="Read and hash the archive, FASTA and structure inputs in full")
     scope = parser.add_mutually_exclusive_group(required=True)
     scope.add_argument("--pilot", type=Path)
     scope.add_argument("--full", action="store_true")
@@ -1096,7 +1125,8 @@ def main():
                      for family, urls in json.loads(args.pilot.read_text()).items()}
         if not selection or not set(selection).issubset(FAMILY_META) or any(not v for v in selection.values()):
             parser.error("The pilot needs at least one known family with non-empty parent selections.")
-    run(args.output, args.archive, args.fasta, args.prior, selection, args.old, args.structure_dir, args.curated_cache)
+    run(args.output, args.archive, args.fasta, args.prior, selection, args.old, args.structure_dir, args.curated_cache,
+        verify_input_content=args.verify_input_content)
 
 
 if __name__ == "__main__":

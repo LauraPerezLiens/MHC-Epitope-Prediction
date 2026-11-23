@@ -75,12 +75,14 @@ def ingest(db):
                 with db:
                     db.executemany("INSERT OR REPLACE INTO records VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",batch)
                 batch.clear()
+    expected = json.loads((DOWNLOAD / "summary.json").read_text())
+    expected_rows = sum(r.get("mhc_records", 0) + r.get("tcell_records", 0) for r in expected["families"])
     with db:
-        db.executemany("INSERT OR REPLACE INTO records VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",batch)
+        db.executemany("INSERT OR REPLACE INTO records VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", batch)
+        actual_rows = db.execute("SELECT COUNT(*) FROM records").fetchone()[0]
+        if actual_rows != expected_rows:
+            raise ValueError(f"Ingest row count mismatch: {actual_rows} != {expected_rows}")
         db.execute("INSERT INTO checkpoints VALUES ('ingested')")
-    expected=json.loads((DOWNLOAD/"summary.json").read_text())
-    assert db.execute("SELECT COUNT(*) FROM records").fetchone()[0] == sum(
-        r.get("mhc_records",0)+r.get("tcell_records",0) for r in expected["families"])
 
 
 def cache_records():

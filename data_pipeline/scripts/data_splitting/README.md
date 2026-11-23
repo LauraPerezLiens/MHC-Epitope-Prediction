@@ -1,8 +1,10 @@
-# Data splitting and metadata
+# Historical row splitting and metadata
 
 Assign TRAIN/VALIDATION/TEST rows, prepare compact metadata and validate the dataset. Run from the `lperez_nn/` root with `nap_env` activated.
 
-The current dataset already has validated splits, metadata and a fitted scaler. These instructions prepare a new dataset. Changing its split requires recalculating the corresponding scaler.
+The historical training tree already has validated splits, metadata and a fitted scaler. The commands below target a separate shuffled working tree. The split generator replaces an existing `master_split.csv` at the selected root. Regenerate the matching metadata and use a scaler fitted to the resulting TRAIN split.
+
+See the [D1 contract](../../docs/data_and_models.md#certified-d1-and-planned-d2) for exact-primary partitioning of originals.
 
 ## 1. Generate splits
 
@@ -29,7 +31,7 @@ python data_pipeline/scripts/data_splitting/check_master_split.py \
   --root data/data_input_nn_shuffled_new
 ```
 
-Checks integrity, split proportions and consistency between CSV and arrays. This operational validation was used on the current dataset.
+Checks split proportions and consistency between CSV and arrays. This operational validation was used on the historical dataset. Coverage of the input rows does not establish disjoint proteins or sequences.
 
 ## 4. Calculate the scaler or concatenate
 

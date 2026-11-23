@@ -1,9 +1,12 @@
+from contextlib import closing
 import csv
 import json
 from pathlib import Path
 import sqlite3
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -12,6 +15,55 @@ import pyarrow.parquet as pq
 
 from data_pipeline.scripts.source_audits import exact_embeddings as embedding
 from data_pipeline.scripts.source_audits import omitted_epitopes as epitope
+
+
+class DiagnosticPublicationTests(unittest.TestCase):
+    def test_count_mismatch_preserves_existing_csv(self):
+        from data_pipeline.scripts import find_label_contradictions as diagnostic
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "sources/human/mhc-I/HLA-A"
+            source.mkdir(parents=True)
+            (source / "classification_fixture.csv").write_text(
+                "25aa_seq,contains_epitope,group_id,protein_group_id,protein_url\n"
+                f"{'A' * 25},0,1,1,example.org/1\n"
+                f"{'A' * 25},1,2,1,example.org/1\n"
+            )
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({"sources": [{
+                "master_index": "human/mhc-I/HLA-A/store/master_index.csv",
+                "group_id_offset": 0, "id": 0,
+            }]}))
+            output = root / "reports"
+            output.mkdir()
+            previous = output / "contradictions.csv"
+            previous.write_text("previous report\n")
+            query = pd.read_sql_query
+
+            def omit_one(*args, **kwargs):
+                return query(*args, **kwargs).iloc[:0]
+
+            with patch.object(pd, "read_sql_query", side_effect=omit_one):
+                with self.assertRaisesRegex(ValueError, "Export count mismatch"):
+                    diagnostic.run(SimpleNamespace(sources=root / "sources", output=output,
+                                                   manifest=manifest, batch_rows=2))
+            self.assertEqual(previous.read_text(), "previous report\n")
+            self.assertFalse((output / "contradictions.csv.partial").exists())
+
+    def test_nonfinite_scaler_means_are_rejected(self):
+        from data_pipeline.scripts import measure_primary_mutations as diagnostic
+
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "reorder_manifest.json").write_text('{"sources": []}')
+            scaler = root / "scaler.npz"
+            args = SimpleNamespace(root=root, output=root / "reports", scaler=scaler, seed=42)
+            for value in (np.nan, np.inf, -np.inf):
+                with self.subTest(value=value):
+                    np.savez(scaler, primary_mean=np.full(1024, value), primary_scale=np.ones(1024))
+                    with self.assertRaisesRegex(ValueError, "Invalid Primary scaler"):
+                        diagnostic.run(args)
 
 
 class EpitopeAuditTests(unittest.TestCase):
@@ -149,6 +201,38 @@ class ExactEmbeddingAuditTests(unittest.TestCase):
             frame.loc[0, "protein_group_id"] = 9
             with self.assertRaisesRegex(ValueError, "provenance"):
                 embedding.compare_shuffle(db, observed, [(0, frame)], root, source, True)
+
+    def test_shuffle_comparison_rejects_invalid_destination_rows(self):
+        for row in (-1, 2):
+            with self.subTest(row=row), TemporaryDirectory() as folder:
+                root = Path(folder)
+                vectors = np.zeros((2, embedding.WIDTH), dtype=np.float32)
+                np.save(root / "chunk_000000_X.npy", vectors)
+                frame = pd.DataFrame([(0, row, 0, 0, 0, 1, 1, 5, 0)], columns=embedding.SHUFFLE_COLUMNS)
+                with closing(sqlite3.connect(":memory:")) as db:
+                    db.execute("""CREATE TABLE obs (id INTEGER PRIMARY KEY,sid INTEGER,gid INTEGER,
+                                  chunk INTEGER,slot INTEGER,protein INTEGER,original_label INTEGER)""")
+                    db.execute("INSERT INTO obs VALUES (0,0,1,0,0,5,0)")
+                    with self.assertRaisesRegex(ValueError, "Shuffled row out of range"):
+                        embedding.compare_shuffle(db, vectors, [(0, frame)], root,
+                                                  {"fixture": {"id": 0, "group_id_offset": 0}}, False)
+
+    def test_embedding_investigation_accepts_sample_without_distinct_cases(self):
+        from data_pipeline.scripts.source_audits import investigate_embedding_cases
+
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            dataset, sample, output = (root / name for name in ("dataset", "sample", "output"))
+            dataset.mkdir()
+            sample.mkdir()
+            (dataset / "config.json").write_text('{"sources": []}')
+            (sample / "sources.json").write_text("{}")
+            pq.write_table(pa.table({"original_seq": pa.array([], type=pa.string())}),
+                           sample / "proposed_provenance.parquet")
+            investigate_embedding_cases.run(dataset, sample, output)
+            self.assertEqual(json.loads((output / "summary.json").read_text())["cases"], [])
+            for filename in ("observations.csv", "pairwise.csv"):
+                self.assertEqual(len((output / filename).read_text().splitlines()), 1)
 
     def test_original_index_filters_blosum_variants(self):
         with TemporaryDirectory() as folder:

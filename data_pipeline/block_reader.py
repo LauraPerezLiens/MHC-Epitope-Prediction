@@ -4,6 +4,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 import hashlib
 import logging
+from math import prod
 from numbers import Integral
 import os
 from pathlib import Path
@@ -29,6 +30,10 @@ class RowRange:
     block_id: int
     offset: int
     count: int
+
+
+def _row_bytes(shape: tuple[int, ...], dtype: np.dtype) -> int:
+    return dtype.itemsize * prod(int(width) for width in shape[1:])
 
 
 class BlockReader:
@@ -88,9 +93,7 @@ class BlockReader:
                 raise ValueError("expected a C-order numeric array with a row axis")
             if shape != block.shape or dtype != np.dtype(block.dtype):
                 raise ValueError("shape or dtype differs from manifest")
-            row_bytes = dtype.itemsize
-            for size in shape[1:]:
-                row_bytes *= size
+            row_bytes = _row_bytes(shape, dtype)
             start = file.tell()
             if not row_bytes or os.fstat(file.fileno()).st_size != start + shape[0] * row_bytes:
                 raise ValueError("invalid row size or incomplete/inconsistent NPY payload")
@@ -112,7 +115,11 @@ class BlockReader:
         return block
 
     def _read(self, block: Block, offset: int, count: int) -> np.ndarray:
-        entry = self._files.pop(block.block_id, None)
+        entry = self._files.get(block.block_id)
+        row_bytes = entry[2] if entry is not None else _row_bytes(block.shape, np.dtype(block.dtype))
+        size = count * row_bytes
+        if size > self.max_bytes:
+            raise ValueError("range exceeds max_bytes; use batches")
         if entry is None:
             if self.max_open and len(self._files) == self.max_open:
                 _, (old_file, _, _) = self._files.popitem(last=False)
@@ -121,10 +128,8 @@ class BlockReader:
         file, start, row_bytes = entry
         if self.max_open:
             self._files[block.block_id] = entry
+            self._files.move_to_end(block.block_id)
         try:
-            size = count * row_bytes
-            if size > self.max_bytes:
-                raise ValueError("range exceeds max_bytes; use batches")
             file.seek(start + offset * row_bytes)
             payload = file.read(size)
             if len(payload) != size:
@@ -147,9 +152,7 @@ class BlockReader:
         for span in spans:
             try:
                 block = self._resolve(span)
-                row_bytes = np.dtype(block.dtype).itemsize
-                for width in block.shape[1:]:
-                    row_bytes *= width
+                row_bytes = _row_bytes(block.shape, np.dtype(block.dtype))
                 step = min(batch_rows, self.max_bytes // row_bytes) if row_bytes else 0
                 if step < 1:
                     raise ValueError("invalid row size for max_bytes")

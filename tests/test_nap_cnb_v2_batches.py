@@ -4,6 +4,7 @@ from contextlib import closing
 import hashlib
 import importlib
 import json
+import os
 from pathlib import Path
 import shutil
 import sqlite3
@@ -24,6 +25,95 @@ except ImportError:
 
 @unittest.skipIf(batches is None, "NumPy/PyArrow unavailable")
 class BatchTest(unittest.TestCase):
+    def test_standalone_secondary_reader_checks_archive_offsets(self):
+        if shutil.which("zstd") is None:
+            self.skipTest("Zstandard is unavailable")
+        arrays = {"full.npy": np.arange(2 * 768, dtype="<f4").reshape(2, 768),
+                  "empty.npy": np.empty((0, 768), dtype="<f4")}
+        for name, matrix in arrays.items():
+            path = self.root / name
+            np.save(path, matrix)
+            data = path.read_bytes()
+            Path(str(path) + ".zst").write_bytes(subprocess.check_output(["zstd", "-q", "-c", str(path)]))
+            Path(str(path) + ".archive.json").write_text(json.dumps(
+                dict(original_bytes=len(data), original_sha256=hashlib.sha256(data).hexdigest())))
+        with closing(sqlite3.connect(":memory:")) as db:
+            db.executescript("""
+                CREATE TABLE shard (id INTEGER PRIMARY KEY, path TEXT);
+                CREATE TABLE inventory (structure TEXT PRIMARY KEY, shard INTEGER, row_offset INTEGER);
+                CREATE TABLE embedding (structure TEXT PRIMARY KEY, vector BLOB, checksum BLOB);
+                INSERT INTO shard VALUES (1, 'full.npy'), (2, 'empty.npy'), (3, 'missing.npy');
+                INSERT INTO inventory VALUES ('valid', 1, 1), ('empty', 2, 0), ('missing', 3, 0),
+                    ('dangling', 4, 0);
+            """)
+            read = batches.read_secondary_embeddings
+            np.testing.assert_array_equal(read(db, ["valid", "valid"], root=self.root),
+                                          arrays["full.npy"][[1, 1]])
+            for offset in (-1, -3, 2, 5):
+                with self.subTest(offset=offset):
+                    db.execute("UPDATE inventory SET row_offset=? WHERE structure='valid'", (offset,))
+                    with self.assertRaisesRegex(ValueError, "Invalid historical row offset"):
+                        read(db, ["valid"], root=self.root)
+            with self.assertRaisesRegex(ValueError, "Invalid historical row offset"):
+                read(db, ["empty"], root=self.root)
+            with self.assertRaises(FileNotFoundError):
+                read(db, ["missing"], root=self.root)
+            with self.assertRaisesRegex(ValueError, "Missing SecondaryBERT shard"):
+                read(db, ["dangling"], root=self.root)
+
+    def test_cache_capacity_requires_integer(self):
+        for kwargs in ({"secondary_cache": 1.5}, {"primary_cache": 2.5},
+                       {"secondary_cache": True}):
+            with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, "Cache sizes"):
+                self.reader("global", **kwargs)
+
+    def test_secondary_cache_eviction_and_archive_corruption(self):
+        name = "sample.npy"
+        archive = self.root / f"{name}.zst"
+        receipt = self.root / f"{name}.archive.json"
+        compressed, metadata = archive.read_bytes(), receipt.read_bytes()
+
+        def copy_archive(other_name, value):
+            path = self.root / other_name
+            np.save(path, np.full((1, 768), value, dtype="<f4"))
+            raw = path.read_bytes()
+            path.with_suffix(".npy.zst").write_bytes(subprocess.check_output(["zstd", "-q", "-c", str(path)]))
+            path.with_suffix(".npy.archive.json").write_text(json.dumps(
+                {"original_bytes": len(raw), "original_sha256": hashlib.sha256(raw).hexdigest()}))
+
+        copy_archive("other.npy", 42)
+        with closing(sqlite3.connect(self.root / "secondary.sqlite")) as db, db:
+            db.execute("INSERT INTO shard VALUES(2, 'other.npy')")
+            db.execute("UPDATE inventory SET shard=2,row_offset=0 WHERE structure=?", (self.ss[1],))
+
+        with self.reader("global") as reader, patch.object(
+            reader, "historical_archive", wraps=reader.historical_archive
+        ) as load:
+            np.testing.assert_array_equal(reader.features(0, [0])[0, -768:], 10)
+            archive.write_bytes(compressed[:-1])
+            np.testing.assert_array_equal(reader.features(0, [0])[0, -768:], 10)
+            self.assertEqual(load.call_count, 1)
+            np.testing.assert_array_equal(reader.features(0, [1])[0, -768:], 42)
+            self.assertEqual(list(reader.secondary_cache), ["other.npy"])
+            for data, message in ((compressed[:-1], "length"), (b"?" * len(compressed), "length"),
+                                  ((self.root / "other.npy.zst").read_bytes(), "checksum")):
+                archive.write_bytes(data)
+                with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+                    reader.features(0, [0])
+                self.assertNotIn(name, reader.secondary_cache)
+            archive.write_bytes(compressed)
+            declared = json.loads(metadata)
+            for length in (declared["original_bytes"] + 1, declared["original_bytes"] - 1):
+                receipt.write_text(json.dumps({**declared, "original_bytes": length}))
+                with self.assertRaisesRegex(ValueError, "length"):
+                    reader.features(0, [0])
+            receipt.write_text(json.dumps({**declared, "original_bytes": True}))
+            with self.assertRaisesRegex(ValueError, "Invalid count"):
+                reader.features(0, [0])
+            receipt.write_bytes(metadata)
+            np.testing.assert_array_equal(reader.features(0, [0])[0, -768:], 10)
+            self.assertEqual(list(reader.secondary_cache), [name])
+
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
@@ -72,13 +162,24 @@ class BatchTest(unittest.TestCase):
                 data["base_id"] = [f"window-{i}" for i in range(6)]
             pq.write_table(pa.table(data), self.root / f"{label}.parquet")
 
-    def reader(self, label):
+    def test_reader_rejects_signed_negative_and_floating_split_codes(self):
+        path = self.root / "assign.parquet"
+        for values, dtype in (([-1, *self.split[1:]], pa.int8()), (self.split, pa.float64())):
+            with self.subTest(dtype=dtype):
+                pq.write_table(pa.table({
+                    "effective_group_id": self.keys, "split_id": pa.array(values, type=dtype),
+                }), path)
+                with self.assertRaisesRegex(ValueError, "uint8"):
+                    with self.reader("global"):
+                        pass
+
+    def reader(self, label, **options):
         contract = {"rows": 6, "path": f"{label}.parquet", "label": f"label_{label}",
                     "splits": {"path": "assign.parquet"},
                     "embeddings": {"ProtT5": {"manifest": "manifest.json", "inventory": "inventory.parquet"},
                                    "SecondaryBERT": {"index": "secondary.sqlite"}}}
         with patch.object(batches.cli, "original_training_data", return_value=contract):
-            return batches.OriginalBatches(self.root, label)
+            return batches.OriginalBatches(self.root, label, **options)
 
     def test_labels_keys_splits_order_and_partial_batch(self):
         for label, labels in (("original", self.base_y), ("global", self.global_y)):
@@ -96,6 +197,81 @@ class BatchTest(unittest.TestCase):
                 first = [b.identifiers for b in reader.batches(0, 1, shuffle_seed=42)]
                 self.assertEqual(first, [b.identifiers for b in reader.batches(0, 1, shuffle_seed=42)])
                 np.testing.assert_array_equal(reader.features(0, np.array([5, 0, 5])), self.expected[[5, 0, 5]])
+
+    def test_reader_rejects_non_int8_label_columns(self):
+        path = self.root / "global.parquet"
+        table = pq.read_table(path)
+        for dtype, values in ((pa.bool_(), [bool(v) for v in self.global_y]),
+                              (pa.float64(), self.global_y), (pa.int64(), self.global_y)):
+            with self.subTest(dtype=dtype):
+                pq.write_table(table.set_column(2, "label_global", pa.array(values, type=dtype)), path)
+                with self.reader("global") as reader:
+                    with self.assertRaisesRegex(ValueError, "int8"):
+                        reader.load_group(0)
+
+    def test_view_mutations_and_retained_batches(self):
+        path = self.root / "original.parquet"
+        table = pq.read_table(path)
+        changed = table.set_column(2, "label_original", pa.array([1, *self.base_y[1:]], type=pa.int8()))
+        changed = changed.set_column(3, "base_id", pa.array(["edited", *table["base_id"].to_pylist()[1:]]))
+        pq.write_table(changed.take([1, 0, 2, 3, 4, 0]), path, row_group_size=2)
+        with self.reader("original") as reader:
+            iterator = reader.batches(0, 1)
+            first = next(iterator)
+            remaining = list(iterator)
+            self.assertEqual([b.identifiers for b in [first, *remaining]],
+                             [("window-1",), ("edited",), ("edited",)])
+            np.testing.assert_array_equal(first.X, self.expected[[1]])
+            np.testing.assert_array_equal(remaining[-1].X, self.expected[[0]])
+            np.testing.assert_array_equal(remaining[-1].y, [1])
+            self.assertFalse(np.shares_memory(first.X, remaining[-1].X))
+            self.assertFalse(np.shares_memory(first.y, remaining[-1].y))
+        pq.write_table(table.slice(0, 5), path)
+        with self.assertRaisesRegex(ValueError, "row count"):
+            with self.reader("original"):
+                pass
+
+    def test_primary_cache_snapshot_and_mutations(self):
+        path = self.root / "shard-0000.npy"
+        original = np.load(path)
+        info = path.stat()
+        with self.reader("global") as reader:
+            np.testing.assert_array_equal(reader.features(0, [1]), self.expected[[1]])
+            mapped = np.load(path, mmap_mode="r+")
+            mapped[0, 0] = 999
+            mapped.flush()
+            del mapped
+            os.utime(path, ns=(info.st_atime_ns, info.st_mtime_ns))
+            self.assertEqual(reader.features(0, [1])[0, 0], 999)
+            replacement = path.with_name("replacement.npy")
+            np.save(replacement, original[[1, 0, 2]])
+            os.utime(replacement, ns=(info.st_atime_ns, info.st_mtime_ns))
+            replacement.replace(path)
+            self.assertEqual(path.stat().st_size, info.st_size)
+            self.assertNotEqual(path.stat().st_ino, info.st_ino)
+            self.assertEqual(reader.features(0, [1])[0, 0], 999)
+        with self.reader("global") as reader:
+            self.assertEqual(reader.features(0, [1])[0, 0], original[1, 0])
+            for positions in ([-1], [0.5], [True], [6]):
+                with self.subTest(positions=positions), self.assertRaisesRegex(ValueError, "positions"):
+                    reader.features(0, positions)
+        for value in (np.nan, np.inf):
+            matrix = original.copy()
+            matrix[0, 0] = value
+            np.save(path, matrix)
+            with self.reader("global") as reader:
+                with self.assertRaisesRegex(ValueError, "Nonfinite"):
+                    reader.features(0, [1])
+        for matrix, message, position in ((original[:, :-1], "dimension", 1),
+                                           (original[:1], "offset", 4)):
+            np.save(path, matrix)
+            with self.reader("global") as reader:
+                with self.assertRaisesRegex(ValueError, message):
+                    reader.features(0, [position])
+        path.write_bytes(path.read_bytes()[:-1])
+        with self.reader("global") as reader:
+            with self.assertRaisesRegex(ValueError, "size"):
+                reader.features(0, [1])
 
     def test_fit_only_train_and_transform_held_out(self):
         with self.reader("global") as reader:
@@ -164,6 +340,7 @@ class BatchTest(unittest.TestCase):
                 data[f"label_{label}"].append(0)
                 if label == "original":
                     data["base_id"].append(f"extra-{index}")
+            data[f"label_{label}"] = pa.array(data[f"label_{label}"], type=pa.int8())
             pq.write_table(pa.table(data), release.root / cli.VIEWS / filename)
             release.metrics["files_bytes"][filename] = (release.root / cli.VIEWS / filename).stat().st_size
         release.metrics["families"]["fixture"].update(base=8, removed=4, base_positive=3)
@@ -185,8 +362,48 @@ class BatchTest(unittest.TestCase):
         release.write(cli.D1, release.d1)
         return release
 
+    def test_v2_rejects_checkpoint_options_before_reading_source_or_state(self):
+        try:
+            import torch
+        except ImportError:
+            self.skipTest("PyTorch unavailable")
+        directory = str(Path(__file__).resolve().parents[1] / "neural_network/MLP")
+        sys.path.insert(0, directory)
+        try:
+            engine = importlib.import_module("neural_network.MLP.mlp_layernorm_shuffled_ladder100_dualeval")
+        finally:
+            sys.path.remove(directory)
+
+        output = self.root / "existing-output"
+        output.mkdir()
+        checkpoint = output / "checkpoint.pt"
+        with patch.object(torch, "load", side_effect=AssertionError("checkpoint opened")):
+            for content in (None, b"corrupt", {}):
+                if isinstance(content, bytes):
+                    checkpoint.write_bytes(content)
+                elif content is not None:
+                    torch.save(content, checkpoint)
+                for option in ("--resume", "--init-checkpoint"):
+                    for model, size in (("logistic", "2"), ("mlp", "4")):
+                        with self.subTest(content=content, option=option, model=model, batch_size=size):
+                            args = engine.parse_args([option, str(checkpoint), "--model-type", model,
+                                                      "--batch-size", size, "--output-dir", str(output)])
+                            with self.assertRaisesRegex(ValueError, "v2 expects a new run"):
+                                engine.main(args, data_source=object())
+
+            class Source:
+                def training_contract(self):
+                    return {"sampling": "exact_50_50", "model": "logistic", "seed": 42}
+
+            args = engine.parse_args(["--model-type", "logistic", "--output-dir", str(output)])
+            previous = checkpoint.read_bytes()
+            cpu = (False, 0, 0, 1, torch.device("cpu"))
+            with patch.object(engine, "distributed_setup", return_value=cpu):
+                with self.assertRaises(FileExistsError):
+                    engine.main(args, data_source=Source())
+            self.assertEqual(checkpoint.read_bytes(), previous)
+
     def test_balanced_v2_engine_end_to_end_without_patching_readers(self):
-        import os
         try:
             import torch
         except ImportError:

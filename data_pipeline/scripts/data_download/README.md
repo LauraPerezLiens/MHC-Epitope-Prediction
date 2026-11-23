@@ -14,7 +14,7 @@ The merge extracts the canonical peptide sequence, discards entries missing epit
 
 ## Run
 
-From the project root:
+The historical downloader writes CSV files directly at the default destination. A repeat run can replace existing files, and an interruption during writing can leave a partial CSV. From the project root:
 
 ```bash
 python data_pipeline/scripts/data_download/build_iedb_dataset.py

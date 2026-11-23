@@ -117,6 +117,15 @@ class TrainingPlanTest(unittest.TestCase):
         self.write(config, {"schema_version": 1, "scaler": "unsafe substitution"})
         self.assertEqual(self.request("lr", "original", "global", "--config", config)["overall"], "INCOMPATIBLE")
 
+    def test_configuration_rejects_non_integer_schema_version(self):
+        config = Path("experiment.json")
+        for version in (True, 1.0):
+            with self.subTest(version=version):
+                self.write(config, {"schema_version": version})
+                report = self.request("lr", "blosum62", "global", "--config", config)
+                self.assertEqual([error["message"] for error in report["errors"]],
+                                 ["Training configuration requires schema_version 1"])
+
     def test_planning_without_dry_run_cannot_call_a_subprocess_or_create_output(self):
         args = SimpleNamespace(model="lr", data="blosum62", label="global", config=None,
                                dry_run=False, output=Path("new-trial"))

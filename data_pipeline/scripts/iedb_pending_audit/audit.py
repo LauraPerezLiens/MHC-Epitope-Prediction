@@ -198,7 +198,7 @@ def extend_references(groups, refs, cache):
 
 
 def exact(sequence, peptide, a, b):
-    return isinstance(a,int) and isinstance(b,int) and 1<=a<=b<=len(sequence) and sequence[a-1:b]==peptide
+    return type(a) is int and type(b) is int and 1<=a<=b<=len(sequence) and sequence[a-1:b]==peptide
 
 
 def borrowed_key(e):

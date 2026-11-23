@@ -1,4 +1,4 @@
-# Data processing steps
+# Historical data processing steps
 
 Run documented commands from the `lperez_nn/` root. Use `nap_env` except for ProteinUnet prediction, which uses `proteinunet_env`; see [environment setup](../../env/README.md).
 
@@ -17,7 +17,9 @@ Run documented commands from the `lperez_nn/` root. Use `nap_env` except for Pro
 
 Steps 3 and 4 are complementary branches. SecondaryBERT has its own pretraining workflow. The classifier scaler and launchers are in `../../neural_network/MLP/`. The MLP loader reads concatenated chunks directly; original sources can be archived after verified conversion.
 
-Shuffling, splits, metadata and scaling are already complete for the current dataset. Do not repeat them on data used by an active process.
+Shuffling, splits, metadata and scaling are already complete for the historical training tree. The split generator can replace an existing `master_split.csv`, and metadata regeneration can replace arrays. Archive mode removes originals after verification. Use these preparation commands on separate working trees.
+
+For certified D1, use the [data contract](../docs/data_and_models.md#certified-d1-and-planned-d2). D1 uses original observations and groups global labels and splits by exact primary sequence. D2 remains planned. The diagnostics below target historical artifacts. Their reports are written to the configured output directories.
 
 ## Sequence label contradictions
 
@@ -32,7 +34,7 @@ source/family/species, protein accession, local and global group IDs, source row
 index and label counts), `summary.json`, and the resumable `index.sqlite`.
 Local `protein_group_id` and `group_id` must be interpreted together with
 `source_file`; `global_group_id` uses the shuffle manifest. Rerun the same command
-to resume counting; export is rebuilt atomically. Inputs and batch size must stay
+to resume counting; the CSV and JSON are each replaced atomically. Inputs and batch size must stay
 unchanged when resuming. Use `--output` for a separate run.
 
 ## Group split overlap and sampled modalities
@@ -59,8 +61,8 @@ provenance. Secondary is compared with original per-group values. Outputs are
 `results/sampled_modalities_check/sampled_modalities.csv` (sample locations,
 local/global group, protein group, references and differences) and `summary.json`.
 The sample can be enlarged using `--groups-per-source` and changed with `--seed`.
-Both checks are read-only with respect to datasets, use writer locks, and can
-write to a different directory using `--output`.
+Both checks read datasets and use writer locks for their reports. Existing
+reports at the chosen output can be replaced. Use `--output` for separate reports.
 
 ## Primary embedding sensitivity to single substitutions
 

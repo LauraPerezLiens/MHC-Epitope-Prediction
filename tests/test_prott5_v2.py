@@ -2,6 +2,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import pyarrow as pa
@@ -45,6 +46,47 @@ class ProtT5StoreTest(unittest.TestCase):
                     second.verify()
             finally:
                 second.close()
+
+    def test_secondary_validator_rejects_fractional_manifest_addresses(self):
+        from data_pipeline.scripts.embeddings.secondary_structure import check_secondary_embeddings as check
+        with TemporaryDirectory() as tmp:
+            manifest = Path(tmp) / "chunks_manifest.csv"
+            manifest.write_text("chunk_id,start,end,n_rows\n0.5,0,2,2\n")
+            with self.assertRaisesRegex(ValueError, "integer"):
+                check.load_manifest(manifest)
+
+    def test_missing_shard_with_committed_receipt_is_rejected(self):
+        keys = pa.chunked_array([["A" * 25]])
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            store = Store(root, keys, range(1), {"batch_size": 1})
+            try:
+                store.generate(StubEncoder(), 0)
+                (root / "shard-0000.npy").unlink()
+                with self.assertRaisesRegex(ValueError, "Missing shard"):
+                    store.verify()
+            finally:
+                store.close()
+
+    def test_historical_generator_refuses_to_overwrite_existing_index(self):
+        from data_pipeline.scripts.embeddings.primary_structure import generate_prott5_embeddings as historical
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            input_root = root / "inputs"
+            input_root.mkdir()
+            source = input_root / "fixture.csv"
+            source.write_text("blosum_seq,contains_epitope,epitope_pos_score,group_id,protein_group_id\n")
+            output_root = root / "outputs"
+            destination = output_root / "fixture_ProtT5_chunks"
+            destination.mkdir(parents=True)
+            index = destination / "master_index.csv"
+            index.write_text("previous index\n")
+            (destination / "chunk_000000_X.npy").touch()
+            with patch.object(historical, "DATA_INTERMEDIATE", input_root), \
+                    patch.object(historical, "DATA_INPUT_NN", output_root):
+                with self.assertRaises(FileExistsError):
+                    historical.process_csv_in_chunks(source, None, None, None)
+            self.assertEqual(index.read_text(), "previous index\n")
 
     def test_explicit_transform_does_not_define_original_identity(self):
         self.assertEqual(input_sequence("U" + "A" * 24), input_sequence("X" + "A" * 24))

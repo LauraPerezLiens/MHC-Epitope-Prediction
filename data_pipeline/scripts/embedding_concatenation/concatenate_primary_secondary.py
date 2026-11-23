@@ -10,6 +10,7 @@ with a matching completion marker; interrupted chunks are regenerated.
 import argparse
 import hashlib
 import fcntl
+from itertools import repeat, zip_longest
 import json
 import os
 import shutil
@@ -586,6 +587,28 @@ def process_fast_job(job):
     return primary, False, n, time.monotonic()-started
 
 
+def source_metadata_rows(master, split_master, read_rows):
+    """Align physical chunks with an independent split CSV when available."""
+    source = iter_physical_chunks(master, read_rows)
+    if split_master is None:
+        pairs = zip(source, repeat(None))
+    else:
+        pairs = zip_longest(source, iter_physical_chunks(split_master, read_rows))
+    columns = ["row_idx_in_chunk", "group_id", "y"]
+    for original, assigned in pairs:
+        if original is None or (split_master is not None and assigned is None):
+            raise ValueError("Source index and split index differ in chunk count")
+        cid, frame = original
+        if not np.array_equal(frame["row_idx_in_chunk"], np.arange(len(frame))):
+            raise ValueError(f"{master}, chunk {cid}: invalid row order")
+        if assigned is not None:
+            split_cid, split_frame = assigned
+            if cid != split_cid or not np.array_equal(frame[columns], split_frame[columns]):
+                raise ValueError(f"{master}, chunk {cid}: source index and split index disagree")
+            frame = split_frame
+        yield cid, frame
+
+
 def run_fast(args):
     """Bounded CPU/I/O concurrency and verified archival overlapped with conversion."""
     import time
@@ -671,28 +694,38 @@ def run_fast(args):
                 metadata_target = target / 'chunk_metadata'
                 metadata_target.mkdir(parents=True, exist_ok=True)
                 source_meta = master.parent / 'chunk_metadata'
-                gids_files = sorted(source_meta.glob('chunk_*_group_id.npy'))
-                if not gids_files:
+                prepared = set(source_meta.glob('chunk_*_group_id.npy'))
+                if not prepared:
                     raise FileNotFoundError(f'No prepared metadata: {source_meta}')
-                for gid_path in gids_files:
-                    cid = int(gid_path.name.split('_')[1])
+                split_master = master.with_name('master_split.csv')
+                if not split_master.is_file():
+                    split_master = None
+                split_signature = input_signature([split_master]) if split_master else None
+                for cid, source_rows in source_metadata_rows(master, split_master, args.block_rows):
                     if cid < args.start_chunk:
                         continue
                     if args.max_chunks is not None and scheduled >= args.max_chunks:
                         break
+                    gid_path = source_meta / f'chunk_{cid:06d}_group_id.npy'
+                    if gid_path not in prepared:
+                        raise ValueError(f'Missing prepared metadata for source index chunk {cid}')
+                    prepared.remove(gid_path)
                     gids = np.load(gid_path)
                     if gids.ndim != 1 or gids.dtype.kind not in 'iu' or np.any(gids < 0):
                         raise ValueError(f'Invalid group IDs: {gid_path}')
                     metadata_digests = {}
                     for suffix in ('y', 'group_id', 'split_id'):
                         name = f'chunk_{cid:06d}_{suffix}.npy'
-                        a = np.load(source_meta / name, mmap_mode='r')
+                        a = gids if suffix == 'group_id' else np.load(source_meta / name, mmap_mode='r')
                         if a.shape != (len(gids),):
                             raise ValueError(f'Inconsistent metadata: {name}')
                         if suffix == 'y' and not np.isin(a, [0, 1]).all():
                             raise ValueError('Invalid labels')
                         if suffix == 'split_id' and not np.isin(a, [0, 1, 2]).all():
                             raise ValueError('Invalid split IDs')
+                        if suffix != 'split_id' or split_master is not None:
+                            if not np.array_equal(a, source_rows[suffix].to_numpy()):
+                                raise ValueError(f'{name} differs from source index')
                         metadata_digests[suffix] = copy_verified(source_meta / name, metadata_target / name)
                     primary = master.parent / f'chunk_{cid:06d}_X.npy'
                     output = target / primary.name
@@ -701,9 +734,12 @@ def run_fast(args):
                     scheduled += 1
                     if len(pending) >= args.workers:
                         finish_job(pending.popleft(), archive_pool)
+                if prepared and args.max_chunks is None and args.start_chunk == 0:
+                    raise ValueError(f"Unexpected prepared metadata outside the source index: {source_meta}")
                 while pending:
                     finish_job(pending.popleft(), archive_pool)
-                if input_signature(dependencies) != signature_inputs:
+                if (input_signature(dependencies) != signature_inputs
+                        or (split_master is not None and input_signature([split_master]) != split_signature)):
                     raise ValueError('Inputs changed during conversion')
             while archives:
                 archives.popleft().result()

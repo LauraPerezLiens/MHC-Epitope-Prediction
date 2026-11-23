@@ -21,6 +21,8 @@ Key properties
 - Scientific model configuration is unchanged from the previous script.
 """
 
+from __future__ import annotations
+
 import argparse
 import hashlib
 import json
@@ -30,7 +32,7 @@ import os
 import random
 import threading
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import psutil
 import pyarrow as pa
@@ -40,12 +42,9 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import AdamW
 from torch.utils.data import DataLoader, IterableDataset, get_worker_info
-from transformers import (
-    BertConfig,
-    BertForMaskedLM,
-    BertTokenizer,
-    get_linear_schedule_with_warmup,
-)
+if TYPE_CHECKING:
+    from transformers import BertForMaskedLM, BertTokenizer
+
 
 try:
     import pynvml
@@ -238,6 +237,8 @@ def parse_args() -> argparse.Namespace:
 # =====================================================================
 
 def build_tokenizer(vocab_file: Path) -> BertTokenizer:
+    from transformers import BertTokenizer
+
     tokenizer = BertTokenizer(
         vocab=str(vocab_file),
         do_lower_case=False,
@@ -995,6 +996,8 @@ def sanity_check_stream(
 # =====================================================================
 
 def build_model() -> BertForMaskedLM:
+    from transformers import BertConfig, BertForMaskedLM
+
     config = BertConfig(
         vocab_size=VOCAB_SIZE,
         hidden_size=HIDDEN_SIZE,
@@ -1023,7 +1026,18 @@ def move_batch(
     }
 
 
+def require_masked_training_tokens(labels: torch.Tensor) -> None:
+    """Fail every rank before forward if any rank would have undefined mean loss."""
+    has_tokens = labels.ne(-100).any().to(dtype=torch.int32)
+    if dist.is_initialized():
+        dist.all_reduce(has_tokens, op=dist.ReduceOp.MIN)
+    if not has_tokens.item():
+        raise RuntimeError("Training batch has no masked tokens on at least one rank")
+
+
 def main() -> None:
+    from transformers import BertTokenizer, get_linear_schedule_with_warmup
+
     args = parse_args()
     rank, local_rank, world_size, device = init_distributed()
     setup_logging(rank)
@@ -1283,6 +1297,7 @@ def main() -> None:
                         ) from exc
 
                 batch = move_batch(batch, device)
+                require_masked_training_tokens(batch["labels"])
 
                 optimizer.zero_grad(set_to_none=True)
 

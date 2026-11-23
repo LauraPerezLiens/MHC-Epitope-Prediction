@@ -1,6 +1,9 @@
 import fcntl
 import json
+import os
 import shutil
+import subprocess
+import sys
 import unittest
 from unittest import mock
 import numpy as np
@@ -17,9 +20,80 @@ class ConcatenationTests(PipelineCase):
         copied = output.parent / 'chunk_metadata/chunk_000000_y.npy'
         np.testing.assert_array_equal(np.load(copied), self.y)
 
+    def test_fast_concatenation_preserves_rows_across_block_sizes_and_memory_order(self):
+        primary = self.x.copy(order="F")
+        np.save(self.input_x, primary)
+        store = dataset.SecondaryBERTStore(self.secondary)
+        for block_rows in (1, 4, 10):
+            with self.subTest(block_rows=block_rows):
+                output = self.temp / f"joined-{block_rows}.npy"
+                concat.concatenate_chunk_fast(self.input_x, self.groups, store, output, block_rows, lambda _: None)
+                combined = np.load(output)
+                self.assertEqual(combined.shape, (6, 1792))
+                self.assertEqual(combined.dtype, np.dtype("<f4"))
+                np.testing.assert_array_equal(combined[:, :1024], primary)
+                np.testing.assert_array_equal(combined[:, 1024:], self.ss[[1, 0, 1, 2, 0, 2]])
+
+    def test_primary_vectors_follow_positions_when_only_payload_rows_are_swapped(self):
+        primary = self.x.copy()
+        primary[[0, 1]] = primary[[1, 0]]
+        np.save(self.input_x, primary)
+        output = self.convert()
+        combined = np.load(output)
+        np.testing.assert_array_equal(combined[:, :1024], primary)
+        np.testing.assert_array_equal(combined[:, 1024:], self.expected[:, 1024:])
+        np.testing.assert_array_equal(np.load(output.parent / "chunk_metadata/chunk_000000_y.npy"), self.y)
+        concat.verify_completed_output(self.output)
+
+    def test_swapped_group_metadata_cannot_swap_secondary_vectors(self):
+        gids = self.groups.copy()
+        gids[[0, 1]] = gids[[1, 0]]
+        np.save(self.metadata / 'chunk_000000_group_id.npy', gids)
+        with self.assertRaisesRegex(ValueError, 'group_id.*source index'):
+            self.convert()
+        self.assertFalse(list(self.output.rglob('chunk_*_X.npy')))
+
+    def test_swapped_labels_and_split_codes_are_rejected(self):
+        master = self.primary / 'master_index.csv'
+        lines = master.read_text().splitlines()
+        split_csv = master.with_name('master_split.csv')
+        split_csv.write_text(lines[0] + ',split_id\n' + ''.join(
+            f'{line},{code}\n' for line, code in zip(lines[1:], self.split, strict=True)))
+        for name, original, positions in (
+            ('y', self.y, [0, 1]), ('split_id', self.split, [0, 4]),
+        ):
+            with self.subTest(field=name):
+                changed = original.copy()
+                changed[positions] = changed[positions[::-1]]
+                path = self.metadata / f'chunk_000000_{name}.npy'
+                np.save(path, changed)
+                with self.assertRaisesRegex(ValueError, f'{name}.*source index'):
+                    self.convert()
+                self.assertFalse(list(self.output.rglob('chunk_*_X.npy')))
+                np.save(path, original)
+
+    def test_nonfinite_features_are_rejected_in_either_modality(self):
+        for path, original, invalid in (
+            (self.input_x, self.x, np.nan),
+            (self.secondary / 'ss.npy', self.ss, np.inf),
+        ):
+            with self.subTest(path=path):
+                modified = original.copy()
+                modified[0, 0] = invalid
+                np.save(path, modified)
+                with self.assertRaisesRegex(ValueError, 'Nonfinite'):
+                    self.convert()
+                self.assertFalse(list(self.output.rglob('chunk_*_X.npy')))
+                np.save(path, original)
+
     def test_missing_group_does_not_publish_output(self):
         gids = self.groups.copy(); gids[0] = 99
         np.save(self.metadata / 'chunk_000000_group_id.npy', gids)
+        master = self.primary / 'master_index.csv'
+        header, row, tail = master.read_text().split("\n", 2)
+        fields = row.split(",")
+        fields[header.split(",").index("group_id")] = "99"
+        master.write_text(f"{header}\n{','.join(fields)}\n{tail}")
         with self.assertRaisesRegex(KeyError, 'absent'):
             self.convert()
         self.assertFalse((self.output / 'feature_layout.json').exists())
@@ -191,7 +265,6 @@ class ConcatenationTests(PipelineCase):
         self.assertEqual(len(hashed), 3)  # Every metadata array is still hashed.
 
     def test_full_mode_detects_same_size_corruption_with_preserved_mtime(self):
-        import os
         output = self.convert()
         stat = output.stat()
         values = np.load(output, mmap_mode='r+')
@@ -205,8 +278,6 @@ class ConcatenationTests(PipelineCase):
             concat.verify_completed_output(self.output)
 
     def test_verify_only_cli_is_read_only_and_does_not_require_sources(self):
-        import subprocess
-        import sys
         self.convert()
         for path in self.metadata.glob('*.npy'):
             path.unlink()
@@ -218,8 +289,6 @@ class ConcatenationTests(PipelineCase):
         self.assertEqual(before, {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()})
 
     def test_verify_only_rejects_archival_before_any_write(self):
-        import subprocess
-        import sys
         result = subprocess.run([sys.executable, concat.__file__, '--verify-only',
                                  '--output', str(self.output), '--archive-sources'],
                                 capture_output=True, text=True)
@@ -228,8 +297,6 @@ class ConcatenationTests(PipelineCase):
         self.assertFalse(self.output.exists())
 
     def test_verify_only_respects_an_active_writer(self):
-        import subprocess
-        import sys
         self.convert()
         with (self.output / '.writer.lock').open('rb') as owner:
             fcntl.flock(owner, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -248,8 +315,6 @@ class ConcatenationTests(PipelineCase):
             concat.verify_completed_output(self.output, full=False)
 
     def test_verify_only_corruption_returns_a_clear_error_without_writes(self):
-        import subprocess
-        import sys
         output = self.convert()
         values = np.load(output, mmap_mode='r+')
         values[0, 0] += 1
@@ -264,7 +329,6 @@ class ConcatenationTests(PipelineCase):
         self.assertEqual(before, {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()})
 
     def test_verify_only_without_lock_refuses_before_payload_reads(self):
-        import sys
         self.convert()
         (self.output / '.writer.lock').unlink()
         before = {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()}
@@ -278,8 +342,6 @@ class ConcatenationTests(PipelineCase):
         self.assertEqual(before, {p: p.read_bytes() for p in self.output.rglob('*') if p.is_file()})
 
     def test_missing_lock_cannot_bypass_a_new_incompatible_writer(self):
-        import subprocess
-        import sys
         self.convert()
         lock_path = self.output / '.writer.lock'
         lock_path.unlink()

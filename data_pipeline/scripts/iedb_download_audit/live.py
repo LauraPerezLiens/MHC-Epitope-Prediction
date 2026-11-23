@@ -59,6 +59,8 @@ def check_pages(fetch, total, page_size):
     while len(output) < total:
         offset = len(output)
         page, span = fetch(offset, page_size)
+        if not isinstance(page, list) or any(not isinstance(row, dict) for row in page):
+            raise ValueError(f"Expected a list of JSON records at offset {offset}")
         match = re.fullmatch(r"(\d+)-(\d+)/(\d+|\*)", span)
         if not page or not match or (int(match[1]), int(match[2])) != (offset, offset + len(page) - 1):
             raise ValueError(f"Unexpected pagination at {offset}: {span!r} ({len(page)} rows)")

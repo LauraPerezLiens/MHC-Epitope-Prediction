@@ -13,7 +13,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from split_data import split_counts, validate_ratios
+if __package__:
+    from .split_data import split_counts, validate_ratios
+else:
+    from split_data import split_counts, validate_ratios
 
 REQUIRED = ['chunk_id', 'row_idx_in_chunk', 'y', 'group_id']
 

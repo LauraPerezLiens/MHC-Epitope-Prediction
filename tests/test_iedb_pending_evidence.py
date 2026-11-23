@@ -1,6 +1,6 @@
 import unittest
 
-from data_pipeline.scripts.iedb_pending_audit.audit import event_key, verify_group
+from data_pipeline.scripts.iedb_pending_audit.audit import event_key, exact, verify_group
 from data_pipeline.scripts.rebuild_iedb.rebuild import Reference
 
 
@@ -46,6 +46,12 @@ class PendingEvidenceTests(unittest.TestCase):
         result=self.verify()
         self.assertEqual(result["state"],"incompatible_parent_reference")
         self.assertFalse(result["corrected"])
+
+    def test_boolean_coordinates_are_not_one_based_positions(self):
+        self.assertTrue(exact("ACD", "A", 1, 1))
+        for start, end in ((True, 1), (1, True), (True, True)):
+            with self.subTest(start=start, end=end):
+                self.assertFalse(exact("ACD", "A", start, end))
 
     def test_event_keys_scope_family_and_preserve_versions(self):
         original=event_key(self.row)

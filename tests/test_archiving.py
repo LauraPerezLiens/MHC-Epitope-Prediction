@@ -1,3 +1,4 @@
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -67,6 +68,39 @@ class ArchivingTests(unittest.TestCase):
                 archive.archive_file(self.original)
         self.assertEqual(self.original.read_bytes(), self.content + b'changed')
         self.assertFalse(self.target.exists())
+
+    def test_same_size_source_change_after_receipt_preserves_original(self):
+        write_receipt = archive.atomic_json
+        before = self.original.stat()
+        modified = b'x' * len(self.content)
+
+        def change_source(path, record):
+            write_receipt(path, record)
+            self.original.write_bytes(modified)
+            os.utime(self.original, ns=(before.st_atime_ns, before.st_mtime_ns))
+
+        with mock.patch.object(archive, 'atomic_json', side_effect=change_source):
+            with self.assertRaisesRegex(ValueError, 'Original changed before removal'):
+                archive.archive_file(self.original)
+        self.assertEqual(self.original.read_bytes(), modified)
+        self.assertTrue(self.target.is_file())
+        with self.assertRaisesRegex(ValueError, 'Existing archive differs from original'):
+            archive.archive_file(self.original)
+        self.assertEqual(self.original.read_bytes(), modified)
+
+    def test_archive_replaced_after_receipt_preserves_original(self):
+        write_receipt = archive.atomic_json
+
+        def replace_archive(path, record):
+            write_receipt(path, record)
+            replacement = self.root / "replacement"
+            replacement.write_bytes(b"not a recoverable archive")
+            replacement.replace(self.target)
+
+        with mock.patch.object(archive, "atomic_json", side_effect=replace_archive):
+            with self.assertRaisesRegex(ValueError, "Archive changed before removal"):
+                archive.archive_file(self.original)
+        self.assertEqual(self.original.read_bytes(), self.content)
 
     def test_corrupt_archive_is_rejected_when_original_is_present(self):
         self.target.write_bytes(b'not a zstd archive')

@@ -197,7 +197,8 @@ def write_report(output, summary, families, totals):
                 n(c["positive_final"]), n(c["negative_final"]),
                 f"{percent(p,w)} → {percent(c['positive_final'],w-exc)}"]
         lines.append("| " + " | ".join(line) + " |")
-    ranked = sorted(families, key=lambda f: families[f].get("excluded_positive", 0) / families[f]["positive_windows"],
+    eligible = (family for family, counts in families.items() if counts["positive_windows"] > 0)
+    ranked = sorted(eligible, key=lambda f: families[f].get("excluded_positive", 0) / families[f]["positive_windows"],
                     reverse=True)
     lines += ["", "Las mayores pérdidas relativas de positivos fueron las de estas tres familias.", ""]
     for family in ranked[:3]:

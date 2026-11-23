@@ -142,6 +142,15 @@ class SpecializedValidationTest(unittest.TestCase):
         (self.root / cli.PRIMARY / "manifest.json").unlink()
         self.outcome("prott5", "FAIL")
 
+    def test_prott5_receipt_coverage_does_not_rehash_vectors(self):
+        self.primary()
+        shard = self.root / cli.PRIMARY / "shard-0000.npy"
+        original = shard.read_bytes()
+        shard.write_bytes(original[:-8] + b"\0\0\x80\x3f" * 2)
+        self.assertEqual(self.outcome("prott5", "PASS")["sqlite_receipts"], 2)
+        self.sqlite(cli.PRIMARY / "progress.sqlite", "DELETE FROM batches WHERE start=2;")
+        self.outcome("prott5", "FAIL")
+
     def test_prott5_invalid_inventory_schema(self):
         inventory = self.primary()
         self.footer(inventory, ("not_sequence", {}), 3)
@@ -160,8 +169,11 @@ class SpecializedValidationTest(unittest.TestCase):
         self.outcome("secondarybert", "FAIL")
 
     def test_secondarybert_dimension_counts_and_new_reference(self):
-        _, _, report = self.secondary(create_embedding=False)
+        _, index, _ = self.secondary(create_embedding=False)
         self.outcome("secondarybert", "FAIL")
+        (self.root / index).unlink()
+        _, _, report = self.secondary()
+        self.outcome("secondarybert", "PASS")
         template = (self.root / report).read_text()
         for old, new in (("2 valores", "3 valores"), ("**2 estructuras", "**3 estructuras")):
             self.write(report, template.replace(old, new))

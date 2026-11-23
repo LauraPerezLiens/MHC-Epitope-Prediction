@@ -184,9 +184,9 @@ def process_master_split(
     dtypes = {
         "chunk_id": np.int32,
         "row_idx_in_chunk": np.int32,
-        "y": np.uint8,
+        "y": np.int64,
         "group_id": np.int64,
-        "split_id": np.uint8,
+        "split_id": np.int64,
     }
 
     pending_chunk_id = None

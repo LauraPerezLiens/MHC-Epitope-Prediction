@@ -39,7 +39,7 @@ python data_pipeline/scripts/secondaryBERT/build_secondary_mlm_dataset.py   --da
 
 Prediction CSVs contain `id`, `protein_id`, `sequence` and `secondary_structure`; skipped CSVs contain `protein_id`, `reason` and `details`. The audit distinguishes `non_standard_residues`, `missing_output_csv` and `missing_unknown_reason`.
 
-The builder writes `all_cleaned.parquet`, `train.parquet`, `val.parquet`, `test.parquet` and `vocab.txt`. Splits default to 80/10/10 with seed 42; validation size is a fraction of the full cleaned dataset. Recorded source-protein counts are 18,374,944 TRAIN, 2,296,868 validation and 2,296,869 TEST (22,968,681 total).
+The builder requires a new output directory and publishes the staged dataset after writing all files. It writes `all_cleaned.parquet`, `train.parquet`, `val.parquet`, `test.parquet` and `vocab.txt`. Splits are assigned by row. They default to 80/10/10 with seed 42; validation size is a fraction of the full cleaned dataset. Recorded source-protein counts are 18,374,944 TRAIN, 2,296,868 validation and 2,296,869 TEST (22,968,681 total).
 
 ## 2. Train the model
 

@@ -107,7 +107,7 @@ class Component:
 def selection(component):
     data = component.load(SELECTION)
     totals = data["totals"]
-    require(data["schema_version"] == 1 and data["join_key"] == "window_id", "Unsupported selection schema")
+    require(count(data["schema_version"]) == 1 and data["join_key"] == "window_id", "Unsupported selection schema")
     retained = count(totals["windows"]) - count(totals["excluded"])
     component.record_counts(retained, totals["positive_final"], totals["negative_final"])
     require(retained == count(totals["matched"]) + count(totals["recovered"]), "Structural totals disagree")
@@ -260,7 +260,7 @@ def splits(component):
 
 def d1(component):
     data = component.load(D1)
-    require(data["schema_version"] == 1 and data["id"] == "D1" and data["path_base"] == "repository_root",
+    require(count(data["schema_version"]) == 1 and data["id"] == "D1" and data["path_base"] == "repository_root",
             "Unsupported D1 manifest")
     dataset, split, embeds = data["dataset"], data["splits"], data["embeddings"]
     require(dataset["key"] == ["sequence", "secondary_structure"] and dataset["label"] == "label_global"
@@ -481,6 +481,7 @@ def read_footer(component, path):
     if info.st_size < 12:
         raise ValueError(f"Truncated Parquet file: {path}")
     with (component.root / path).open("rb") as stream:
+        require(stream.read(4) == b"PAR1", f"Invalid Parquet header: {path}")
         stream.seek(-8, 2)
         trailer = stream.read(8)
         require(len(trailer) == 8 and trailer[4:] == b"PAR1", f"Invalid Parquet trailer: {path}")
@@ -502,7 +503,9 @@ def read_footer(component, path):
         schema = metadata.schema.to_arrow_schema()
     except (pa.ArrowException, OSError) as error:
         raise ValueError(f"Invalid Parquet footer: {path}: {error}") from error
-    return info.st_size, metadata.num_rows, {field.name: str(field.type) for field in schema}
+    columns = {field.name: str(field.type) for field in schema}
+    require(len(columns) == len(schema), f"Duplicate Parquet column names: {path}")
+    return info.st_size, metadata.num_rows, columns
 
 
 def footer_contract(component, path, schema, declared_rows, declared_size):
@@ -935,10 +938,12 @@ def training_profile(component, args):
     import math
 
     profiles = component.load(TRAIN_PROFILES)
-    require(profiles["schema_version"] == 1, "Unsupported training profile schema")
+    require(count(profiles["schema_version"]) == 1, "Unsupported training profile schema")
     config = component.load(args.config) if args.config else {}
     require(set(config) <= {"schema_version", "profile", "parameters"}, "Unknown training configuration field")
-    require(not args.config or config.get("schema_version") == 1, "Training configuration requires schema_version 1")
+    version = config.get("schema_version")
+    require(not args.config or (type(version) is int and version == 1),
+            "Training configuration requires schema_version 1")
     name = config.get("profile", "lr_balanced" if args.model == "lr" else "mlp_historical")
     require(isinstance(name, str) and name in profiles["profiles"],
             "Unknown or unsupported training profile; v2 requires exact 50/50 TRAIN balance")

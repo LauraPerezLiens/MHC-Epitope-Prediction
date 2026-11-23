@@ -280,7 +280,11 @@ def run(root, output):
             raise ValueError("Recovery totals disagree with the gap inventory")
         if before != [signature(path) for path in watched]:
             raise ValueError("An original input changed during recovery")
-        write_tsv(staged / "proteins.tsv", proteins, list(proteins[0]))
+        protein_fields = [
+            "parent_accession", "parent_version", "parent_sha256", "length", "parent_urls",
+            "parent_providers", "original_statuses", "windows_by_family", "binary_windows", "recovery_status",
+        ]
+        write_tsv(staged / "proteins.tsv", proteins, protein_fields)
         source_fields = [
             "parent_accession", "parent_version", "parent_sha256", "recovery_status", "organism",
             "source_file", "source_record", "source_url", "source_accession", "source_version",

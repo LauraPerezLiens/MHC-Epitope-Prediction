@@ -103,6 +103,10 @@ def load_manifest(path):
             f"Manifest missing columns: {sorted(missing)}"
         )
 
+    for name in required:
+        if df[name].dtype.kind not in "iu" or (df[name] < 0).any():
+            raise ValueError(f"Manifest {name} must contain nonnegative integers")
+
     return (
         df
         .sort_values("chunk_id")

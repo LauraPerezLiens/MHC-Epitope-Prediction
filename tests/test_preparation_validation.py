@@ -23,6 +23,30 @@ class PreparationValidationTests(PipelineCase):
             scaler = fit_sequential(preparation.discover_datasets(self.root), block_rows=2, work_dir=self.temp)
         scaler.save(self.scaler)
 
+    def test_scalers_use_only_train_rows_and_preserve_secondary_multiplicity(self):
+        primary = self.x.copy()
+        primary[:, 0] = 7
+        primary[4:] = np.nan
+        np.save(self.input_x, primary)
+        datasets = preparation.discover_datasets(self.root)
+        for scaler in (
+            fit_sequential(datasets, block_rows=2, work_dir=self.temp),
+            preparation.ModalityStandardizer.load(self.existing_scaler_path(datasets)),
+        ):
+            secondary = self.ss[[1, 0, 1, 2]]
+            np.testing.assert_allclose(scaler.primary_mean, primary[:4].mean(axis=0), rtol=1e-6)
+            np.testing.assert_allclose(scaler.primary_scale[1:], primary[:4, 1:].std(axis=0), rtol=1e-6)
+            self.assertEqual(scaler.primary_scale[0], 1)
+            np.testing.assert_allclose(scaler.secondary_mean, secondary.mean(axis=0), rtol=1e-6)
+            np.testing.assert_allclose(scaler.secondary_scale, secondary.std(axis=0), rtol=1e-6)
+
+    def existing_scaler_path(self, datasets):
+        from neural_network.MLP.dataset import fit_primary_secondary_standardizer
+
+        scaler = fit_primary_secondary_standardizer(datasets, n_train_chunks=1, stats_batch_size=2)
+        scaler.save(self.scaler)
+        return self.scaler
+
     def test_existing_scaler_skips_full_csv_comparison(self):
         self.existing_scaler()
         with mock.patch.object(preparation, 'validate_dataset') as exhaustive:

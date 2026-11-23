@@ -5,7 +5,6 @@ import pyarrow.parquet as pq
 import torch
 import torch.distributed as dist
 from torch.utils.data import IterableDataset, DataLoader
-from transformers import BertForMaskedLM, BertTokenizer
 
 WINDOW_SIZE=25; MAX_WINDOWS=3
 STATE_TO_ID={'C':5,'H':6,'E':7}; BIO_IDS=(5,6,7)
@@ -118,6 +117,8 @@ def embedding_sanity(model,dev):
  return {'patterns':pats,'cosine_similarity_matrix':sim.cpu().tolist(),'max_pairwise_absolute_difference':dif,'all_embeddings_identical':dif<1e-7}
 
 def main():
+ from transformers import BertForMaskedLM, BertTokenizer
+
  a=args(); rank,world,dev=init_dist(); val=a.dataset_dir/'val.parquet'; out=a.output_json or a.model_dir/'validation_metrics.json'
  tok=BertTokenizer.from_pretrained(a.model_dir); obs=tok('C H E C',add_special_tokens=True)['input_ids']
  if obs!=[2,5,6,7,5,3]:raise RuntimeError(f'Bad tokenizer: {obs}')
@@ -142,11 +143,15 @@ def main():
      for j,q in enumerate(BIO_IDS):cm[i,j]+=((y==t)&(p==q)).sum()
    if rank==0 and step%a.logging_steps==0:logging.info('batch %d | local windows %d',step,int(seen.item()))
  for x in (loss_sum,n,correct,seen,unk,cm,pred_nonbio,truec,predc):red(x)
+ if n.item() == 0:
+  if dist.is_initialized():
+   dist.destroy_process_group()
+  raise RuntimeError("Validation has no masked tokens; metrics are undefined")
  if rank==0:
-  loss=loss_sum.item()/max(n.item(),1); per={}
+  loss=loss_sum.item()/n.item(); per={}
   for i,s in enumerate('CHE'):
    tp=cm[i,i].item();fp=predc[i].item()-tp;fn=truec[i].item()-tp;pr=tp/(tp+fp) if tp+fp else 0;rc=tp/(tp+fn) if tp+fn else 0;f1=2*pr*rc/(pr+rc) if pr+rc else 0;per[s]={'support':truec[i].item(),'precision':pr,'recall':rc,'f1':f1}
-  res={'validation_proteins':proteins,'expected_windows':expected,'evaluated_windows':seen.item(),'masked_tokens':n.item(),'mlm_loss':loss,'perplexity':math.exp(loss),'masked_token_accuracy':correct.item()/max(n.item(),1),'macro_f1_CHE':sum(v['f1'] for v in per.values())/3,'per_class':per,'confusion_matrix_rows_true_cols_pred_CHE':cm.cpu().tolist(),'predicted_non_CHE_tokens':pred_nonbio.item(),'original_UNK_tokens':unk.item(),'embedding_sanity':embedding_sanity(model,dev)}
+  res={'validation_proteins':proteins,'expected_windows':expected,'evaluated_windows':seen.item(),'masked_tokens':n.item(),'mlm_loss':loss,'perplexity':math.exp(loss),'masked_token_accuracy':correct.item()/n.item(),'macro_f1_CHE':sum(v['f1'] for v in per.values())/3,'per_class':per,'confusion_matrix_rows_true_cols_pred_CHE':cm.cpu().tolist(),'predicted_non_CHE_tokens':pred_nonbio.item(),'original_UNK_tokens':unk.item(),'embedding_sanity':embedding_sanity(model,dev)}
   if seen.item()!=expected:raise RuntimeError(f'Coverage mismatch {seen.item()} != {expected}')
   if unk.item()!=0:raise RuntimeError(f'Found {unk.item()} original UNK tokens')
   out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(res,indent=2))

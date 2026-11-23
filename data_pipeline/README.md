@@ -1,6 +1,6 @@
 # Data pipeline
 
-Prepare IEDB epitope datasets and protein representations for the [MLP classifier](../neural_network/MLP/README.md).
+The diagram describes the historical data flow for the [MLP classifier](../neural_network/MLP/README.md).
 
 ```text
 IEDB positive MHC / T-cell assays (human and mouse)
@@ -50,4 +50,6 @@ Datasets and weights are excluded from Git. Archived inputs must be restored bef
 - Positive windows fully contain a recorded positive epitope. Other windows are labeled negative, but are not experimentally verified negatives.
 - BLOSUM variants inherit the original label and structural features; mutant structures are not predicted independently.
 - IDs are local to each species/class/family dataset. Join branches by dataset and identifiers, not row order. A window containing several epitopes can produce several labeled examples.
-- The current MLP split is by row and allows shared groups and proteins across splits. It does not measure generalization to unseen proteins.
+- The historical MLP split is by row and allows shared groups and proteins across splits. It does not measure generalization to unseen proteins.
+
+The [certified D1 contract](docs/data_and_models.md#certified-d1-and-planned-d2) describes original observations, exact-primary partitioning and separate embedding catalogs. D2 augmentation remains planned.

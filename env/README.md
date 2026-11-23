@@ -24,7 +24,7 @@ Validated locally with the saved ProteinUnet model: both prediction scripts prod
 
 ## CPU tests and CI
 
-`requirements-ci.txt` is a small independent test environment: NumPy/Pandas for arrays and metadata, Biopython for BLOSUM62, SciPy/scikit-learn for metrics, and Ruff for focused correctness checks. CPU PyTorch is installed separately from its official wheel index. TensorFlow, Transformers, CUDA runtimes and pretrained models are not required by this test suite.
+`requirements-ci.txt` is a small independent test environment: NumPy, Pandas and PyArrow for arrays, metadata and Parquet, Biopython for BLOSUM62, SciPy/scikit-learn for metrics, and Ruff for focused correctness checks. CPU PyTorch is installed separately from its official wheel index. TensorFlow, Transformers, CUDA runtimes and pretrained models are not required by this test suite.
 
 From the project root on Linux with Python 3.10 and the `zstd` executable available:
 

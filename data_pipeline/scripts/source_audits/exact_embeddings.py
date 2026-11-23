@@ -222,6 +222,9 @@ def compare_shuffle(db, vectors, frames, combined_root, sources, expected_full):
         combined = np.load(combined_root / f"chunk_{number:06d}_X.npy", mmap_mode="r", allow_pickle=False)
         if combined.ndim != 2 or combined.shape[1] != WIDTH or combined.dtype != np.float32:
             raise ValueError(f"Unexpected concatenated feature schema: {number}.")
+        for _, row, *_ in selected:
+            if not isinstance(row, (int, np.integer)) or isinstance(row, bool) or not 0 <= row < len(combined):
+                raise ValueError(f"Shuffled row out of range or noninteger: {number}:{row}.")
         with db:
             db.executemany("INSERT INTO seen VALUES (?)", ((idx,) for idx, *_ in selected))
         for idx, row, sid, chunk, slot in selected:

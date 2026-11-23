@@ -98,3 +98,23 @@ class PreparationLauncherTests(PipelineCase):
         self.assertIn('Missing existing metadata for feature directory', result.stderr)
         self.assertFalse(self.scaler.exists())
         self.assertEqual(before, self.snapshot())
+
+
+class LogisticLauncherTests(PipelineCase):
+    def test_output_override_keeps_log_with_run_and_propagates_exit_status(self):
+        stub = self.temp / "python stub"
+        stub.write_text("#!/usr/bin/env bash\nprintf '%s\\n' '$fixture'\nexit 23\n")
+        stub.chmod(0o755)
+        default = self.temp / "default output"
+        script = PROJECT / "neural_network/logistic_regression/run.sh"
+        for args in (["--output", str(self.temp / "separate output")],
+                     [f"--out={self.temp / 'equals output'}"]):
+            with self.subTest(args=args):
+                output = self.temp / ("separate output" if len(args) == 2 else "equals output")
+                result = subprocess.run(["bash", str(script), *args], capture_output=True, text=True,
+                                        env={**os.environ, "PYTHON": str(stub), "RESULTS": str(default)},
+                                        timeout=10)
+                self.assertEqual(result.returncode, 23)
+                self.assertTrue((output / "run.log").is_file())
+                self.assertIn("$fixture", (output / "run.log").read_text())
+                self.assertFalse(default.exists())

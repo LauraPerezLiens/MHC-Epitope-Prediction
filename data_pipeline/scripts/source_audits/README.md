@@ -4,14 +4,14 @@ Ejecutar desde la raíz del repositorio con `nap_env`. Ambas herramientas leen e
 
 ## Epítopos potencialmente omitidos
 
-Extraer los eventos positivos y las dos tablas de FASTA de los archivos locales a una carpeta separada. Si ya existe la carpeta de evidencia de la muestra, se puede reutilizar directamente.
+Extraer los eventos positivos y las dos tablas de FASTA de los archivos locales a una carpeta separada. Si ya existe una carpeta de evidencia completa, se puede reutilizar y omitir la extracción. Una extracción interrumpida puede dejar archivos parciales.
 
 ```bash
 stage="$PWD/results/source_audits_inputs_20261118"
-mkdir -p "$stage"
-tar -I zstd -xf data/used_data/data_raw.tar.zst -C "$stage" \
+mkdir "$stage"
+tar --keep-old-files -I zstd -xf data/used_data/data_raw.tar.zst -C "$stage" \
   --wildcards 'data_raw/*/merged_unique_events.csv'
-tar -I zstd -xf data/used_data/data_intermediate.tar.zst -C "$stage" \
+tar --keep-old-files -I zstd -xf data/used_data/data_intermediate.tar.zst -C "$stage" \
   --occurrence data_intermediate/human_parent_protein_fasta.csv \
   data_intermediate/mouse_parent_protein_fasta.csv
 ```

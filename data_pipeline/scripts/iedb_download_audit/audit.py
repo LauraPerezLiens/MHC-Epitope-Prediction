@@ -12,6 +12,7 @@ from pathlib import Path
 import re
 import subprocess
 import tarfile
+from tempfile import TemporaryDirectory
 
 from data_pipeline.scripts.data_download.build_iedb_dataset import canonical_epitope, get_value
 from data_pipeline.scripts.global_epitope_labels.build import FAMILIES, ROOT, write_json
@@ -128,7 +129,19 @@ def windows(interval_start, length, protein_length):
 
 
 def audit(archive, output, fasta):
-    output.mkdir(parents=True, exist_ok=False)
+    if output.exists() or output.is_symlink():
+        raise FileExistsError(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with TemporaryDirectory(prefix=".iedb-audit-", dir=output.parent) as temporary:
+        staged = Path(temporary) / "report"
+        staged.mkdir()
+        _audit(archive, staged, fasta)
+        if output.exists() or output.is_symlink():
+            raise FileExistsError(output)
+        staged.rename(output)
+
+
+def _audit(archive, output, fasta):
     csv.field_size_limit(16 * 1024 * 1024)
     proteins = {}
     for org in SPECIES:
@@ -154,6 +167,10 @@ def audit(archive, output, fasta):
     missing_windows = defaultdict(set)
     legacy_windows = defaultdict(set)
     mtime = archive.stat().st_mtime_ns
+    expected_members = set(MEMBERS) | {
+        f"data_raw/{org}/{mhc}/{fam}/merged_unique_events.csv" for org, mhc, fam in FAMILIES
+    }
+    seen_members = set()
     with ExitStack() as stack:
         writers = {}
         for name in ("added_events", "removed_events", "modified_events", "discarded_records",
@@ -164,8 +181,11 @@ def audit(archive, output, fasta):
         proc = stack.enter_context(subprocess.Popen(["zstd", "-qdc", str(archive)], stdout=subprocess.PIPE))
         with tarfile.open(fileobj=proc.stdout, mode="r|", bufsize=1024*1024) as tar:
             for member in tar:
-                if not member.isfile():
+                if member.name not in expected_members:
                     continue
+                if not member.isfile() or member.name in seen_members:
+                    raise ValueError(f"Invalid or duplicate archive member: {member.name}")
+                seen_members.add(member.name)
                 entry = MEMBERS.get(member.name)
                 if not entry:
                     if member.name.endswith("/merged_unique_events.csv"):
@@ -287,6 +307,9 @@ def audit(archive, output, fasta):
         while proc.stdout.read(1024*1024): pass
         if proc.wait():
             raise RuntimeError("Archive integrity check failed")
+    missing = expected_members - seen_members
+    if missing:
+        raise ValueError(f"Missing archive members: {', '.join(sorted(missing))}")
     if archive.stat().st_mtime_ns != mtime:
         raise ValueError("Archive changed during the comparison")
     table = []

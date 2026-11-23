@@ -49,6 +49,65 @@ def cached(cache, key, limit, load):
     return cache[key]
 
 
+def _load_secondary_archive(root, name):
+    path = root / name
+    receipt = cli.Component(root, path).load(Path(str(path) + ".archive.json"))
+    length = cli.count(receipt["original_bytes"])
+    cli.require(0 < length <= MAX_ARCHIVE_BYTES, f"Historical archive exceeds decode limit: {path}")
+    with subprocess.Popen(["zstd", "-dc", str(path) + ".zst"], stdout=subprocess.PIPE) as process:
+        try:
+            raw = process.stdout.read(length + 1)
+            cli.require(len(raw) == length and process.wait() == 0, f"Invalid archive length: {path}")
+        finally:
+            if process.poll() is None:
+                process.kill()
+    cli.require(hashlib.sha256(raw).hexdigest() == receipt["original_sha256"], f"Archive checksum mismatch: {path}")
+    matrix = np.load(io.BytesIO(raw), allow_pickle=False)
+    cli.require(matrix.ndim == 2 and matrix.shape[1] == historical.SECONDARY_DIM and matrix.dtype == "<f4",
+                f"Invalid historical matrix: {path}")
+    return matrix
+
+def _fill_secondary_vectors(db, keys, target, load_archive):
+    placements = defaultdict(list)
+    archives = defaultdict(list)
+    for position, key in enumerate(keys):
+        placements[key].append(position)
+    unique = tuple(placements)
+    for start in range(0, len(unique), 500):
+        chunk = unique[start:start + 500]
+        placeholders = ",".join("?" for _ in chunk)
+        rows = db.execute(f"""
+            SELECT i.structure,i.shard,s.path,i.row_offset,e.vector,e.checksum FROM inventory i
+            LEFT JOIN shard s ON i.shard=s.id LEFT JOIN embedding e ON i.structure=e.structure
+            WHERE i.structure IN ({placeholders})
+        """, chunk).fetchall()
+        cli.require(len(rows) == len(chunk), "Missing SecondaryBERT key")
+        for key, shard, path, offset, value, checksum in rows:
+            if shard is not None:
+                cli.require(path is not None, f"Missing SecondaryBERT shard for {key}")
+                archives[path].append((placements[key], offset))
+            else:
+                cli.require(value is not None and len(value) == historical.SECONDARY_DIM * 4 and
+                            hashlib.sha256(key.encode("ascii") + value).digest() == checksum,
+                            f"Invalid new SecondaryBERT vector: {key}")
+                target[placements[key]] = np.frombuffer(value, dtype="<f4")
+    for path, requests in archives.items():
+        matrix = load_archive(path)
+        for positions, offset in requests:
+            cli.require(type(offset) is int and 0 <= offset < len(matrix), "Invalid historical row offset")
+            target[positions] = matrix[offset]
+
+
+
+def read_secondary_embeddings(db, keys, *, root=cli.ROOT):
+    """Retrieve exact keys in order, checking archived row bounds and vector integrity."""
+    keys = tuple(keys)
+    result = np.empty((len(keys), historical.SECONDARY_DIM), dtype=np.float32)
+    _fill_secondary_vectors(db, keys, result, lambda name: _load_secondary_archive(Path(root), name))
+    cli.require(np.isfinite(result).all(), "Nonfinite SecondaryBERT features")
+    return result
+
+
 @dataclass(frozen=True)
 class Batch:
     identifiers: tuple
@@ -64,7 +123,9 @@ class OriginalBatches:
 
     def __init__(self, root, label, primary_cache=2, secondary_cache=1):
         cli.require(label in ("original", "global"), "Unknown label contract")
-        cli.require(1 <= primary_cache <= 16 and 1 <= secondary_cache <= 4, "Cache sizes out of bounds")
+        cli.require(type(primary_cache) is int and 1 <= primary_cache <= 16
+                    and type(secondary_cache) is int and 1 <= secondary_cache <= 4,
+                    "Cache sizes must be integers within bounds")
         self.root = Path(root)
         self.label = label
         component = cli.Component(self.root, cli.D1)
@@ -88,6 +149,7 @@ class OriginalBatches:
             cli.require(np.array_equal(exact_keys(assignments["effective_group_id"]), self.keys),
                         "Split manifest primary keys disagree with inventory")
             split_codes = assignments["split_id"].combine_chunks()
+            cli.require(pa.types.is_uint8(split_codes.type), "Split assignments must have uint8 type")
             cli.require(split_codes.null_count == 0, "Null split assignment")
             self.splits = split_codes.to_numpy()
             cli.require(np.all(self.splits <= historical.TEST), "Invalid split code")
@@ -125,7 +187,9 @@ class OriginalBatches:
             cli.require(all(rows[name].null_count == 0 for name in columns), "Null observation metadata")
             keys = exact_keys(rows["sequence"])
             indices = locate(self.keys, keys)
-            labels = rows[self.contract["label"]].combine_chunks().to_numpy()
+            label_column = rows[self.contract["label"]]
+            cli.require(pa.types.is_int8(label_column.type), "Observation labels must have int8 type")
+            labels = label_column.combine_chunks().to_numpy()
             cli.require(np.all((labels == 0) | (labels == 1)), "Nonbinary label")
             meta = {"y": labels, "split_id": self.splits[indices], "group_id": self.ordinals[indices].astype(np.int64)}
             self.current = index, rows, meta
@@ -139,51 +203,13 @@ class OriginalBatches:
         return matrix
 
     def historical_archive(self, name):
-        path = self.root / name
-        receipt = cli.Component(self.root, path).load(Path(str(path) + ".archive.json"))
-        length = cli.count(receipt["original_bytes"])
-        cli.require(0 < length <= MAX_ARCHIVE_BYTES, f"Historical archive exceeds decode limit: {path}")
-        with subprocess.Popen(["zstd", "-dc", str(path) + ".zst"], stdout=subprocess.PIPE) as process:
-            try:
-                raw = process.stdout.read(length + 1)
-                cli.require(len(raw) == length and process.wait() == 0, f"Invalid archive length: {path}")
-            finally:
-                if process.poll() is None:
-                    process.kill()
-        cli.require(hashlib.sha256(raw).hexdigest() == receipt["original_sha256"], f"Archive checksum mismatch: {path}")
-        matrix = np.load(io.BytesIO(raw), allow_pickle=False)
-        cli.require(matrix.ndim == 2 and matrix.shape[1] == historical.SECONDARY_DIM and matrix.dtype == "<f4",
-                    f"Invalid historical matrix: {path}")
-        return matrix
+        return _load_secondary_archive(self.root, name)
 
     def secondary_vectors(self, keys, target):
-        placements = defaultdict(list)
-        archives = defaultdict(list)
-        for position, key in enumerate(keys):
-            placements[key].append(position)
-        unique = tuple(placements)
-        for start in range(0, len(unique), 500):
-            chunk = unique[start:start + 500]
-            placeholders = ",".join("?" for _ in chunk)
-            rows = self.db.execute(f"""
-                SELECT i.structure,s.path,i.row_offset,e.vector,e.checksum FROM inventory i
-                LEFT JOIN shard s ON i.shard=s.id LEFT JOIN embedding e ON i.structure=e.structure
-                WHERE i.structure IN ({placeholders})
-            """, chunk).fetchall()
-            cli.require(len(rows) == len(chunk), "Missing SecondaryBERT key")
-            for key, path, offset, value, checksum in rows:
-                if path is not None:
-                    archives[path].append((placements[key], offset))
-                else:
-                    cli.require(value is not None and len(value) == historical.SECONDARY_DIM * 4 and
-                                hashlib.sha256(key.encode("ascii") + value).digest() == checksum,
-                                f"Invalid new SecondaryBERT vector: {key}")
-                    target[placements[key]] = np.frombuffer(value, dtype="<f4")
-        for path, requests in archives.items():
-            matrix = cached(self.secondary_cache, path, self.secondary_limit, self.historical_archive)
-            for positions, offset in requests:
-                cli.require(type(offset) is int and 0 <= offset < len(matrix), "Invalid historical row offset")
-                target[positions] = matrix[offset]
+        def load_archive(path):
+            return cached(self.secondary_cache, path, self.secondary_limit, self.historical_archive)
+
+        _fill_secondary_vectors(self.db, keys, target, load_archive)
 
     def features(self, index, positions):
         rows, meta = self.load_group(index)

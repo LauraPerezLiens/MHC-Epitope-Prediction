@@ -26,6 +26,10 @@ Preparation-cost regressions ensure that existing-scaler checks skip full CSV pa
 
 The CPU model test performs two optimizer steps across an actual temporary checkpoint. It restores model, optimizer, scheduler and CPU RNG state and compares the resumed step with an uninterrupted step. It does not use production checkpoints or change checkpoint-selection policy.
 
+## Reconstruction and structural recovery
+
+Reconstruction tests compare each synthetic window with its expected coordinates, sequence and label. Structural recovery tests inject a failure before the final directory rename and verify that a fresh invocation can publish after staging is cleaned up. The sparse-window fixture checks each row against its reference and verifies the expected count. The gap inventory records counts by protein, so substituting a different valid position in the source can preserve every check.
+
 ## CI and local reproduction
 
 The [CPU workflow](../.github/workflows/cpu-checks.yml) installs a small independent environment and runs syntax checks, focused Ruff correctness rules, the unit suite and the synthetic example. See [environment setup](../env/README.md#cpu-tests-and-ci) for the exact local commands. GitHub-hosted execution is only confirmed after the workflow has actually run there.

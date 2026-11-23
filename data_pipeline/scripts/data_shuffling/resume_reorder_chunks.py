@@ -103,11 +103,17 @@ def restore_checkpoint(primary, checkpoint):
     master = primary / 'master_index.csv'
     if master.stat().st_size < checkpoint['csv_bytes']:
         raise ValueError('CSV shorter than durable checkpoint')
+    embeddings = list(primary.glob('chunk_*_X.npy'))
+    present = {path.name for path in embeddings if path.is_file()}
+    for chunk_id in range(checkpoint['chunks']):
+        name = f'chunk_{chunk_id:06d}_X.npy'
+        if name not in present:
+            raise ValueError(f'Missing committed embedding: {name}')
     with master.open('r+b') as handle:
         handle.truncate(checkpoint['csv_bytes'])
         handle.flush()
         os.fsync(handle.fileno())
-    for path in primary.glob('chunk_*_X.npy'):
+    for path in embeddings:
         if int(path.stem.split('_')[1]) >= checkpoint['chunks']:
             print(f'REMOVE uncommitted embedding {path.name}', flush=True)
             path.unlink()
