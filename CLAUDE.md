@@ -99,6 +99,7 @@ Certificar la procedencia de los datos IEDB del pipeline, que §3 y §21 dejan s
 | Artefacto | Ruta | Nota |
 |---|---|---|
 | Script de descarga del pipeline | `data_pipeline/scripts/data_download/build_iedb_dataset.py` | **Ya revisado.** Paginaba por `offset` **sin `order`**, lo que en PostgREST no garantiza orden estable entre páginas → riesgo de filas perdidas y duplicadas. Causa de la re-descarga. |
+| **Script de descarga definitivo** | `data_pipeline/scripts/data_download/build_iedb_dataset_v2.py` | **Escrito el 24 nov; sustituye a `build_iedb_dataset.py`.** Ver §0.6.7. |
 | Scripts de esta verificación | `data_pipeline/scripts/iedb_verification_20261124/` | Copiados del scratchpad al repo el 24 nov para que no se pierdan. |
 | Snapshot histórico extraído | `data/used_data/data_raw.tar.zst` (3,2 GB al extraer) | Se extrajo al scratchpad; **re-extraíble**, no hace falta conservarlo. |
 | Re-descarga nueva | `data/data_raw_20261124/` + `manifest.json` | En curso (ver 0.6.4). |
@@ -241,7 +242,42 @@ El pipeline colapsa **276 alelos en 11 etiquetas de familia**. Esto cuantifica �
 
 **Paginación histórica:** `limit` fijo con `offset = página × limit` y **sin `order`** (`build_iedb_dataset.py:149-175`). Frágil por diseño, aunque de hecho no dañó los datos (hallazgo A bis). La re-descarga lo sustituye por keyset sobre `assay_id`.
 
-**Pendiente de certificar todavía:** la *release* concreta de IEDB de cada descarga. El manifiesto nuevo registra la fecha UTC, pero no la versión de la base.
+**Sobre la *release* de IEDB: no se puede certificar, porque IEDB no la publica.** Comprobado el 24 nov recorriendo los 39 endpoints del swagger de `query-api.iedb.org`: no existe ninguno de versión, release ni metadatos (el `"version": "14.3"` del swagger es la versión de **PostgREST**, no de la base). Sustituto adoptado: **huella de contenido por consulta** en el manifiesto — número de filas, `min`/`max assay_id`, `assay_id` distintos, alelos distintos, SHA-256 y tamaño del CSV. Con eso dos descargas son comparables bit a bit aunque IEDB no diga en qué versión está.
+
+**J. El filtro `ilike.*Positive*` nos ha estado privando de negativos experimentales reales, y son muchos.** Medido sobre H2-L con el perfil `full` del script nuevo (sin filtro cualitativo y sin filtro de organismo fuente):
+
+| | `mhc_export` | `tcell_export` |
+|---|---:|---:|
+| Perfil `legacy` (lo que alimentó D1) | 44 | 114 |
+| Perfil `full` | **534** | **1.488** |
+| De ellas, `Negative` explícitas | **210 (39,3 %)** | **518 (34,8 %)** |
+| `Positive` + variantes High/Low/Intermediate | 324 | 970 |
+| Organismos fuente distintos | 69 | 84 |
+
+Es decir: para H2-L había **728 ensayos negativos experimentales en IEDB** que el pipeline nunca vio. §4.3 trataba la tarea como positive-unlabeled por necesidad; **en buena medida no era necesario**. Esto no elimina el carácter PU del problema (las ventanas sin anotación siguen siendo unlabeled), pero permite un conjunto de negativos *medidos* con el que calibrar, y acerca el diseño al de Wert2021, que construía negativos explícitos.
+
+> Ojo al interpretar el 12× de H2-L: se debe a los negativos **y** a los epítopos de patógeno a la vez. No es comparable sin desglosar, y H2-L es la familia más pequeña; no extrapolar el factor a HLA-A.
+
+**K. El filtro de organismo fuente también descarta las filas sin organismo anotado.** En H2-L `mhc` perfil `full`, 169 de 534 filas (31,7 %) tienen `epitope__source_organism` vacío. `ilike.*Mus musculus*` las elimina en silencio junto con las de patógeno. Hay que decidir explícitamente qué se hace con las no anotadas.
+
+**L. La etiqueta de alelo es, en su mayoría, inferida — no medida.** Censo de `mhc_restriction__evidence_code`, que `build_iedb_dataset.py` nunca consultó:
+
+| Código de evidencia | H2-K | HLA-A |
+|---|---:|---:|
+| Elución con anticuerpo específico de MHC | **84.020 (95,9 %)** | 130.665 (23,0 %) |
+| Inferido estadísticamente por motivo o alelos presentes | 2.583 | **242.842 (42,7 %)** |
+| **Un solo alelo presente** (atribución directa) | **627 (0,7 %)** | 173.688 (30,5 %) |
+| Sin código | 363 | 6.239 |
+
+En H2-K, **solo el 0,7 % de las filas tiene el alelo atribuido de forma directa**; el 95,9 % lo tiene atribuido por el anticuerpo usado en la elución (Y-3, SF1-1.1.1…), que no distingue entre alelos de la misma familia. En HLA-A, el 42,7 % es inferencia por motivo — es decir, **la etiqueta de alelo procede de un predictor, no de un experimento**, con el riesgo de circularidad que eso implica para entrenar sobre ella. Es una limitación que debe declararse y, probablemente, un criterio de filtrado o de ponderación.
+
+**M. No hay afinidad cuantitativa aprovechable.** `assay__quantitative_measurement` está relleno en el **0,16 %** de H2-K y el **0,68 %** de HLA-A (3.293 filas en nM sobre 569.013). **Descarta por completo plantear regresión de afinidad** sobre estos datos; la tarea solo puede ser cualitativa.
+
+**N. El tipo de ensayo está dominado por inmunopeptidómica, no por unión.** `assay__method` en H2-K: `cellular MHC/mass spectrometry` 85.432 (97,5 %), `mass spectrometry` 1.539, unión competitiva purificada 59. En HLA-A: espectrometría de masas 562.708 (98,9 %), unión 3.529. Lo que el dataset mide mayoritariamente es **presentación (ligandos eluidos)**, no afinidad de unión ni inmunogenicidad. Para la comparación con NetMHCpan/MHCflurry (§0.5.7) importa: hay que comparar contra sus modelos de **presentación/eluted ligand**, no contra sus predicciones de afinidad.
+
+**O. Riesgo de fuga por publicación, no detectado hasta ahora.** `reference__pmid` tiene solo **89 valores distintos para las 87.593 filas de H2-K** y 583 para las 569.013 de HLA-A. Un único estudio de inmunopeptidómica aporta decenas de miles de filas con el mismo tipo celular, el mismo anticuerpo y el mismo sesgo de preparación. **Particionar por proteína no protege de esto:** un modelo puede aprender la huella técnica de un laboratorio. Hay que medir la fuga por `pmid` y considerar partición por publicación como control adicional, al nivel de la partición por componentes de proteína de §0.2.
+
+**P. La resolución de alelo en humano es buena; el problema es el colapso, no los datos.** En HLA-A: 554.918 filas (97,5 %) con alelo de cuatro dígitos (`HLA-A*02:01`…), 14.071 (2,5 %) serotipos de baja resolución (`HLA-A24`, `HLA-A2`…) y 3 mutantes. Los serotipos son además mayoritariamente de elución (72,7 %), coherente con el hallazgo L. **Conclusión: trabajar por alelo es viable sin apenas pérdida; el 2,5 % de serotipos se descarta o se trata aparte.** Nótese el desbalance extremo: `HLA-A*02:01` es 219.292 filas, el 38,5 % de HLA-A.
 
 ### 0.6.4. Estado de la re-descarga (proceso vivo)
 
@@ -273,6 +309,38 @@ Pendiente: `human/mhc-I/{HLA-A,HLA-B,HLA-C}` y `human/mhc-II/{HLA-DR,HLA-DQ,HLA-
 6. **Decidir y documentar el universo de epítopos** de la tarea: solo propio/murino (actual, defendible para neoantígenos) o todo IEDB por alelo (lo de Wert2021). Condiciona qué comparación con el 0,865 es legítima.
 7. **Escribir el informe** en `reports/audits/iedb_provenance_20261124.md` y actualizar §3 de este documento con release, filtros y criterios reales, que es lo que §21 declara ausente. Añadir el hallazgo D a §0.4 como quinta decisión de diseño.
 8. **Luego, no antes:** E0 (§0.5.1), usando `LSTMcvonehot.py` como referencia de arquitectura y decidiendo primero si el brazo de control usa los 4.828 del paper o los 8.901 del CSV distribuido.
+
+### 0.6.7. El script de descarga definitivo
+
+`data_pipeline/scripts/data_download/build_iedb_dataset_v2.py`, escrito el 24 nov 2026. **Sustituye a `build_iedb_dataset.py`**, que no debe volver a usarse para datos nuevos (se conserva solo para reproducir la procedencia de D1). Probado en vivo sobre `mouse/mhc-I/H2-L` en los dos perfiles.
+
+**Tres cambios de fondo**, cada uno atado a un hallazgo:
+
+1. **Paginación keyset** sobre `assay_id` (`order=assay_id.asc` + `assay_id=gt.N`) en lugar de `offset` sin `order`. El viejo no dañó los datos (hallazgo A bis) pero es frágil por diseño.
+2. **Los negativos ya no se excluyen por defecto** (hallazgo J). El valor cualitativo se descarga tal cual y el filtrado se decide en el procesado, no en la descarga.
+3. **El filtro de organismo fuente es una elección explícita de perfil** (hallazgos D y K), no una decisión enterrada en el código.
+
+**Dos perfiles, `--profile` obligatorio** —a propósito, para que nadie lance una descarga de varios millones de filas por omisión:
+
+| Perfil | Filtro cualitativo | Filtro de organismo fuente | Para qué |
+|---|---|---|---|
+| `legacy` | `ilike.*Positive*` | `ilike.*<especie>*` | Reproduce el universo exacto de D1. Verificar procedencia. |
+| `full` | **ninguno** | **ninguno** | Superconjunto: negativos experimentales + epítopos de patógeno. Es el universo de Wert2021 y el necesario para E0. |
+
+**Lo que conserva y el viejo tiraba.** La salida es el export completo de IEDB (113 columnas), y el alelo (`mhc_restriction__name`) se guarda **literal**. La familia se usa solo para *enumerar* las consultas, nunca como etiqueta: colapsar 276 alelos en 11 familias es el primer problema de diseño del modelo (hallazgo F). Columnas que ahora sí se explotan: `mhc_restriction__evidence_code` (hallazgo L), `assay__method` (N), `reference__pmid` (O), `epitope__starting_position`/`ending_position` y `epitope__molecule_parent`.
+
+**Procedencia.** Manifiesto con huella de contenido por consulta (filas, `min`/`max assay_id`, `assay_id` distintos, alelos distintos, SHA-256, bytes), parámetros exactos de cada petición, fecha UTC y commit de git. **Reanudable**: las consultas ya presentes en el manifiesto se omiten salvo `--force`, y el manifiesto se reescribe tras cada consulta. Se niega a escribir en un directorio cuyo manifiesto sea de otro perfil, para que no se mezclen universos de datos.
+
+```bash
+P=/home/nap/miniconda3/envs/nap_env/bin/python   # requests + pandas
+# universo Wert2021 / E0, con negativos:
+$P data_pipeline/scripts/data_download/build_iedb_dataset_v2.py \
+    --profile full --out data/data_raw_full_YYYYMMDD
+# una sola familia:
+$P ... --profile full --out DIR --only mouse/mhc-I/H2-K
+```
+
+> **Entorno:** `pandas` y `requests` están en `nap_env`, **no** en `base`. Usar `/home/nap/miniconda3/envs/nap_env/bin/python`.
 
 ### 0.6.6. Decisiones tomadas en esta tarea
 
