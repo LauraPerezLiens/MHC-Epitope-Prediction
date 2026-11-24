@@ -716,7 +716,7 @@ Salida en `results/mlp_shuffled_concatenated_14499chunks_10epochs_20261117_22253
 
 **Decisión de Laura, 24 nov 15:33 UTC: dejar que termine la época 2 y parar entonces.** Criterio razonable: da un **segundo punto de la curva de aprendizaje con el mismo protocolo**, lo que permite documentar que el 0,7955 no mejora con más épocas —y por tanto que el techo no es de entrenamiento insuficiente— antes de cerrar la línea histórica. Cuesta ~11,7 h en lugar de 20,6 días.
 
-**Parada automatizada, independiente de la sesión de Claude.** Proceso vigilante lanzado con `setsid` (PID 2651898), log en `logs/mlp_stop_after_epoch2.log`. Lógica:
+**Parada automatizada, independiente de la sesión de Claude.** Proceso vigilante lanzado con `setsid` (PID **2651901**; el 2651898 era solo el envoltorio de `setsid`, comprobar con `pgrep -af mlp_stop_after_epoch2`), log en `logs/mlp_stop_after_epoch2.log`. Lógica:
 
 1. Sondea cada 120 s el fichero `history_mlp_primary_secondary.jsonl` contando líneas `"type": "epoch_end"`. Al llegar a **2**, la época 2 está cerrada.
 2. **Espera 300 s de gracia** para que el script termine de escribir `best_`, `last_` e `history_` (en la época 1 se escribieron en el mismo minuto que el `epoch_end`).
