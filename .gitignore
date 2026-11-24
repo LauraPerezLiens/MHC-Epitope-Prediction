@@ -69,5 +69,3 @@ miniconda3/
 # neoantigenpred-master.zip (ignorado por *.zip) en la raiz del repo.
 /reference/neoantigenpred_zip/
 
-# Artefactos temporales de /tmp rescatados el 24 nov 2026 (triage pendiente)
-/_tmp_rescatado_*/

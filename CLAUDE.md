@@ -78,12 +78,14 @@ El volumen raíz llegó al **100 %** (877 G, 837 G usados) y dejó de poder escr
 | Borrado: `nap_prott5_3a`, `nap_d1_tar_*`, `mhc_ci_*`, `nap_prott5_3a3`, `epitope_coordinate_recovery_*` | 8.872 MB |
 | Borrado: `a.json`, `b.json` (volcados de `diagnose_paging.py`) y las `.so` de catboost | ~128 MB |
 | **Total liberado** | **~187 GB** |
-| Rescatadas a `_tmp_rescatado_20261124/` (ignorado por git) | 383 entradas, 11 MB |
+| Rescatadas a `_tmp_rescatado_20261124/` y **borradas después** tras comprobar que eran redundantes | 1.943 ficheros, 68 MB |
 | Dejadas intactas en `/tmp` | 9 sockets de la sesión viva |
 
 **Resultado: `/` al 78 %, 191 G libres.** Cada borrado se verificó con `stat -c '%U'` (= `nap`) y `lsof +D` (= 0 ficheros abiertos); se confirmó además que el MLP en ejecución tiene su `cwd` en `/data` y **ningún** descriptor abierto en `/tmp`. **No se tocó nada de `tomomd` (67 entradas en `/tmp`), de `root` (17) ni de `gdm` (1).**
 
-> **Queda pendiente de triage `_tmp_rescatado_20261124/`** (383 entradas, 11 MB): logs, scripts sueltos y certificados. Lo que valga va a `reports/audits/`; el resto se borra. **No se dejó en `/tmp` precisamente por la regla 5.**
+> **`_tmp_rescatado_20261124/` se borró el mismo día, tras verificar que no contenía nada único.** Eran 1.943 ficheros y 68 MB: un entorno virtual de Python completo, `.pyc`, librerías de pip, logs y trabajo intermedio. Lo único que parecía irreemplazable —`secondary_struct_{human,mouse}.csv` y `{human,mouse}_parent_protein_fasta.csv`, 67 de los 68 MB, referenciados por `add_secondary_structure.py` y por los tests— **se comprobó que está dentro de `data/used_data/data_intermediate.tar.zst`** (5 GB, con SHA-256 y verificación), listando el contenido del archivo. Ninguna copia única se perdió.
+>
+> **La lección, para la próxima:** rescatar a ciegas de `/tmp` crea más desorden del que evita. Lo correcto es comprobar primero si el contenido ya está archivado, y solo rescatar lo que de verdad no lo esté.
 
 > ⚠️ **`/home/nap` ocupa 118 GB y NO se ha tocado**, porque no es basura temporal: `ScipionUserData` 43 GB (proyectos de Scipion), `miniconda3` 38 GB (**en uso ahora mismo**, `nap_env` es el intérprete de todo este trabajo), `apps` 5,6 GB y `scipion` 5,1 GB. Reducir eso exige decisión de Laura, no limpieza automática.
 
