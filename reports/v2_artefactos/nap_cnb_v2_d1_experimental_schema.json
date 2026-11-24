@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "path_base": "repository_root",
+  "dataset_blocks_base": "manifest_directory",
+  "observation_registry": {
+    "path_pattern": "originals/*.parquet",
+    "fields": {
+      "observation_id": "binary[50], exact D1 observation identity",
+      "primary_sequence_id": "binary[25], exact original D1 primary",
+      "group_id": "binary[25], D1 effective_group_id",
+      "parent_observation_id": "nullable binary[50], reference to an original observation",
+      "record_id": "binary[50], unique, equal to observation_id for an original",
+      "sequence_id": "binary[25], exact primary identity in the original registry",
+      "global_label": "int8, copied from D1 for originals",
+      "split": "TRAIN, VALIDATION or TEST, copied from D1 for originals",
+      "record_type": "original in the current release",
+      "prott5_embedding_id": "reference to the registry, profile ID followed by ':' and exact primary",
+      "secondarybert_embedding_id": "reference to the registry, profile ID followed by ':' and exact C/H/E key",
+      "embedding_status": "verified_existing for current originals with both certified references"
+    },
+    "future_lineage_contract": {
+      "parent_reference": "Required for related records",
+      "split_and_group": "A related record inherits the group and partition of its certified parent",
+      "label_evidence": "Original label evidence pertains to the original. Related records require their own evidence status",
+      "identifier_policy": "Assign new record types their own domain-separated, versioned deterministic identity before publication",
+      "published_related_records": 0
+    }
+  },
+  "embedding_registry": {
+    "path_patterns": [
+      "embeddings/prott5/*.parquet",
+      "embeddings/secondarybert/*.parquet"
+    ],
+    "fields": {
+      "embedding_id": "unique profile ID and exact input key",
+      "exact_key": "binary[25], modality-specific exact input",
+      "model_profile_id": "reference to a versioned profile in manifest.json",
+      "dimension": "uint16, 1024 for ProtT5 or 768 for SecondaryBERT",
+      "status": "per-representation lifecycle status",
+      "storage": "npy, npy_zstd or sqlite_inline",
+      "shard": "nullable uint16, index into the modality's referenced shards",
+      "row_offset": "nullable uint32, vector row within certified shard"
+    },
+    "statuses": {
+      "verified_existing": "Reference accredited against certified inputs",
+      "requires_recalculation": "Previously identified representation requires replacement",
+      "calculated": "Calculation recorded with its evidence; admissible only after independent correspondence is certified",
+      "pending": "Representational work or validation pending",
+      "invalid": "Evidence makes the representation inadmissible"
+    },
+    "usage_gate": "Match exact input key, versioned model profile, dimension and certified address. Reject inadmissible states and missing evidence."
+  },
+  "calculation_journal": {
+    "path": "calculation_log.sqlite",
+    "schema": "calculation_log.sql",
+    "scope": "Events and provenance only. Publication requires independent evidence and an updated certified release.",
+    "recorded_events": 0
+  },
+  "synthetic_lineage_harness": {
+    "implementation": "synthetic_lineage.py",
+    "tests": "test_synthetic_lineage.py",
+    "scope": "Synthetic fixture identities and temporary databases only",
+    "label_evidence": "inherited_only",
+    "identity": "synthetic:derived: plus SHA-256 of canonical JSON array [nap.synthetic.lineage.v1, parent_observation_id, sequence_id]",
+    "embedding_status_by_modality": [
+      "verified_existing",
+      "pending",
+      "absent"
+    ],
+    "idempotence": "Identical record is replayable; changes under the same identifier are rejected"
+  }
+}

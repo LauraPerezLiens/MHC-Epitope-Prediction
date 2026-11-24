@@ -1,0 +1,25 @@
+{
+  "by_split": {
+    "TEST": 24882,
+    "TRAIN": 200092,
+    "VALIDATION": 25026
+  },
+  "features": {
+    "bytes": 1792000128,
+    "path": "0058.npy",
+    "sha256": "05a0edb847470487cf9d929d6887cf4dcdb343cdbe1495b055aced7e2b07b8d9"
+  },
+  "group": 58,
+  "metadata": {
+    "bytes": 1252551,
+    "path": "0058.parquet",
+    "sha256": "05d8d1c6ffa1253cf138db0ae6c432ea61f2da3d56d1947b1dfade9d525e9c63"
+  },
+  "positive_by_split": {
+    "TEST": 2283,
+    "TRAIN": 18197,
+    "VALIDATION": 2293
+  },
+  "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+  "rows": 250000
+}

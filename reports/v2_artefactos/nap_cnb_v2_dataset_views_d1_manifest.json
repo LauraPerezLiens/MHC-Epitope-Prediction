@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "id": "D1",
+  "status": "validated",
+  "created_at": "2026-11-20T12:30:39.703721+01:00",
+  "path_base": "repository_root",
+  "dataset": {
+    "path": "results/nap_cnb_v2_dataset_views/global_dataset.parquet",
+    "key": [
+      "sequence",
+      "secondary_structure"
+    ],
+    "label": "label_global",
+    "augmentation": "none"
+  },
+  "splits": {
+    "path": "results/nap_cnb_v2_dataset_views/splits/assignments.parquet",
+    "join": {
+      "sequence": "effective_group_id"
+    },
+    "field": "split_id",
+    "codes": {
+      "0": "train",
+      "1": "validation",
+      "2": "test"
+    },
+    "seed": 42,
+    "version": "primary-blake2b-mod10-v1",
+    "validation": "results/nap_cnb_v2_dataset_views/splits/validation.json"
+  },
+  "embeddings": {
+    "ProtT5": {
+      "key": "sequence",
+      "dimension": 1024,
+      "dtype": "float32",
+      "inventory": "results/nap_cnb_v2_embedding_audit/missing_prott5_sequences.parquet",
+      "manifest": "results/nap_cnb_v2_prott5/final/manifest.json",
+      "progress": "results/nap_cnb_v2_prott5/final/progress.sqlite",
+      "shards": "results/nap_cnb_v2_prott5/final/shard-*.npy"
+    },
+    "SecondaryBERT": {
+      "key": "secondary_structure",
+      "dimension": 768,
+      "dtype": "float32",
+      "index": "results/nap_cnb_v2_secondarybert/index.sqlite",
+      "evidence": "results/nap_cnb_v2_secondarybert/secondarybert_report.md"
+    }
+  },
+  "inputs_sha256": {
+    "results/nap_cnb_v2_final_selection/selection.json": "816cf66f983245872d8fc23104f51fadf811cec25b41c479bb293ee054399579",
+    "results/nap_cnb_v2_dataset_views/global_dataset.parquet": "ff91cd21dd0f980d7c2dadc22819ab022cac8cf23d57904c7a0f8b0854b3e75b",
+    "results/nap_cnb_v2_dataset_views/global_labels.parquet": "ed758df3353f209ff01cd2225fae2e7ad092734e42f8993af6a0b2a43a05cad4",
+    "results/nap_cnb_v2_dataset_views/splits/assignments.parquet": "3a74a1b1252265f02daf5e5c521338ced20d304fe9cb6a4f46d112bfc77395e9",
+    "results/nap_cnb_v2_dataset_views/splits/validation.json": "2d09d4618fb8dbeafd0462f6ff2813a33633a8e77b27dc005cd60fea007cd3dc",
+    "results/nap_cnb_v2_embedding_audit/missing_prott5_sequences.parquet": "461d49f46786228f2e9902a4bbae8adfaae74c590a1bf2b45f0122b74186f3e4",
+    "results/nap_cnb_v2_prott5/final/manifest.json": "ab4a0c529f7fb4db0bb41543b7d1f3de0e25f70d822c80fb36f0a4e569814173",
+    "results/nap_cnb_v2_prott5/final/progress.sqlite": "6160d7ed4aedf4c4e44c4fc55f4605ac08119a995a5539109bf9b50ceb3f729f",
+    "results/nap_cnb_v2_secondarybert/index.sqlite": "6ce92b96250f083a258f3c875165371102287f5e39f77f261a516387df955a00",
+    "results/nap_cnb_v2_secondarybert/secondarybert_report.md": "57eca558c2176d4ecae5fe1954c65562e730aef3910862a8d48abad0c2014e99"
+  },
+  "observations": 15100592,
+  "by_split": {
+    "train": {
+      "negative": 9006997,
+      "positive": 3076633,
+      "rows": 12083630
+    },
+    "validation": {
+      "negative": 1123719,
+      "positive": 383839,
+      "rows": 1507558
+    },
+    "test": {
+      "negative": 1125248,
+      "positive": 384156,
+      "rows": 1509404
+    }
+  },
+  "validation": {
+    "unique_primary_keys": 14530324,
+    "unique_secondary_keys": 1847436,
+    "unique_representations": 15100592,
+    "confirmed_prott5_shards": 146,
+    "accessible_secondarybert_archives": 549,
+    "reproduced_all_split_assignments": true
+  }
+}

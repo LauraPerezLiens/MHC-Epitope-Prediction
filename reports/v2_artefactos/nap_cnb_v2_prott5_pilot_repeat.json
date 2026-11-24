@@ -1,0 +1,13 @@
+{
+  "rows": 10000,
+  "batches": 40,
+  "expected": 10000,
+  "token_seconds": 0.8483879447448999,
+  "forward_seconds": 12.919611250516027,
+  "write_seconds": 1.4999020788818598,
+  "verified": 10000,
+  "repeated_rows": 256,
+  "bitwise_equal": true,
+  "max_abs": 0.0,
+  "inventory_read_seconds": 1.7499166859779507
+}

@@ -1,0 +1,278 @@
+{
+  "schema_version": 1,
+  "path_base": "repository_root",
+  "d1_manifest": "results/nap_cnb_v2_d1_original_manifest/manifest.json",
+  "d1_parent_manifest": {
+    "path": "results/nap_cnb_v2_dataset_views/d1_manifest.json",
+    "sha256": "eb55979937a89721eb3dfbd703ba4efe40ffc8e76487ce61fb366936ff47b0a6"
+  },
+  "identity": [
+    "sequence",
+    "secondary_structure"
+  ],
+  "label": "label_global",
+  "partitions": {
+    "TRAIN": {
+      "negative": 9006997,
+      "positive": 3076633,
+      "rows": 12083630
+    },
+    "VALIDATION": {
+      "negative": 1123719,
+      "positive": 383839,
+      "rows": 1507558
+    },
+    "TEST": {
+      "negative": 1125248,
+      "positive": 384156,
+      "rows": 1509404
+    }
+  },
+  "scaler_reference": {
+    "path": "results/nap_cnb_v2_training/d1_lr_original_baseline/scaler.npz",
+    "sha256": "0a983b6caa8a6674d8732ef238ca5cdc7cc623869b247786c22fcc1682d28048"
+  },
+  "feature_order": [
+    "ProtT5",
+    "SecondaryBERT"
+  ],
+  "dimensions": [
+    1024,
+    768
+  ],
+  "comparison_contract": {
+    "model_selection": "Menor log loss en VALIDATION original.",
+    "threshold_selection": "Máximo F1 en VALIDATION original, empate por el menor logit.",
+    "prediction_rule": "logit >= umbral",
+    "test_policy": "Puntuar TEST original después de fijar checkpoint y umbral. Cotejar identidad y etiqueta de cada observación contra D1.",
+    "metric_policy": "ROC-AUC y AP globales sobre logits. Log loss sobre probabilidades. Matriz real por predicha, orden 0,1. Delta = resultado menos su baseline.",
+    "preprocessing_policy": "Conservar el scaler común para una comparación de referencia. Registrar cualquier cambio de preprocesamiento como diferencia experimental.",
+    "controls": "Registrar semilla, época, actualizaciones, arquitectura, hiperparámetros, prevalencia, peso de clase, remuestreo y recursos."
+  },
+  "experiments": {
+    "E1": {
+      "status": "ejecutado",
+      "model": "lr",
+      "report": "reports/experiments/d1_lr_original_baseline.md",
+      "metrics_source": "results/nap_cnb_v2_training/d1_lr_original_baseline/metrics.json",
+      "selection_source": "results/nap_cnb_v2_training/d1_lr_original_baseline/selection.json",
+      "checksums": "results/nap_cnb_v2_training/d1_lr_original_baseline/artifacts.sha256",
+      "validation_predictions": "results/nap_cnb_v2_training/d1_lr_original_baseline/validation_predictions.parquet",
+      "test_predictions": "results/nap_cnb_v2_training/d1_lr_original_baseline/test_predictions.parquet",
+      "best_epoch": 2,
+      "threshold_logit": -1.2955230474472046,
+      "validation": {
+        "rows": 1507558,
+        "prevalence": 0.25460977289099324,
+        "roc_auc": 0.6537062376907838,
+        "average_precision": 0.37534840957102006,
+        "log_loss": 0.5403065517911209,
+        "precision": 0.3243269714644682,
+        "recall": 0.7505412425522159,
+        "f1": 0.45293137331970756,
+        "confusion_matrix": [
+          [
+            523545,
+            600174
+          ],
+          [
+            95752,
+            288087
+          ]
+        ],
+        "threshold_logit": -1.2955230474472046
+      },
+      "test": {
+        "rows": 1509404,
+        "prevalence": 0.25450840199177954,
+        "roc_auc": 0.6546408924425009,
+        "average_precision": 0.3757380939259356,
+        "log_loss": 0.5397911664889625,
+        "precision": 0.32434229025835987,
+        "recall": 0.750640364851779,
+        "f1": 0.45296435982300076,
+        "confusion_matrix": [
+          [
+            524541,
+            600707
+          ],
+          [
+            95793,
+            288363
+          ]
+        ],
+        "threshold_logit": -1.2955230474472046
+      },
+      "train_seconds": 1479.3782787148375,
+      "config_source": "results/nap_cnb_v2_training/d1_lr_original_baseline/config.json",
+      "checkpoint": "results/nap_cnb_v2_training/d1_lr_original_baseline/best.pt"
+    },
+    "E2": {
+      "status": "ejecutado",
+      "model": "mlp",
+      "report": "reports/experiments/d1_mlp_original_baseline.md",
+      "metrics_source": "results/nap_cnb_v2_training/d1_mlp_original_baseline/metrics.json",
+      "selection_source": "results/nap_cnb_v2_training/d1_mlp_original_baseline/selection.json",
+      "checksums": "results/nap_cnb_v2_training/d1_mlp_original_baseline/artifacts.sha256",
+      "validation_predictions": "results/nap_cnb_v2_training/d1_mlp_original_baseline/validation_predictions.parquet",
+      "test_predictions": "results/nap_cnb_v2_training/d1_mlp_original_baseline/test_predictions.parquet",
+      "best_epoch": 2,
+      "threshold_logit": -1.0966777801513672,
+      "validation": {
+        "rows": 1507558,
+        "prevalence": 0.25460977289099324,
+        "roc_auc": 0.6792224860150821,
+        "average_precision": 0.4115799318500356,
+        "log_loss": 0.5276583554493076,
+        "precision": 0.3410749395493724,
+        "recall": 0.7393803131000237,
+        "f1": 0.4668108095660663,
+        "confusion_matrix": [
+          [
+            575438,
+            548281
+          ],
+          [
+            100036,
+            283803
+          ]
+        ],
+        "threshold_logit": -1.0966777801513672
+      },
+      "test": {
+        "rows": 1509404,
+        "prevalence": 0.25450840199177954,
+        "roc_auc": 0.6801066958612227,
+        "average_precision": 0.41212936718086374,
+        "log_loss": 0.5271972390976918,
+        "precision": 0.34113807055572015,
+        "recall": 0.7402877997480191,
+        "f1": 0.46705069408233735,
+        "confusion_matrix": [
+          [
+            575995,
+            549253
+          ],
+          [
+            99770,
+            284386
+          ]
+        ],
+        "threshold_logit": -1.0966777801513672
+      },
+      "train_seconds": 1898.4436091019306,
+      "config_source": "results/nap_cnb_v2_training/d1_mlp_original_baseline/config.json",
+      "checkpoint": "results/nap_cnb_v2_training/d1_mlp_original_baseline/best.pt"
+    },
+    "E3": {
+      "status": "no_ejecutado",
+      "baseline": "E1",
+      "model": "lr",
+      "best_epoch": null,
+      "threshold_logit": null,
+      "run_config": null,
+      "scaler_used": null,
+      "checkpoint": null,
+      "selection_source": null,
+      "test_predictions": null,
+      "validation_predictions": null,
+      "test_keys_and_labels_match_d1": null,
+      "training_population_documentation": null,
+      "optimizer_steps": null,
+      "seed": null,
+      "train_seconds": null,
+      "hardware": null,
+      "validation": {
+        "rows": null,
+        "prevalence": null,
+        "roc_auc": null,
+        "average_precision": null,
+        "log_loss": null,
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "confusion_matrix": null,
+        "threshold_logit": null
+      },
+      "test": {
+        "rows": null,
+        "prevalence": null,
+        "roc_auc": null,
+        "average_precision": null,
+        "log_loss": null,
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "confusion_matrix": null,
+        "threshold_logit": null
+      },
+      "test_delta_vs_baseline": {
+        "rows": null,
+        "prevalence": null,
+        "roc_auc": null,
+        "average_precision": null,
+        "log_loss": null,
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "confusion_matrix": null,
+        "threshold_logit": null
+      }
+    },
+    "E4": {
+      "status": "no_ejecutado",
+      "baseline": "E2",
+      "model": "mlp",
+      "best_epoch": null,
+      "threshold_logit": null,
+      "run_config": null,
+      "scaler_used": null,
+      "checkpoint": null,
+      "selection_source": null,
+      "test_predictions": null,
+      "validation_predictions": null,
+      "test_keys_and_labels_match_d1": null,
+      "training_population_documentation": null,
+      "optimizer_steps": null,
+      "seed": null,
+      "train_seconds": null,
+      "hardware": null,
+      "validation": {
+        "rows": null,
+        "prevalence": null,
+        "roc_auc": null,
+        "average_precision": null,
+        "log_loss": null,
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "confusion_matrix": null,
+        "threshold_logit": null
+      },
+      "test": {
+        "rows": null,
+        "prevalence": null,
+        "roc_auc": null,
+        "average_precision": null,
+        "log_loss": null,
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "confusion_matrix": null,
+        "threshold_logit": null
+      },
+      "test_delta_vs_baseline": {
+        "rows": null,
+        "prevalence": null,
+        "roc_auc": null,
+        "average_precision": null,
+        "log_loss": null,
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "confusion_matrix": null,
+        "threshold_logit": null
+      }
+    }
+  }
+}

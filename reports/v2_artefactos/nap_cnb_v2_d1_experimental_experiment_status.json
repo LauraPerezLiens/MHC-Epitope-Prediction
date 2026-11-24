@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "evaluation_protocol": "evaluate_predictions.py",
+  "experiments": {
+    "E1": {
+      "status": "executed",
+      "test_metrics": "results/nap_cnb_v2_training/d1_lr_original_baseline/metrics.json"
+    },
+    "E2": {
+      "status": "executed",
+      "test_metrics": "results/nap_cnb_v2_training/d1_mlp_original_baseline/metrics.json"
+    },
+    "E3": {
+      "status": "not_executed",
+      "baseline": "E1",
+      "predictions": null,
+      "metrics": null
+    },
+    "E4": {
+      "status": "not_executed",
+      "baseline": "E2",
+      "predictions": null,
+      "metrics": null
+    }
+  },
+  "pending": "No approved experimental observations and no generated E3/E4 predictions are available in this run.",
+  "metadata_review": {
+    "inventory": "results/nap_cnb_v2_blosum_preparation/recovery/inventory.json",
+    "catalog": "results/nap_cnb_v2_blosum_preparation/organization/artifact_catalog.json",
+    "field": "metadata_compatibility_checks",
+    "d1_certified_historical_secondarybert_archives": 549,
+    "external_import_validation": "external_import_tests.log"
+  }
+}

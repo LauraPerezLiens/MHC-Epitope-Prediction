@@ -1,0 +1,52 @@
+{
+  "version": 2,
+  "scope": {
+    "HLA-A": null,
+    "HLA-B": null,
+    "HLA-C": null,
+    "HLA-DP": null,
+    "HLA-DQ": null,
+    "HLA-DR": null,
+    "H2-D": null,
+    "H2-K": null,
+    "H2-L": null,
+    "H2-IA": null,
+    "H2-IE": null
+  },
+  "archive": [
+    "/data/nap/lperez_nn/data/used_data/data_raw.tar.zst",
+    110874377,
+    1794308933056539395
+  ],
+  "fasta": [
+    [
+      "/data/nap/lperez_nn/results/source_audits_inputs_20261118/data_intermediate/human_parent_protein_fasta.csv",
+      15795312,
+      1779963914000000000
+    ],
+    [
+      "/data/nap/lperez_nn/results/source_audits_inputs_20261118/data_intermediate/mouse_parent_protein_fasta.csv",
+      10179111,
+      1779967529000000000
+    ]
+  ],
+  "prior": "/data/nap/lperez_nn/results/epitope_counterfactual_20261118",
+  "previous_dataset": "/data/nap/lperez_nn/data/global_epitope_labels",
+  "structure_inputs": {
+    "human": [
+      "/data/nap/lperez_nn/results/nap_cnb_v2_phase1_structure/secondary_struct_human.csv",
+      25007966,
+      1780054724000000000
+    ],
+    "mouse": [
+      "/data/nap/lperez_nn/results/nap_cnb_v2_phase1_structure/secondary_struct_mouse.csv",
+      16459762,
+      1780054724000000000
+    ]
+  },
+  "local_caches": [
+    "/data/nap/lperez_nn/results/iedb_rebuild_v1_pilot_20261118/reference_cache",
+    "/data/nap/lperez_nn/results/iedb_pending_evidence_20261118/cache",
+    "/data/nap/lperez_nn/results/iedb_modified_audit_20261118/cache"
+  ]
+}

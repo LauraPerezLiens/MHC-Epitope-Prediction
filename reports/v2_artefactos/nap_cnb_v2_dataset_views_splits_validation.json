@@ -1,0 +1,570 @@
+{
+  "version": "primary-blake2b-mod10-v1",
+  "seed": 42,
+  "targets": [
+    0.8,
+    0.1,
+    0.1
+  ],
+  "split_ids": {
+    "0": "train",
+    "1": "validation",
+    "2": "test"
+  },
+  "generated_at": "2026-11-20T12:20:28.723663+01:00",
+  "selection_sha256": "816cf66f983245872d8fc23104f51fadf811cec25b41c479bb293ee054399579",
+  "catalog_sha256": {
+    "base_dataset": "cd7fd20bcfde4c59100e96c5c47c651ff558d8ed5c456a9baa92882d6394a70e",
+    "global_dataset": "ff91cd21dd0f980d7c2dadc22819ab022cac8cf23d57904c7a0f8b0854b3e75b",
+    "global_labels": "ed758df3353f209ff01cd2225fae2e7ad092734e42f8993af6a0b2a43a05cad4",
+    "window_provenance": "93a999545d0455a66138a2db80a03990fa94ab8b2223e8396490e026774efde2",
+    "legacy_group_links": "127b44b96af9ab1bf74289796337f0a7068cd9f33aaea3b040a7b673509724d3"
+  },
+  "assignment_sha256": "3a74a1b1252265f02daf5e5c521338ced20d304fe9cb6a4f46d112bfc77395e9",
+  "assignment_bytes": 164425896,
+  "effective_groups": 14530324,
+  "effective_groups_by_split": {
+    "train": 11627152,
+    "validation": 1450379,
+    "test": 1452793
+  },
+  "base": {
+    "train": {
+      "negative": 34758080,
+      "positive": 4470747,
+      "rows": 39228827,
+      "row_share": 0.8002231430718554,
+      "target_deviation_percentage_points": 0.02231430718553362
+    },
+    "validation": {
+      "negative": 4334178,
+      "positive": 557339,
+      "rows": 4891517,
+      "row_share": 0.0997813446761845,
+      "target_deviation_percentage_points": -0.021865532381550035
+    },
+    "test": {
+      "negative": 4343029,
+      "positive": 558987,
+      "rows": 4902016,
+      "row_share": 0.09999551225196013,
+      "target_deviation_percentage_points": -0.0004487748039877504
+    }
+  },
+  "global": {
+    "train": {
+      "negative": 9006997,
+      "positive": 3076633,
+      "rows": 12083630,
+      "row_share": 0.8002090249176986,
+      "target_deviation_percentage_points": 0.02090249176985859
+    },
+    "validation": {
+      "negative": 1123719,
+      "positive": 383839,
+      "rows": 1507558,
+      "row_share": 0.09983436410969848,
+      "target_deviation_percentage_points": -0.016563589030152426
+    },
+    "test": {
+      "negative": 1125248,
+      "positive": 384156,
+      "rows": 1509404,
+      "row_share": 0.09995661097260293,
+      "target_deviation_percentage_points": -0.004338902739707551
+    }
+  },
+  "families": {
+    "HLA-A": {
+      "train": {
+        "negative": 6357760,
+        "positive": 1215405,
+        "rows": 7573165
+      },
+      "validation": {
+        "negative": 792212,
+        "positive": 151741,
+        "rows": 943953
+      },
+      "test": {
+        "negative": 794633,
+        "positive": 152406,
+        "rows": 947039
+      }
+    },
+    "HLA-B": {
+      "train": {
+        "negative": 6002480,
+        "positive": 1599322,
+        "rows": 7601802
+      },
+      "validation": {
+        "negative": 748370,
+        "positive": 199603,
+        "rows": 947973
+      },
+      "test": {
+        "negative": 749943,
+        "positive": 199931,
+        "rows": 949874
+      }
+    },
+    "HLA-C": {
+      "train": {
+        "negative": 5370200,
+        "positive": 625431,
+        "rows": 5995631
+      },
+      "validation": {
+        "negative": 669549,
+        "positive": 77641,
+        "rows": 747190
+      },
+      "test": {
+        "negative": 670973,
+        "positive": 78150,
+        "rows": 749123
+      }
+    },
+    "HLA-DP": {
+      "train": {
+        "negative": 3230701,
+        "positive": 190494,
+        "rows": 3421195
+      },
+      "validation": {
+        "negative": 401909,
+        "positive": 23804,
+        "rows": 425713
+      },
+      "test": {
+        "negative": 403770,
+        "positive": 23947,
+        "rows": 427717
+      }
+    },
+    "HLA-DQ": {
+      "train": {
+        "negative": 1596223,
+        "positive": 86841,
+        "rows": 1683064
+      },
+      "validation": {
+        "negative": 199227,
+        "positive": 10975,
+        "rows": 210202
+      },
+      "test": {
+        "negative": 199720,
+        "positive": 10848,
+        "rows": 210568
+      }
+    },
+    "HLA-DR": {
+      "train": {
+        "negative": 4361270,
+        "positive": 336518,
+        "rows": 4697788
+      },
+      "validation": {
+        "negative": 543355,
+        "positive": 41839,
+        "rows": 585194
+      },
+      "test": {
+        "negative": 545645,
+        "positive": 41564,
+        "rows": 587209
+      }
+    },
+    "H2-D": {
+      "train": {
+        "negative": 2343964,
+        "positive": 101024,
+        "rows": 2444988
+      },
+      "validation": {
+        "negative": 293009,
+        "positive": 12516,
+        "rows": 305525
+      },
+      "test": {
+        "negative": 292888,
+        "positive": 12652,
+        "rows": 305540
+      }
+    },
+    "H2-K": {
+      "train": {
+        "negative": 4109041,
+        "positive": 276447,
+        "rows": 4385488
+      },
+      "validation": {
+        "negative": 513289,
+        "positive": 34356,
+        "rows": 547645
+      },
+      "test": {
+        "negative": 512813,
+        "positive": 34534,
+        "rows": 547347
+      }
+    },
+    "H2-L": {
+      "train": {
+        "negative": 3482,
+        "positive": 87,
+        "rows": 3569
+      },
+      "validation": {
+        "negative": 447,
+        "positive": 4,
+        "rows": 451
+      },
+      "test": {
+        "negative": 393,
+        "positive": 8,
+        "rows": 401
+      }
+    },
+    "H2-IA": {
+      "train": {
+        "negative": 1327533,
+        "positive": 37910,
+        "rows": 1365443
+      },
+      "validation": {
+        "negative": 165908,
+        "positive": 4688,
+        "rows": 170596
+      },
+      "test": {
+        "negative": 165395,
+        "positive": 4802,
+        "rows": 170197
+      }
+    },
+    "H2-IE": {
+      "train": {
+        "negative": 55426,
+        "positive": 1268,
+        "rows": 56694
+      },
+      "validation": {
+        "negative": 6903,
+        "positive": 172,
+        "rows": 7075
+      },
+      "test": {
+        "negative": 6856,
+        "positive": 145,
+        "rows": 7001
+      }
+    }
+  },
+  "species": {
+    "human": {
+      "train": {
+        "negative": 26918634,
+        "positive": 4054011,
+        "rows": 30972645
+      },
+      "validation": {
+        "negative": 3354622,
+        "positive": 505603,
+        "rows": 3860225
+      },
+      "test": {
+        "negative": 3364684,
+        "positive": 506846,
+        "rows": 3871530
+      }
+    },
+    "mouse": {
+      "train": {
+        "negative": 7839446,
+        "positive": 416736,
+        "rows": 8256182
+      },
+      "validation": {
+        "negative": 979556,
+        "positive": 51736,
+        "rows": 1031292
+      },
+      "test": {
+        "negative": 978345,
+        "positive": 52141,
+        "rows": 1030486
+      }
+    }
+  },
+  "mhc_class": {
+    "mhc-I": {
+      "train": {
+        "negative": 24186927,
+        "positive": 3817716,
+        "rows": 28004643
+      },
+      "validation": {
+        "negative": 3016876,
+        "positive": 475861,
+        "rows": 3492737
+      },
+      "test": {
+        "negative": 3021643,
+        "positive": 477681,
+        "rows": 3499324
+      }
+    },
+    "mhc-II": {
+      "train": {
+        "negative": 10571153,
+        "positive": 653031,
+        "rows": 11224184
+      },
+      "validation": {
+        "negative": 1317302,
+        "positive": 81478,
+        "rows": 1398780
+      },
+      "test": {
+        "negative": 1321386,
+        "positive": 81306,
+        "rows": 1402692
+      }
+    }
+  },
+  "original_windows_by_split": {
+    "train": 39311036,
+    "validation": 4900434,
+    "test": 4912033
+  },
+  "historical": {
+    "HLA-A": {
+      "source_file": "human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A.csv",
+      "scoped_groups": 9906869,
+      "single_candidate_windows": 8816904,
+      "multiple_candidate_windows": 403348,
+      "unmatched_windows": 264830,
+      "candidate_links_to_ambiguous_windows": 1089965,
+      "historical_groups_by_split": {
+        "train": 7928170,
+        "validation": 987502,
+        "test": 991197
+      },
+      "original_rows_by_split": {
+        "train": 7590135,
+        "validation": 945815,
+        "test": 949132
+      }
+    },
+    "HLA-B": {
+      "source_file": "human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B.csv",
+      "scoped_groups": 10261739,
+      "single_candidate_windows": 8641258,
+      "multiple_candidate_windows": 611402,
+      "unmatched_windows": 262836,
+      "candidate_links_to_ambiguous_windows": 1620481,
+      "historical_groups_by_split": {
+        "train": 8212524,
+        "validation": 1022712,
+        "test": 1026503
+      },
+      "original_rows_by_split": {
+        "train": 7614631,
+        "validation": 949373,
+        "test": 951492
+      }
+    },
+    "HLA-C": {
+      "source_file": "human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C.csv",
+      "scoped_groups": 7564147,
+      "single_candidate_windows": 7239840,
+      "multiple_candidate_windows": 133309,
+      "unmatched_windows": 134735,
+      "candidate_links_to_ambiguous_windows": 324307,
+      "historical_groups_by_split": {
+        "train": 6054632,
+        "validation": 753526,
+        "test": 755989
+      },
+      "original_rows_by_split": {
+        "train": 6008717,
+        "validation": 748557,
+        "test": 750610
+      }
+    },
+    "HLA-DP": {
+      "source_file": "human/mhc-II/HLA-DP/classification_human_mhc-II_HLA-DP.csv",
+      "scoped_groups": 4798460,
+      "single_candidate_windows": 4105825,
+      "multiple_candidate_windows": 131824,
+      "unmatched_windows": 50453,
+      "candidate_links_to_ambiguous_windows": 692635,
+      "historical_groups_by_split": {
+        "train": 3838987,
+        "validation": 478135,
+        "test": 481338
+      },
+      "original_rows_by_split": {
+        "train": 3432241,
+        "validation": 426834,
+        "test": 429027
+      }
+    },
+    "HLA-DQ": {
+      "source_file": "human/mhc-II/HLA-DQ/classification_human_mhc-II_HLA-DQ.csv",
+      "scoped_groups": 2230103,
+      "single_candidate_windows": 1987794,
+      "multiple_candidate_windows": 48809,
+      "unmatched_windows": 76065,
+      "candidate_links_to_ambiguous_windows": 242309,
+      "historical_groups_by_split": {
+        "train": 1784092,
+        "validation": 223235,
+        "test": 222776
+      },
+      "original_rows_by_split": {
+        "train": 1690275,
+        "validation": 210947,
+        "test": 211446
+      }
+    },
+    "HLA-DR": {
+      "source_file": "human/mhc-II/HLA-DR/classification_human_mhc-II_HLA-DR.csv",
+      "scoped_groups": 6833746,
+      "single_candidate_windows": 5501511,
+      "multiple_candidate_windows": 230043,
+      "unmatched_windows": 153193,
+      "candidate_links_to_ambiguous_windows": 1332235,
+      "historical_groups_by_split": {
+        "train": 5469069,
+        "validation": 681708,
+        "test": 682969
+      },
+      "original_rows_by_split": {
+        "train": 4709542,
+        "validation": 586484,
+        "test": 588721
+      }
+    },
+    "H2-D": {
+      "source_file": "mouse/mhc-I/H2-D/classification_mouse_mhc-I_H2-D.csv",
+      "scoped_groups": 2934994,
+      "single_candidate_windows": 2852723,
+      "multiple_candidate_windows": 25738,
+      "unmatched_windows": 180358,
+      "candidate_links_to_ambiguous_windows": 82271,
+      "historical_groups_by_split": {
+        "train": 2348857,
+        "validation": 292992,
+        "test": 293145
+      },
+      "original_rows_by_split": {
+        "train": 2447226,
+        "validation": 305772,
+        "test": 305821
+      }
+    },
+    "H2-K": {
+      "source_file": "mouse/mhc-I/H2-K/classification_mouse_mhc-I_H2-K.csv",
+      "scoped_groups": 5482289,
+      "single_candidate_windows": 5235208,
+      "multiple_candidate_windows": 74970,
+      "unmatched_windows": 175365,
+      "candidate_links_to_ambiguous_windows": 247081,
+      "historical_groups_by_split": {
+        "train": 4386963,
+        "validation": 547750,
+        "test": 547576
+      },
+      "original_rows_by_split": {
+        "train": 4389592,
+        "validation": 548147,
+        "test": 547804
+      }
+    },
+    "H2-L": {
+      "source_file": "mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L.csv",
+      "scoped_groups": 4448,
+      "single_candidate_windows": 4404,
+      "multiple_candidate_windows": 17,
+      "unmatched_windows": 0,
+      "candidate_links_to_ambiguous_windows": 44,
+      "historical_groups_by_split": {
+        "train": 3591,
+        "validation": 453,
+        "test": 404
+      },
+      "original_rows_by_split": {
+        "train": 3569,
+        "validation": 451,
+        "test": 401
+      }
+    },
+    "H2-IA": {
+      "source_file": "mouse/mhc-II/H2-IA/classification_mouse_mhc-II_H2-IA.csv",
+      "scoped_groups": 1523931,
+      "single_candidate_windows": 1447252,
+      "multiple_candidate_windows": 15898,
+      "unmatched_windows": 246779,
+      "candidate_links_to_ambiguous_windows": 76679,
+      "historical_groups_by_split": {
+        "train": 1219786,
+        "validation": 152270,
+        "test": 151875
+      },
+      "original_rows_by_split": {
+        "train": 1368381,
+        "validation": 170975,
+        "test": 170573
+      }
+    },
+    "H2-IE": {
+      "source_file": "mouse/mhc-II/H2-IE/classification_mouse_mhc-II_H2-IE.csv",
+      "scoped_groups": 52647,
+      "single_candidate_windows": 52227,
+      "multiple_candidate_windows": 137,
+      "unmatched_windows": 18448,
+      "candidate_links_to_ambiguous_windows": 420,
+      "historical_groups_by_split": {
+        "train": 42192,
+        "validation": 5264,
+        "test": 5191
+      },
+      "original_rows_by_split": {
+        "train": 56727,
+        "validation": 7079,
+        "test": 7006
+      }
+    }
+  },
+  "protein_diagnostics": {
+    "unique_protein_sequence_hashes": 28485,
+    "protein_hashes_in_multiple_splits": 28475,
+    "windows_overlapping_another_split": {
+      "train": 39306452,
+      "validation": 4900433,
+      "test": 4912033
+    },
+    "windows_overlapping_another_split_at_different_start": {
+      "train": 39306452,
+      "validation": 4900433,
+      "test": 4912033
+    },
+    "overlapping_window_pairs": {
+      "train\u2013validation": 695443761,
+      "train\u2013test": 697914950,
+      "validation\u2013test": 86994451
+    },
+    "primaries_shared_between_protein_hashes": 2186218
+  },
+  "verified_cross_primary_historical_edges": 0,
+  "elapsed_seconds": 386.32185969804414,
+  "largest_effective_group": {
+    "base_observations": 139,
+    "representations": 10,
+    "original_observations": 351
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "rows": 768,
+  "batches": 3,
+  "expected": 10000,
+  "token_seconds": 0.06477102194912732,
+  "forward_seconds": 1.3133690722752362,
+  "write_seconds": 0.11959497514180839,
+  "verified": 768,
+  "new_inferences": 768,
+  "generation_wall_seconds": 4.928799006156623,
+  "model_load_seconds": 2.204051280859858,
+  "peak_vram_bytes": 2966448128,
+  "peak_rss_kib": 4246456,
+  "inventory_read_seconds": 1.711833706824109
+}

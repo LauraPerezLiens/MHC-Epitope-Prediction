@@ -1,0 +1,28 @@
+{
+  "status": "historical_training_pilot",
+  "source_revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+  "source_manifest": "../nap_cnb_v2_d1_materialized/manifest.json",
+  "source_manifest_sha256": "1376c32a7875ac3133a1835276faad8a3964accb899e68bebebbad9042d84697",
+  "original_rows": 15100592,
+  "materialized_variant_rows": 89179,
+  "original_index": {
+    "path": "original_index.parquet",
+    "sha256": "02baca1e3b511b66462db8732ae79665477942bff765ac0bab1df2acde4e2e21"
+  },
+  "secondary_reference": {
+    "block_column": "source_block",
+    "row_column": "source_row",
+    "column_start": 1024,
+    "dimension": 768
+  },
+  "historical_pilot": {
+    "manifest": "historical_h2_l/manifest.json",
+    "manifest_sha256": "26a1f46a2972ecde9ffdb8547dafce7e799613fad9c5dbf5f9a755a943e82a93",
+    "paired_original_primary_check": "historical_h2_l/paired_original_primary_check.json",
+    "paired_original_primary_check_sha256": "e2fb7df0fce992dc1981e29cce1579bbe62e5b793088b2536254be366224940c",
+    "family": "H2-L",
+    "train_parent_count": 3569,
+    "secondary_reuse_bitwise_verified": true,
+    "eligible_as_certified_e3_e4": false
+  }
+}

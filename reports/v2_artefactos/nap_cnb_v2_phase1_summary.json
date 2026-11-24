@@ -1,0 +1,775 @@
+{
+  "status": "validated",
+  "scope": "full",
+  "families": {
+    "HLA-A": {
+      "events": 532359,
+      "events_simple": 484418,
+      "verified": 477520,
+      "pending": 54839,
+      "events_modified": 47941,
+      "proteins_no_verified_simple_evidence": 689,
+      "proteins_eligible": 15818,
+      "structural_proteins_matched": 15471,
+      "windows": 9502740,
+      "positive_windows": 1521405,
+      "pending_candidate_windows": 15512,
+      "structural_windows_matched": 9319991,
+      "held_out_windows": 80845,
+      "structural_proteins_missing_prediction": 66,
+      "structural_windows_missing_prediction": 17658,
+      "structural_proteins_unverified_archived_reference": 281,
+      "structural_windows_unverified_archived_reference": 165091,
+      "proteins_too_short": 1,
+      "proteins_unresolved_reference": 2,
+      "methods": {
+        "iedb_explicit_parent_reference": 462388,
+        "full_reference_alignment": 5653,
+        "exact_whole_reference_identity": 3900,
+        "verified_prior_coordinate_audit": 5579
+      },
+      "pending_reasons": {
+        "source_coordinates_missing_or_invalid": 791,
+        "parent_absent_or_projection_ambiguous": 2019,
+        "source_version_unpinned": 100,
+        "parent_reference_unavailable": 2086,
+        "modified_peptide_excluded": 47941,
+        "source_reference_unavailable": 1854,
+        "source_interval_mismatch": 48
+      }
+    },
+    "HLA-B": {
+      "events": 594318,
+      "events_simple": 552782,
+      "verified": 537910,
+      "pending": 56408,
+      "events_modified": 41536,
+      "proteins_no_verified_simple_evidence": 817,
+      "proteins_eligible": 16181,
+      "structural_proteins_matched": 15703,
+      "windows": 9531009,
+      "positive_windows": 2001316,
+      "pending_candidate_windows": 146818,
+      "structural_windows_matched": 9312062,
+      "held_out_windows": 112618,
+      "structural_proteins_missing_prediction": 77,
+      "structural_windows_missing_prediction": 15513,
+      "proteins_too_short": 2,
+      "structural_proteins_unverified_archived_reference": 401,
+      "structural_windows_unverified_archived_reference": 203434,
+      "proteins_unresolved_reference": 1,
+      "methods": {
+        "iedb_explicit_parent_reference": 505209,
+        "full_reference_alignment": 11839,
+        "verified_prior_coordinate_audit": 11990,
+        "exact_whole_reference_identity": 8872
+      },
+      "pending_reasons": {
+        "parent_reference_unavailable": 1939,
+        "source_version_unpinned": 99,
+        "parent_absent_or_projection_ambiguous": 2408,
+        "source_coordinates_missing_or_invalid": 83,
+        "modified_peptide_excluded": 41536,
+        "source_interval_mismatch": 113,
+        "source_reference_unavailable": 10230
+      }
+    },
+    "HLA-C": {
+      "events": 137151,
+      "events_simple": 125490,
+      "verified": 123945,
+      "pending": 13206,
+      "events_modified": 11661,
+      "proteins_eligible": 11833,
+      "structural_proteins_matched": 11761,
+      "windows": 7513895,
+      "positive_windows": 781899,
+      "pending_candidate_windows": 3759,
+      "structural_windows_matched": 7485498,
+      "proteins_no_verified_simple_evidence": 457,
+      "held_out_windows": 33941,
+      "structural_proteins_missing_prediction": 24,
+      "structural_windows_missing_prediction": 6011,
+      "structural_proteins_unverified_archived_reference": 48,
+      "structural_windows_unverified_archived_reference": 22386,
+      "proteins_unresolved_reference": 1,
+      "methods": {
+        "iedb_explicit_parent_reference": 120722,
+        "full_reference_alignment": 1419,
+        "verified_prior_coordinate_audit": 1150,
+        "exact_whole_reference_identity": 654
+      },
+      "pending_reasons": {
+        "parent_absent_or_projection_ambiguous": 400,
+        "parent_reference_unavailable": 413,
+        "source_coordinates_missing_or_invalid": 14,
+        "source_reference_unavailable": 700,
+        "modified_peptide_excluded": 11661,
+        "source_interval_mismatch": 14,
+        "source_version_unpinned": 4
+      }
+    },
+    "HLA-DP": {
+      "events": 161963,
+      "events_simple": 153755,
+      "verified": 150869,
+      "pending": 11094,
+      "events_modified": 8208,
+      "proteins_no_verified_simple_evidence": 286,
+      "proteins_eligible": 6695,
+      "structural_proteins_matched": 6680,
+      "windows": 4291091,
+      "positive_windows": 238576,
+      "pending_candidate_windows": 2387,
+      "structural_windows_matched": 4284889,
+      "structural_proteins_missing_prediction": 11,
+      "structural_windows_missing_prediction": 2989,
+      "held_out_windows": 3784,
+      "proteins_unresolved_reference": 1,
+      "structural_proteins_unverified_archived_reference": 4,
+      "structural_windows_unverified_archived_reference": 3213,
+      "methods": {
+        "iedb_explicit_parent_reference": 148358,
+        "full_reference_alignment": 1673,
+        "exact_whole_reference_identity": 129,
+        "verified_prior_coordinate_audit": 709
+      },
+      "pending_reasons": {
+        "source_coordinates_missing_or_invalid": 13,
+        "parent_reference_unavailable": 825,
+        "modified_peptide_excluded": 8208,
+        "parent_absent_or_projection_ambiguous": 680,
+        "source_reference_unavailable": 1302,
+        "source_interval_mismatch": 45,
+        "source_version_unpinned": 21
+      }
+    },
+    "HLA-DQ": {
+      "events": 48114,
+      "events_simple": 45881,
+      "verified": 44267,
+      "pending": 3847,
+      "events_modified": 2232,
+      "events_uncertain": 1,
+      "proteins_eligible": 3386,
+      "structural_proteins_matched": 3361,
+      "windows": 2114393,
+      "positive_windows": 108805,
+      "pending_candidate_windows": 1571,
+      "structural_windows_matched": 2102586,
+      "proteins_no_verified_simple_evidence": 224,
+      "held_out_windows": 2293,
+      "structural_proteins_missing_prediction": 4,
+      "structural_windows_missing_prediction": 1725,
+      "structural_proteins_unverified_archived_reference": 21,
+      "structural_windows_unverified_archived_reference": 10082,
+      "proteins_unresolved_reference": 1,
+      "methods": {
+        "iedb_explicit_parent_reference": 39218,
+        "full_reference_alignment": 2539,
+        "verified_prior_coordinate_audit": 1287,
+        "exact_whole_reference_identity": 1223
+      },
+      "pending_reasons": {
+        "source_reference_unavailable": 301,
+        "parent_reference_unavailable": 554,
+        "parent_absent_or_projection_ambiguous": 639,
+        "source_coordinates_missing_or_invalid": 20,
+        "source_interval_mismatch": 45,
+        "modified_peptide_excluded": 2232,
+        "source_version_unpinned": 55,
+        "unresolved_peptide_identity": 1
+      }
+    },
+    "HLA-DR": {
+      "events": 337826,
+      "events_simple": 316459,
+      "verified": 306870,
+      "pending": 30956,
+      "events_modified": 21367,
+      "proteins_eligible": 9353,
+      "structural_proteins_matched": 9265,
+      "windows": 5889056,
+      "positive_windows": 420357,
+      "pending_candidate_windows": 9558,
+      "structural_windows_matched": 5841887,
+      "proteins_no_verified_simple_evidence": 1015,
+      "held_out_windows": 18077,
+      "structural_proteins_missing_prediction": 15,
+      "structural_windows_missing_prediction": 4309,
+      "structural_proteins_unverified_archived_reference": 73,
+      "structural_windows_unverified_archived_reference": 42860,
+      "proteins_unresolved_reference": 1,
+      "methods": {
+        "iedb_explicit_parent_reference": 291064,
+        "verified_prior_coordinate_audit": 4054,
+        "full_reference_alignment": 7577,
+        "exact_whole_reference_identity": 4175
+      },
+      "pending_reasons": {
+        "source_coordinates_missing_or_invalid": 255,
+        "parent_reference_unavailable": 2152,
+        "source_reference_unavailable": 2857,
+        "parent_absent_or_projection_ambiguous": 4161,
+        "source_version_unpinned": 79,
+        "modified_peptide_excluded": 21367,
+        "source_interval_mismatch": 85
+      }
+    },
+    "H2-D": {
+      "events": 46036,
+      "events_simple": 43062,
+      "verified": 34367,
+      "pending": 11669,
+      "events_modified": 2974,
+      "proteins_no_verified_simple_evidence": 2484,
+      "proteins_eligible": 4406,
+      "structural_proteins_matched": 4390,
+      "windows": 3072856,
+      "positive_windows": 126584,
+      "pending_candidate_windows": 33078,
+      "structural_windows_matched": 3057989,
+      "held_out_windows": 7179,
+      "structural_proteins_missing_prediction": 14,
+      "structural_windows_missing_prediction": 14037,
+      "structural_proteins_unverified_archived_reference": 2,
+      "structural_windows_unverified_archived_reference": 830,
+      "methods": {
+        "verified_prior_coordinate_audit": 239,
+        "full_reference_alignment": 398,
+        "iedb_explicit_parent_reference": 33516,
+        "exact_whole_reference_identity": 214
+      },
+      "pending_reasons": {
+        "parent_reference_unavailable": 86,
+        "parent_absent_or_projection_ambiguous": 95,
+        "source_coordinates_missing_or_invalid": 16,
+        "modified_peptide_excluded": 2974,
+        "source_reference_unavailable": 8497,
+        "source_version_unpinned": 1
+      }
+    },
+    "H2-K": {
+      "events": 88306,
+      "events_simple": 80282,
+      "verified": 76001,
+      "pending": 12305,
+      "events_modified": 8024,
+      "proteins_eligible": 8359,
+      "structural_proteins_missing_prediction": 22,
+      "windows": 5501215,
+      "positive_windows": 346276,
+      "pending_candidate_windows": 23785,
+      "structural_windows_missing_prediction": 15672,
+      "structural_proteins_matched": 8322,
+      "structural_windows_matched": 5472862,
+      "proteins_no_verified_simple_evidence": 1078,
+      "held_out_windows": 20281,
+      "structural_proteins_unverified_archived_reference": 15,
+      "structural_windows_unverified_archived_reference": 12681,
+      "methods": {
+        "exact_whole_reference_identity": 512,
+        "verified_prior_coordinate_audit": 791,
+        "iedb_explicit_parent_reference": 73781,
+        "full_reference_alignment": 917
+      },
+      "pending_reasons": {
+        "parent_absent_or_projection_ambiguous": 312,
+        "parent_reference_unavailable": 236,
+        "source_coordinates_missing_or_invalid": 49,
+        "modified_peptide_excluded": 8024,
+        "source_reference_unavailable": 3682,
+        "source_version_unpinned": 2
+      }
+    },
+    "H2-L": {
+      "events": 158,
+      "events_simple": 157,
+      "verified": 136,
+      "pending": 22,
+      "events_modified": 1,
+      "proteins_no_verified_simple_evidence": 4,
+      "proteins_eligible": 7,
+      "structural_proteins_missing_prediction": 1,
+      "windows": 4819,
+      "positive_windows": 145,
+      "pending_candidate_windows": 0,
+      "structural_windows_missing_prediction": 398,
+      "structural_proteins_matched": 6,
+      "structural_windows_matched": 4421,
+      "methods": {
+        "iedb_explicit_parent_reference": 131,
+        "full_reference_alignment": 5
+      },
+      "pending_reasons": {
+        "parent_absent_or_projection_ambiguous": 10,
+        "source_coordinates_missing_or_invalid": 4,
+        "modified_peptide_excluded": 1,
+        "source_reference_unavailable": 7
+      }
+    },
+    "H2-IA": {
+      "events": 22780,
+      "events_simple": 19899,
+      "verified": 15984,
+      "pending": 6796,
+      "events_modified": 2879,
+      "events_uncertain": 2,
+      "proteins_eligible": 2448,
+      "structural_proteins_matched": 2422,
+      "windows": 1713218,
+      "positive_windows": 47581,
+      "pending_candidate_windows": 5555,
+      "structural_windows_matched": 1702399,
+      "proteins_no_verified_simple_evidence": 642,
+      "structural_proteins_missing_prediction": 11,
+      "structural_windows_missing_prediction": 3289,
+      "held_out_windows": 2528,
+      "structural_proteins_unverified_archived_reference": 15,
+      "structural_windows_unverified_archived_reference": 7530,
+      "methods": {
+        "iedb_explicit_parent_reference": 12752,
+        "full_reference_alignment": 1114,
+        "exact_whole_reference_identity": 1280,
+        "verified_prior_coordinate_audit": 838
+      },
+      "pending_reasons": {
+        "parent_absent_or_projection_ambiguous": 261,
+        "source_reference_unavailable": 3215,
+        "modified_peptide_excluded": 2879,
+        "parent_reference_unavailable": 285,
+        "source_coordinates_missing_or_invalid": 95,
+        "source_version_unpinned": 4,
+        "unresolved_peptide_identity": 2,
+        "source_interval_mismatch": 55
+      }
+    },
+    "H2-IE": {
+      "events": 406,
+      "events_simple": 381,
+      "verified": 338,
+      "pending": 68,
+      "events_modified": 25,
+      "proteins_eligible": 134,
+      "structural_proteins_matched": 132,
+      "windows": 70812,
+      "positive_windows": 1585,
+      "pending_candidate_windows": 15,
+      "structural_windows_matched": 70360,
+      "proteins_no_verified_simple_evidence": 11,
+      "structural_proteins_unverified_archived_reference": 2,
+      "structural_windows_unverified_archived_reference": 452,
+      "held_out_windows": 9,
+      "methods": {
+        "full_reference_alignment": 84,
+        "iedb_explicit_parent_reference": 110,
+        "verified_prior_coordinate_audit": 60,
+        "exact_whole_reference_identity": 84
+      },
+      "pending_reasons": {
+        "parent_absent_or_projection_ambiguous": 12,
+        "modified_peptide_excluded": 25,
+        "parent_reference_unavailable": 12,
+        "source_reference_unavailable": 3,
+        "source_coordinates_missing_or_invalid": 16
+      }
+    }
+  },
+  "raw": {
+    "HLA-DR_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 346917,
+      "included": 332915,
+      "filtered": 14002
+    },
+    "HLA-C_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 136838,
+      "included": 136838
+    },
+    "H2-IA_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 2101,
+      "included": 2101
+    },
+    "HLA-B_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 593273,
+      "included": 593273
+    },
+    "H2-IA_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 20679,
+      "included": 20679
+    },
+    "HLA-DQ_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 47617,
+      "included": 47484,
+      "filtered": 133
+    },
+    "H2-K_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 87256,
+      "included": 87256
+    },
+    "H2-L_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 114,
+      "included": 114
+    },
+    "HLA-DP_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 161793,
+      "included": 161745,
+      "filtered": 48
+    },
+    "HLA-A_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 522162,
+      "included": 522162
+    },
+    "H2-IE_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 233,
+      "included": 233
+    },
+    "HLA-A_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 10197,
+      "included": 10197
+    },
+    "H2-K_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 1050,
+      "included": 1050
+    },
+    "HLA-DP_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 345,
+      "included": 218,
+      "filtered": 127
+    },
+    "H2-D_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 519,
+      "included": 519
+    },
+    "H2-IE_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 173,
+      "included": 173
+    },
+    "HLA-DQ_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 777,
+      "included": 630,
+      "filtered": 147
+    },
+    "H2-L_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 44,
+      "included": 44
+    },
+    "HLA-DR_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 6297,
+      "filtered": 1386,
+      "included": 4911
+    },
+    "HLA-C_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 313,
+      "included": 313
+    },
+    "H2-D_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 45517,
+      "included": 45517
+    },
+    "HLA-B_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 1045,
+      "included": 1045
+    }
+  },
+  "validation": {
+    "HLA-A": {
+      "verified_events": 477520,
+      "pending_events": 54839,
+      "held_out_windows": 80845,
+      "structural_windows_matched": 9319991,
+      "positive_windows": 1521405,
+      "pending_candidate_windows": 15512,
+      "windows": 9502740,
+      "structural_windows_missing_prediction": 17658,
+      "structural_windows_unverified_archived_reference": 165091
+    },
+    "HLA-B": {
+      "verified_events": 537910,
+      "pending_events": 56408,
+      "held_out_windows": 112618,
+      "structural_windows_matched": 9312062,
+      "positive_windows": 2001316,
+      "pending_candidate_windows": 146818,
+      "windows": 9531009,
+      "structural_windows_missing_prediction": 15513,
+      "structural_windows_unverified_archived_reference": 203434
+    },
+    "HLA-C": {
+      "verified_events": 123945,
+      "pending_events": 13206,
+      "held_out_windows": 33941,
+      "structural_windows_matched": 7485498,
+      "positive_windows": 781899,
+      "pending_candidate_windows": 3759,
+      "windows": 7513895,
+      "structural_windows_missing_prediction": 6011,
+      "structural_windows_unverified_archived_reference": 22386
+    },
+    "HLA-DP": {
+      "verified_events": 150869,
+      "pending_events": 11094,
+      "held_out_windows": 3784,
+      "structural_windows_matched": 4284889,
+      "positive_windows": 238576,
+      "pending_candidate_windows": 2387,
+      "windows": 4291091,
+      "structural_windows_missing_prediction": 2989,
+      "structural_windows_unverified_archived_reference": 3213
+    },
+    "HLA-DQ": {
+      "verified_events": 44267,
+      "pending_events": 3847,
+      "held_out_windows": 2293,
+      "structural_windows_matched": 2102586,
+      "positive_windows": 108805,
+      "pending_candidate_windows": 1571,
+      "windows": 2114393,
+      "structural_windows_missing_prediction": 1725,
+      "structural_windows_unverified_archived_reference": 10082
+    },
+    "HLA-DR": {
+      "verified_events": 306870,
+      "pending_events": 30956,
+      "held_out_windows": 18077,
+      "structural_windows_matched": 5841887,
+      "positive_windows": 420357,
+      "pending_candidate_windows": 9558,
+      "windows": 5889056,
+      "structural_windows_missing_prediction": 4309,
+      "structural_windows_unverified_archived_reference": 42860
+    },
+    "H2-D": {
+      "verified_events": 34367,
+      "pending_events": 11669,
+      "held_out_windows": 7179,
+      "structural_windows_matched": 3057989,
+      "positive_windows": 126584,
+      "pending_candidate_windows": 33078,
+      "windows": 3072856,
+      "structural_windows_missing_prediction": 14037,
+      "structural_windows_unverified_archived_reference": 830
+    },
+    "H2-K": {
+      "verified_events": 76001,
+      "pending_events": 12305,
+      "held_out_windows": 20281,
+      "structural_windows_missing_prediction": 15672,
+      "positive_windows": 346276,
+      "pending_candidate_windows": 23785,
+      "windows": 5501215,
+      "structural_windows_matched": 5472862,
+      "structural_windows_unverified_archived_reference": 12681
+    },
+    "H2-L": {
+      "verified_events": 136,
+      "pending_events": 22,
+      "structural_windows_missing_prediction": 398,
+      "positive_windows": 145,
+      "pending_candidate_windows": 0,
+      "windows": 4819,
+      "structural_windows_matched": 4421
+    },
+    "H2-IA": {
+      "verified_events": 15984,
+      "pending_events": 6796,
+      "held_out_windows": 2528,
+      "structural_windows_matched": 1702399,
+      "positive_windows": 47581,
+      "pending_candidate_windows": 5555,
+      "windows": 1713218,
+      "structural_windows_missing_prediction": 3289,
+      "structural_windows_unverified_archived_reference": 7530
+    },
+    "H2-IE": {
+      "verified_events": 338,
+      "pending_events": 68,
+      "held_out_windows": 9,
+      "structural_windows_matched": 70360,
+      "positive_windows": 1585,
+      "pending_candidate_windows": 15,
+      "windows": 70812,
+      "structural_windows_unverified_archived_reference": 452
+    }
+  },
+  "global_index": {
+    "unique_sequences": 14554919,
+    "positive_sequences": 3582354,
+    "observations": 49205104,
+    "positive_observations": 5594529,
+    "unique_primary_secondary_pairs": 15006963
+  },
+  "previous": {
+    "HLA-A": {
+      "old_rows": 10214658,
+      "old_unique_positions": 9523132,
+      "old_positive_positions": 1542748,
+      "old_duplicate_position_rows": 691526,
+      "positions_unchanged": 9159516,
+      "new_positions": 282488,
+      "new_positive_positions": 12524,
+      "positions_on_previously_omitted_proteins": 282488,
+      "position_0_to_1": 55378,
+      "position_1_to_0": 5358,
+      "old_positions_in_holdouts": 80463,
+      "old_positive_positions_in_holdouts": 77430,
+      "old_positions_missing_in_rebuild": 302880,
+      "old_positive_positions_elsewhere_excluded": 6457
+    },
+    "HLA-B": {
+      "old_rows": 10639963,
+      "old_unique_positions": 9620155,
+      "old_positive_positions": 2039694,
+      "old_duplicate_position_rows": 1019808,
+      "positions_unchanged": 9102481,
+      "position_0_to_1": 105092,
+      "position_1_to_0": 45087,
+      "new_positions": 278349,
+      "new_positive_positions": 16992,
+      "positions_on_previously_omitted_proteins": 278349,
+      "old_positions_in_holdouts": 112028,
+      "old_positive_positions_in_holdouts": 107185,
+      "old_positions_missing_in_rebuild": 367495,
+      "old_positive_positions_elsewhere_excluded": 8190
+    },
+    "HLA-C": {
+      "old_rows": 7788459,
+      "old_unique_positions": 7596123,
+      "old_positive_positions": 799606,
+      "old_duplicate_position_rows": 192336,
+      "positions_unchanged": 7358438,
+      "new_positions": 140746,
+      "new_positive_positions": 7578,
+      "positions_on_previously_omitted_proteins": 140746,
+      "position_1_to_0": 1620,
+      "position_0_to_1": 13091,
+      "old_positions_in_holdouts": 33679,
+      "old_positive_positions_in_holdouts": 31932,
+      "old_positions_missing_in_rebuild": 222974,
+      "old_positive_positions_elsewhere_excluded": 4824
+    },
+    "HLA-DP": {
+      "old_rows": 5027325,
+      "old_unique_positions": 4464776,
+      "old_positive_positions": 243947,
+      "old_duplicate_position_rows": 562549,
+      "positions_unchanged": 4236099,
+      "position_1_to_0": 1083,
+      "new_positions": 53442,
+      "new_positive_positions": 1707,
+      "positions_on_previously_omitted_proteins": 53442,
+      "position_0_to_1": 467,
+      "old_positions_in_holdouts": 3729,
+      "old_positive_positions_in_holdouts": 3717,
+      "old_positions_missing_in_rebuild": 227127,
+      "old_positive_positions_elsewhere_excluded": 2745
+    },
+    "HLA-DQ": {
+      "old_rows": 2389441,
+      "old_unique_positions": 2194959,
+      "old_positive_positions": 108383,
+      "old_duplicate_position_rows": 194482,
+      "positions_unchanged": 2031973,
+      "position_0_to_1": 3736,
+      "new_positions": 77790,
+      "new_positive_positions": 1730,
+      "positions_on_previously_omitted_proteins": 77790,
+      "position_1_to_0": 894,
+      "old_positions_in_holdouts": 2180,
+      "old_positive_positions_in_holdouts": 2081,
+      "old_positions_missing_in_rebuild": 158356,
+      "old_positive_positions_elsewhere_excluded": 2069
+    },
+    "HLA-DR": {
+      "old_rows": 7588227,
+      "old_unique_positions": 6482302,
+      "old_positive_positions": 440835,
+      "old_duplicate_position_rows": 1105925,
+      "positions_unchanged": 5707212,
+      "new_positions": 157502,
+      "new_positive_positions": 3340,
+      "positions_on_previously_omitted_proteins": 157502,
+      "position_0_to_1": 13613,
+      "position_1_to_0": 10729,
+      "old_positions_in_holdouts": 17864,
+      "old_positive_positions_in_holdouts": 16036,
+      "old_positions_missing_in_rebuild": 750748,
+      "old_positive_positions_elsewhere_excluded": 10666
+    },
+    "H2-D": {
+      "old_rows": 4244842,
+      "old_unique_positions": 4185817,
+      "old_positive_positions": 181137,
+      "old_duplicate_position_rows": 59025,
+      "positions_unchanged": 2856937,
+      "new_positions": 194395,
+      "new_positive_positions": 3196,
+      "positions_on_previously_omitted_proteins": 194395,
+      "position_1_to_0": 19341,
+      "position_0_to_1": 2183,
+      "old_positions_in_holdouts": 6968,
+      "old_positive_positions_in_holdouts": 6586,
+      "old_positions_missing_in_rebuild": 1307356,
+      "old_positive_positions_elsewhere_excluded": 34005
+    },
+    "H2-K": {
+      "old_rows": 6022825,
+      "old_unique_positions": 5848668,
+      "old_positive_positions": 382785,
+      "old_duplicate_position_rows": 174157,
+      "new_positions": 191037,
+      "new_positive_positions": 6085,
+      "positions_on_previously_omitted_proteins": 191037,
+      "positions_unchanged": 5291955,
+      "position_0_to_1": 4936,
+      "position_1_to_0": 13287,
+      "old_positions_in_holdouts": 19743,
+      "old_positive_positions_in_holdouts": 19420,
+      "old_positions_missing_in_rebuild": 538490,
+      "old_positive_positions_elsewhere_excluded": 14823
+    },
+    "H2-L": {
+      "old_rows": 4448,
+      "old_unique_positions": 4421,
+      "old_positive_positions": 99,
+      "old_duplicate_position_rows": 27,
+      "new_positions": 398,
+      "new_positive_positions": 46,
+      "positions_on_previously_omitted_proteins": 398,
+      "positions_unchanged": 4421,
+      "old_positions_missing_in_rebuild": 0,
+      "old_positive_positions_elsewhere_excluded": 0
+    },
+    "H2-IA": {
+      "old_rows": 1790731,
+      "old_unique_positions": 1726584,
+      "old_positive_positions": 50779,
+      "old_duplicate_position_rows": 64147,
+      "positions_unchanged": 1458601,
+      "new_positions": 250068,
+      "new_positive_positions": 3584,
+      "positions_on_previously_omitted_proteins": 250068,
+      "position_0_to_1": 1923,
+      "position_1_to_0": 2626,
+      "old_positions_in_holdouts": 2433,
+      "old_positive_positions_in_holdouts": 2155,
+      "old_positions_missing_in_rebuild": 263434,
+      "old_positive_positions_elsewhere_excluded": 3924
+    },
+    "H2-IE": {
+      "old_rows": 52656,
+      "old_unique_positions": 52373,
+      "old_positive_positions": 1269,
+      "old_duplicate_position_rows": 283,
+      "new_positions": 18448,
+      "new_positive_positions": 288,
+      "positions_on_previously_omitted_proteins": 18448,
+      "positions_unchanged": 52327,
+      "position_0_to_1": 37,
+      "old_positions_in_holdouts": 9,
+      "old_positive_positions_in_holdouts": 9,
+      "old_positions_missing_in_rebuild": 9,
+      "old_positive_positions_elsewhere_excluded": 0
+    }
+  },
+  "seconds": 1612.31
+}

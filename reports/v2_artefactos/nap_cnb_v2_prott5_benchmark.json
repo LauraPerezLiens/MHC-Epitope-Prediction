@@ -1,0 +1,64 @@
+{
+  "load_seconds": 2.6377448600251228,
+  "arms": [
+    {
+      "batch_size": 32,
+      "inputs": 1024,
+      "token_seconds": 0.0947173482272774,
+      "forward_seconds": 1.4357805717736483,
+      "sequences_per_second": 669.063307187886,
+      "peak_vram_bytes": 2515070976
+    },
+    {
+      "batch_size": 128,
+      "inputs": 1024,
+      "token_seconds": 0.1466304969508201,
+      "forward_seconds": 1.2788720198441297,
+      "sequences_per_second": 718.3431722746628,
+      "peak_vram_bytes": 2708143616
+    },
+    {
+      "batch_size": 256,
+      "inputs": 1024,
+      "token_seconds": 0.10741293616592884,
+      "forward_seconds": 1.2344277661759406,
+      "sequences_per_second": 763.1308233628979,
+      "peak_vram_bytes": 2965399552
+    }
+  ],
+  "rss_kib": 4233452,
+  "precision_control": {
+    "rows": 128,
+    "max_abs": 0.0008649900555610657,
+    "max_relative_l2": 0.0039687384851276875
+  },
+  "runtime": {
+    "model": "Rostlab/prot_t5_xl_half_uniref50-enc",
+    "revision": "94a6abc029ae13029317b140b7424e012bf8dfbf",
+    "checkpoint_sha256": {
+      "config.json": "c93cc8c31433fb062cad1825a9c16cde962a2015c8a3b10cfdc5f76a85128db3",
+      "pytorch_model.bin": "7f51ba885541c7dc569d46b796af57cc7a2ba7945107dced4f19d1b5ec091157",
+      "special_tokens_map.json": "a4b8dfd3d9a75b0f6f9ddbcb52b147c7377f08aa9310e182829cda2a55684334",
+      "spiece.model": "74da7b4afcde53faa570114b530c726135bdfcdb813dec3abfb27f9d44db7324",
+      "tokenizer_config.json": "d3adf2fb21d1242b5c0b72602f02ce5b0c43f767c0f957e3b57a67b2f93bf4f2"
+    },
+    "precision": "fp16",
+    "pooling": "float32 mean of final hidden states at active positions including EOS",
+    "tokenization": "SentencePiece legacy, uppercase spaced residues; U/B/Z to X; fixed 26 active tokens",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "torch": "2.14.0",
+    "cuda": "13.0",
+    "transformers": "4.57.6",
+    "sentencepiece": "0.2.3",
+    "tokenizers": "0.22.2",
+    "numpy": "2.0.1",
+    "python": "3.10.13",
+    "deterministic": true,
+    "attention": "eager",
+    "tf32": false,
+    "fp16_reduced_precision_reduction": false,
+    "cublas_workspace": ":4096:8",
+    "seed": 20261119
+  },
+  "inventory_read_seconds": 1.5099639499094337
+}

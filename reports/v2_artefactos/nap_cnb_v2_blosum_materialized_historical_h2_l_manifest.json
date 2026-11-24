@@ -1,0 +1,95 @@
+{
+  "status": "complete_historical_pilot",
+  "family": "H2-L",
+  "archived_rows": 115648,
+  "eligible_train_variants": 89775,
+  "heldout_primary_collisions": 46,
+  "equivalent_duplicates": 550,
+  "variant_rows": 89179,
+  "unique_train_parents": 3569,
+  "labels_differ_from_historical": 51717,
+  "d1_revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+  "d1_index_sha256": "02baca1e3b511b66462db8732ae79665477942bff765ac0bab1df2acde4e2e21",
+  "historical_receipts": {
+    "master_index.csv": {
+      "source": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_blosum_ProtT5_chunks/master_index.csv.zst",
+      "original_bytes": 1915068,
+      "original_sha256": "eb6965db103c185dffc9d8bf45458dbf4a75ed6dee4fe6cf66a69164915ed455",
+      "compressed_bytes": 95080,
+      "archive_sha256": "7f1a3af2bfed7ab56e853fcaf7024761578347d50cdeea01cc7096dd137f166c",
+      "source_signature": [
+        38,
+        101337,
+        1915068,
+        1782803098512641145
+      ],
+      "format": "verified_zstd_v1"
+    },
+    "chunk_000000_metadata.csv": {
+      "source": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_blosum_ProtT5_chunks/chunk_000000_metadata.csv.zst",
+      "original_bytes": 3876386,
+      "original_sha256": "fba40d73a60aa12fc2ffef760c1d33ff5bd0cdd6cbe329e82754db749f1488b8",
+      "compressed_bytes": 209273,
+      "archive_sha256": "6791342dc4f0bb13aa049c7effc4eda484e1e647c01a78bc0cfd12784ede9728",
+      "source_signature": [
+        38,
+        101326,
+        3876386,
+        1782803057796353458
+      ],
+      "format": "verified_zstd_v1"
+    },
+    "chunk_000001_metadata.csv": {
+      "source": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_blosum_ProtT5_chunks/chunk_000001_metadata.csv.zst",
+      "original_bytes": 612112,
+      "original_sha256": "ad13767bfd0d06d97014ae51214c1c7269f31669c9c530559bd0ea602f5b3c0a",
+      "compressed_bytes": 33067,
+      "archive_sha256": "12d9ee17c93bd42443e5889421b198260bb93f780739d9f9af2b5e9562e17553",
+      "source_signature": [
+        38,
+        101333,
+        612112,
+        1782803098474639943
+      ],
+      "format": "verified_zstd_v1"
+    },
+    "chunk_000000_X.npy": {
+      "source": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_blosum_ProtT5_chunks/chunk_000000_X.npy.zst",
+      "original_bytes": 409600128,
+      "original_sha256": "8d950928266f0d10c9bf40fd689c26221f9d228cfebfe3b95d26824a4ab67f34",
+      "compressed_bytes": 264698605,
+      "archive_sha256": "6f6cfec3882c07367cc23cdbedffe03f24430f3dceb00578e928e7d81351dc87",
+      "source_signature": [
+        38,
+        101323,
+        409600128,
+        1782803057600347259
+      ],
+      "format": "verified_zstd_v1"
+    },
+    "chunk_000001_X.npy": {
+      "source": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_blosum_ProtT5_chunks/chunk_000001_X.npy.zst",
+      "original_bytes": 64094336,
+      "original_sha256": "8cf7d42bd6513b633687348bdc529c12e305bf99a4b15be15f1bbf451ae98046",
+      "compressed_bytes": 41712462,
+      "archive_sha256": "62c5caf4552ab8e9892e8371c849b6b00d578ce8b471f3368f1b8eea6c32ded8",
+      "source_signature": [
+        38,
+        101330,
+        64094336,
+        1782803098441638899
+      ],
+      "format": "verified_zstd_v1"
+    }
+  },
+  "files": {
+    "variants.parquet": {
+      "sha256": "3614d0a3d4b6f31dc7bf7a856ea058dccfcb68fde7587f5ac8f935da067a7dfa",
+      "bytes": 750551
+    },
+    "features.npy": {
+      "sha256": "23e4b37594b038f55f98e6e5a00dd9079500c9b9b544ae21953d17a212a0b0a7",
+      "bytes": 639235200
+    }
+  }
+}

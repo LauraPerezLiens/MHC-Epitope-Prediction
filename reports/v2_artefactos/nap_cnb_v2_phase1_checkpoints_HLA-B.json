@@ -1,0 +1,36 @@
+{
+  "events": 594318,
+  "events_simple": 552782,
+  "verified": 537910,
+  "pending": 56408,
+  "events_modified": 41536,
+  "proteins_no_verified_simple_evidence": 817,
+  "proteins_eligible": 16181,
+  "structural_proteins_matched": 15703,
+  "windows": 9531009,
+  "positive_windows": 2001316,
+  "pending_candidate_windows": 146818,
+  "structural_windows_matched": 9312062,
+  "held_out_windows": 112618,
+  "structural_proteins_missing_prediction": 77,
+  "structural_windows_missing_prediction": 15513,
+  "proteins_too_short": 2,
+  "structural_proteins_unverified_archived_reference": 401,
+  "structural_windows_unverified_archived_reference": 203434,
+  "proteins_unresolved_reference": 1,
+  "methods": {
+    "iedb_explicit_parent_reference": 505209,
+    "full_reference_alignment": 11839,
+    "verified_prior_coordinate_audit": 11990,
+    "exact_whole_reference_identity": 8872
+  },
+  "pending_reasons": {
+    "parent_reference_unavailable": 1939,
+    "source_version_unpinned": 99,
+    "parent_absent_or_projection_ambiguous": 2408,
+    "source_coordinates_missing_or_invalid": 83,
+    "modified_peptide_excluded": 41536,
+    "source_interval_mismatch": 113,
+    "source_reference_unavailable": 10230
+  }
+}

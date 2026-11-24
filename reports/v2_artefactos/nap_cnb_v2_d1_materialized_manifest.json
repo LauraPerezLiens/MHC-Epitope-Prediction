@@ -1,0 +1,2464 @@
+{
+  "block_directory": "blocks",
+  "blocks": [
+    {
+      "by_split": {
+        "TEST": 25001,
+        "TRAIN": 199996,
+        "VALIDATION": 25003
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0000.npy",
+        "sha256": "f98e381b5a8c1e9deeec234de9e46b0e19727e53f05944f2cf2677b36490ac21"
+      },
+      "group": 0,
+      "metadata": {
+        "bytes": 1191579,
+        "path": "0000.parquet",
+        "sha256": "e2d73420849c257973b11d1314c48beb7553b0138c25212f4cbcd4f1c564ba18"
+      },
+      "positive_by_split": {
+        "TEST": 9399,
+        "TRAIN": 76202,
+        "VALIDATION": 9437
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24965,
+        "TRAIN": 200133,
+        "VALIDATION": 24902
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0001.npy",
+        "sha256": "cc4109b9b008b07fd1337d59cda2ba288a4db7a118157191acf0a8a0a2cb8448"
+      },
+      "group": 1,
+      "metadata": {
+        "bytes": 1163915,
+        "path": "0001.parquet",
+        "sha256": "a793966eda6ba327bdbc91128603bc77d2605f1b80558955437bae477b412f2e"
+      },
+      "positive_by_split": {
+        "TEST": 8629,
+        "TRAIN": 69592,
+        "VALIDATION": 8717
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25273,
+        "TRAIN": 199673,
+        "VALIDATION": 25054
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0002.npy",
+        "sha256": "0dcd45fce9e6993607d9fb3a683a3dfe08115b19b71c5ca023fc41d7e231b630"
+      },
+      "group": 2,
+      "metadata": {
+        "bytes": 1176546,
+        "path": "0002.parquet",
+        "sha256": "361584adbdc74b5b87a0e7bf4390709fdebc7828f3020a27393d8972d4a6a141"
+      },
+      "positive_by_split": {
+        "TEST": 9667,
+        "TRAIN": 75337,
+        "VALIDATION": 9469
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25042,
+        "TRAIN": 199680,
+        "VALIDATION": 25278
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0003.npy",
+        "sha256": "20d5491410af575fe852ddf6c2c908063525c0406ea1f26ccc909420e8e4bedd"
+      },
+      "group": 3,
+      "metadata": {
+        "bytes": 1167245,
+        "path": "0003.parquet",
+        "sha256": "a2ecbdcd261695063d6199d388d33ff216622e65e83481e9f740ebfdbec2c666"
+      },
+      "positive_by_split": {
+        "TEST": 9272,
+        "TRAIN": 74487,
+        "VALIDATION": 9437
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24540,
+        "TRAIN": 200525,
+        "VALIDATION": 24935
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0004.npy",
+        "sha256": "fea79b9d02506166adbea412c24c10ea011fd4f2e0c25c28098a49d00c7fc553"
+      },
+      "group": 4,
+      "metadata": {
+        "bytes": 1175500,
+        "path": "0004.parquet",
+        "sha256": "e655eea26a625f3fdb2f4395fecc73e2ab228dd716a8ab0deeffb7cf648b7da2"
+      },
+      "positive_by_split": {
+        "TEST": 8752,
+        "TRAIN": 71068,
+        "VALIDATION": 8866
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25064,
+        "TRAIN": 199945,
+        "VALIDATION": 24991
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0005.npy",
+        "sha256": "41d7c1cd7d046adc8e087843a35ee0070fe67040a6480d3b5c808a1a0a1bdf72"
+      },
+      "group": 5,
+      "metadata": {
+        "bytes": 1174226,
+        "path": "0005.parquet",
+        "sha256": "19d9106ae8aba3e8b43f0d83f4bcb72165da948b275802f50bddfca9be009d82"
+      },
+      "positive_by_split": {
+        "TEST": 9925,
+        "TRAIN": 79386,
+        "VALIDATION": 10027
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24985,
+        "TRAIN": 200143,
+        "VALIDATION": 24872
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0006.npy",
+        "sha256": "309cf59e9f61d8166d694216584b000561e83c4f3a7c7b1c5e98fab1e4771955"
+      },
+      "group": 6,
+      "metadata": {
+        "bytes": 1174661,
+        "path": "0006.parquet",
+        "sha256": "bf67569d3471fc4b2f0849b41ad3d4f9da69450a6f4d7816175ff6f59c06d783"
+      },
+      "positive_by_split": {
+        "TEST": 8585,
+        "TRAIN": 69339,
+        "VALIDATION": 8601
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25046,
+        "TRAIN": 199996,
+        "VALIDATION": 24958
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0007.npy",
+        "sha256": "28c69a6419604496a58db4544792800ce98402e39688b23f57c01ccf02880477"
+      },
+      "group": 7,
+      "metadata": {
+        "bytes": 1185322,
+        "path": "0007.parquet",
+        "sha256": "a65f4019c76426315619011e4a19f2f3bc19c60050bd37347324072b9516167c"
+      },
+      "positive_by_split": {
+        "TEST": 9540,
+        "TRAIN": 76323,
+        "VALIDATION": 9468
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24920,
+        "TRAIN": 200183,
+        "VALIDATION": 24897
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0008.npy",
+        "sha256": "b755dfcb6bcaca8380769d258bde7226628d29846fa36f8bc15442ee5f237b8d"
+      },
+      "group": 8,
+      "metadata": {
+        "bytes": 1167758,
+        "path": "0008.parquet",
+        "sha256": "ba1db5dc80649d1c8ab9d2df1d0a5c15017dad808510040d05aab3d5f3ee5c49"
+      },
+      "positive_by_split": {
+        "TEST": 8805,
+        "TRAIN": 70227,
+        "VALIDATION": 8790
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25060,
+        "TRAIN": 200034,
+        "VALIDATION": 24906
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0009.npy",
+        "sha256": "37d9d67fb17a2199bf08cd260613fa34c3a69da846a5b9a95c4e3c6f7051366e"
+      },
+      "group": 9,
+      "metadata": {
+        "bytes": 1178790,
+        "path": "0009.parquet",
+        "sha256": "f3d31345043217a7d51b54bc04f8645160ea19e34eafa94a06477489f0735032"
+      },
+      "positive_by_split": {
+        "TEST": 9478,
+        "TRAIN": 75277,
+        "VALIDATION": 9471
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25041,
+        "TRAIN": 200076,
+        "VALIDATION": 24883
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0010.npy",
+        "sha256": "fdf4e722ad170cbb3f20dc51d03c9d86324f7536ddd26d30a09b1760586ceddf"
+      },
+      "group": 10,
+      "metadata": {
+        "bytes": 1165102,
+        "path": "0010.parquet",
+        "sha256": "f3f6e3f798ca28d0f4172c275bdbda4af79170539872ec0e60a002e94f039b41"
+      },
+      "positive_by_split": {
+        "TEST": 9414,
+        "TRAIN": 74541,
+        "VALIDATION": 9242
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25148,
+        "TRAIN": 200170,
+        "VALIDATION": 24682
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0011.npy",
+        "sha256": "cada4843b0728074d4ebbaaeeed1be8cfb029eafce377ec0c2d85814b7dba872"
+      },
+      "group": 11,
+      "metadata": {
+        "bytes": 1172358,
+        "path": "0011.parquet",
+        "sha256": "ba466e6b8f1330da16203c446237982b39d32ab4d353473347e031df41ebb026"
+      },
+      "positive_by_split": {
+        "TEST": 9936,
+        "TRAIN": 78259,
+        "VALIDATION": 9757
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24787,
+        "TRAIN": 200641,
+        "VALIDATION": 24572
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0012.npy",
+        "sha256": "5d9e178625afbc262d5d00083061ba51725701c55173c2c4f7d94f5b9894b0db"
+      },
+      "group": 12,
+      "metadata": {
+        "bytes": 1192594,
+        "path": "0012.parquet",
+        "sha256": "847515d90907209f5c3c732dbce64fde605eeb8b8e6b5e0fc926445ce405faf7"
+      },
+      "positive_by_split": {
+        "TEST": 12047,
+        "TRAIN": 98477,
+        "VALIDATION": 12062
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25104,
+        "TRAIN": 199966,
+        "VALIDATION": 24930
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0013.npy",
+        "sha256": "5f75d6cdb8bee983499100937266e6a13cfca5be04aad661de6bdb06ad16e1e9"
+      },
+      "group": 13,
+      "metadata": {
+        "bytes": 1188049,
+        "path": "0013.parquet",
+        "sha256": "9114d2e045bbe0de380ab7936e1a3c711ae330b1845d697bb19c3040c7f9dabf"
+      },
+      "positive_by_split": {
+        "TEST": 10391,
+        "TRAIN": 83796,
+        "VALIDATION": 10354
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24831,
+        "TRAIN": 200068,
+        "VALIDATION": 25101
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0014.npy",
+        "sha256": "865a5defbfdb7c738a5954ab100be7eda0ac6691be3ae354639aa6ea156e50d6"
+      },
+      "group": 14,
+      "metadata": {
+        "bytes": 1183880,
+        "path": "0014.parquet",
+        "sha256": "df3b8ea70731c49c4787a4c2204758a5843dba739ef34a40b0c4216725a4e460"
+      },
+      "positive_by_split": {
+        "TEST": 9658,
+        "TRAIN": 76319,
+        "VALIDATION": 9679
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25211,
+        "TRAIN": 199853,
+        "VALIDATION": 24936
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0015.npy",
+        "sha256": "abff4b0b3f6510d449da6ec3cb9554e170fa793f015908c2f45671e8dce89cc9"
+      },
+      "group": 15,
+      "metadata": {
+        "bytes": 1209842,
+        "path": "0015.parquet",
+        "sha256": "8cb56a81848becd127a2a01ede07288fe61c9daa606185db0f7ac8a9a9ffb376"
+      },
+      "positive_by_split": {
+        "TEST": 5944,
+        "TRAIN": 47272,
+        "VALIDATION": 6036
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25117,
+        "TRAIN": 200087,
+        "VALIDATION": 24796
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0016.npy",
+        "sha256": "a3079e10f40d4b655a71f248d2c78f9c476f64d07b49b1a5ca95e3cc0bae0e17"
+      },
+      "group": 16,
+      "metadata": {
+        "bytes": 1200405,
+        "path": "0016.parquet",
+        "sha256": "0ef0cc75bf77c5820cce1026c3a453a07de68abd57554040b3dbe7ab399de3f9"
+      },
+      "positive_by_split": {
+        "TEST": 4233,
+        "TRAIN": 33583,
+        "VALIDATION": 4222
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24858,
+        "TRAIN": 200059,
+        "VALIDATION": 25083
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0017.npy",
+        "sha256": "dbad33af7882d991cd7e74715d6b2a9d4785539f488ab401bae3b0d6b2008b24"
+      },
+      "group": 17,
+      "metadata": {
+        "bytes": 1201247,
+        "path": "0017.parquet",
+        "sha256": "00875860a6b7cf37dc0b86c663e9a6884eab7495aab1eddf2e097556ba7e9ba5"
+      },
+      "positive_by_split": {
+        "TEST": 3851,
+        "TRAIN": 30729,
+        "VALIDATION": 3784
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24950,
+        "TRAIN": 200004,
+        "VALIDATION": 25046
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0018.npy",
+        "sha256": "30be7503929e281e044d54269597648604dbb6a77ec766efdc320ecaa6376f93"
+      },
+      "group": 18,
+      "metadata": {
+        "bytes": 1212022,
+        "path": "0018.parquet",
+        "sha256": "485abbf7e7d335eb7b7b85929dffedfd8f177db4926d20e10b103f4202651278"
+      },
+      "positive_by_split": {
+        "TEST": 7899,
+        "TRAIN": 64322,
+        "VALIDATION": 7933
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25264,
+        "TRAIN": 199981,
+        "VALIDATION": 24755
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0019.npy",
+        "sha256": "64558fe7da47ec77ebff217d3093da6059a695c935bd41d8ca63f2e67bf958d7"
+      },
+      "group": 19,
+      "metadata": {
+        "bytes": 1193131,
+        "path": "0019.parquet",
+        "sha256": "8c61d567ba877cc6c21e662a664f33b3ed1a088cdaf97e1812f22df43b08325e"
+      },
+      "positive_by_split": {
+        "TEST": 7412,
+        "TRAIN": 59325,
+        "VALIDATION": 7460
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24844,
+        "TRAIN": 200226,
+        "VALIDATION": 24930
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0020.npy",
+        "sha256": "99096928278693a646fe7838ca301074b28dd67ce6469ab65aa49d1d1434f901"
+      },
+      "group": 20,
+      "metadata": {
+        "bytes": 1182099,
+        "path": "0020.parquet",
+        "sha256": "37abbc264db4a796ae3ce02c409faf1477a6990affd133290a6383de6e4da933"
+      },
+      "positive_by_split": {
+        "TEST": 8180,
+        "TRAIN": 65489,
+        "VALIDATION": 8145
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24935,
+        "TRAIN": 200175,
+        "VALIDATION": 24890
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0021.npy",
+        "sha256": "e104c242ea19c776c2dd3002b4832d545c9dc375f84f273561f7281368c15e96"
+      },
+      "group": 21,
+      "metadata": {
+        "bytes": 1176212,
+        "path": "0021.parquet",
+        "sha256": "25e7c4e3a20aea89cbf00c087a6815738b7372ef3e305bd952d6d3f60040a296"
+      },
+      "positive_by_split": {
+        "TEST": 7127,
+        "TRAIN": 56302,
+        "VALIDATION": 6942
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24845,
+        "TRAIN": 200365,
+        "VALIDATION": 24790
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0022.npy",
+        "sha256": "dca9e3eec2be56b0d4bc0842dd9b282b350efa5f9ac2bcb3b654d6e195658039"
+      },
+      "group": 22,
+      "metadata": {
+        "bytes": 1184211,
+        "path": "0022.parquet",
+        "sha256": "3dbb8f674db6fe6688293c9bfd36ba1ac9094f317f74f0db15944a47f6a6b3df"
+      },
+      "positive_by_split": {
+        "TEST": 7289,
+        "TRAIN": 59882,
+        "VALIDATION": 7372
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24946,
+        "TRAIN": 200037,
+        "VALIDATION": 25017
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0023.npy",
+        "sha256": "d6caee2ddeef432f8beb1ee4ea64d34cf33f06f29c500c31e90e609df78cff61"
+      },
+      "group": 23,
+      "metadata": {
+        "bytes": 1180763,
+        "path": "0023.parquet",
+        "sha256": "6b788e322be32d7102b37e7571f408150e2ae9ff37d20d4763bf02cee315c8f1"
+      },
+      "positive_by_split": {
+        "TEST": 8603,
+        "TRAIN": 69234,
+        "VALIDATION": 8676
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24863,
+        "TRAIN": 200498,
+        "VALIDATION": 24639
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0024.npy",
+        "sha256": "353eb499bf3e3faa1ade7c885ca45f1c2cfa1db286412d4cde37cb5ef667f29e"
+      },
+      "group": 24,
+      "metadata": {
+        "bytes": 1193034,
+        "path": "0024.parquet",
+        "sha256": "d9bb5de98ebf5b071bf4444572c1fd21db90f87e2446f7487c4574d1d8456b1f"
+      },
+      "positive_by_split": {
+        "TEST": 8560,
+        "TRAIN": 68628,
+        "VALIDATION": 8530
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25061,
+        "TRAIN": 199956,
+        "VALIDATION": 24983
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0025.npy",
+        "sha256": "df8271c80d01f5f5b53a2d4b9bcfe5f91b26d88ede128b3b2b337fc77c6caea4"
+      },
+      "group": 25,
+      "metadata": {
+        "bytes": 1179428,
+        "path": "0025.parquet",
+        "sha256": "29bc87001536dc3a06759d6e3ceec9fad88a5a99a82b315792405b0c3ba6e11f"
+      },
+      "positive_by_split": {
+        "TEST": 8884,
+        "TRAIN": 70459,
+        "VALIDATION": 8824
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25188,
+        "TRAIN": 199826,
+        "VALIDATION": 24986
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0026.npy",
+        "sha256": "6c45095657d3a5cb9c6c3fb0ab66e93ab168c0a36ccab3f59838d892dbb2fc44"
+      },
+      "group": 26,
+      "metadata": {
+        "bytes": 1200820,
+        "path": "0026.parquet",
+        "sha256": "ba97894870047126b71369cd6cc24dddede071302db297ba4e0c8fcc164664fe"
+      },
+      "positive_by_split": {
+        "TEST": 9896,
+        "TRAIN": 78664,
+        "VALIDATION": 9879
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24919,
+        "TRAIN": 200063,
+        "VALIDATION": 25018
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0027.npy",
+        "sha256": "3c95f526b1cf01ad10fba0033d54c0b273d0b22eaf375cdd4e955e9bf9c63e27"
+      },
+      "group": 27,
+      "metadata": {
+        "bytes": 1189262,
+        "path": "0027.parquet",
+        "sha256": "b3018f7b53f4976a81d9e106a478af141828ecccfc716b62f366a4aed06dd76b"
+      },
+      "positive_by_split": {
+        "TEST": 9910,
+        "TRAIN": 78219,
+        "VALIDATION": 9754
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24933,
+        "TRAIN": 200049,
+        "VALIDATION": 25018
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0028.npy",
+        "sha256": "6cc661d2d0dc779247d3b6bc083c5484a10ff6931e2dd843f08bdd647b34686a"
+      },
+      "group": 28,
+      "metadata": {
+        "bytes": 1192028,
+        "path": "0028.parquet",
+        "sha256": "4df34c311e5601a0914bfb0c7b333294617f0835bdc76345ef2eab4769af47e4"
+      },
+      "positive_by_split": {
+        "TEST": 9446,
+        "TRAIN": 75776,
+        "VALIDATION": 9426
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24941,
+        "TRAIN": 200222,
+        "VALIDATION": 24837
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0029.npy",
+        "sha256": "c9e9c2193c083040b53492b0de7c95097bec5e3140f4db3ab0e320e523713807"
+      },
+      "group": 29,
+      "metadata": {
+        "bytes": 1216897,
+        "path": "0029.parquet",
+        "sha256": "1bee7dbab575d0501c0e216632b7b9c7230dc4921ce8624610ac007f4250c97e"
+      },
+      "positive_by_split": {
+        "TEST": 4967,
+        "TRAIN": 39741,
+        "VALIDATION": 4918
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24928,
+        "TRAIN": 199771,
+        "VALIDATION": 25301
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0030.npy",
+        "sha256": "16b3abb93be929c4fbdc2264184c8b35be64ec81cd94e4bb9887a5fe76fe9d02"
+      },
+      "group": 30,
+      "metadata": {
+        "bytes": 1240005,
+        "path": "0030.parquet",
+        "sha256": "5f4a04b73d22a7e26849eeb26333b2fd0f1206e2325b2636306c0924c1042d3e"
+      },
+      "positive_by_split": {
+        "TEST": 4388,
+        "TRAIN": 34631,
+        "VALIDATION": 4457
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24918,
+        "TRAIN": 199894,
+        "VALIDATION": 25188
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0031.npy",
+        "sha256": "917b391dbb12a32f43ab6e2114da15ef1b5fb774ee263dd5b609f3c666f6e762"
+      },
+      "group": 31,
+      "metadata": {
+        "bytes": 1224690,
+        "path": "0031.parquet",
+        "sha256": "03bcb6b6f96d98bd049e31b78220a8a68292babed5098c2e5dc7ca5346948529"
+      },
+      "positive_by_split": {
+        "TEST": 3245,
+        "TRAIN": 25955,
+        "VALIDATION": 3193
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24673,
+        "TRAIN": 200499,
+        "VALIDATION": 24828
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0032.npy",
+        "sha256": "1219eb38667debce528b3a98f4f10f446c92536872f7ceaa79bee4174b21e4d4"
+      },
+      "group": 32,
+      "metadata": {
+        "bytes": 1223260,
+        "path": "0032.parquet",
+        "sha256": "8d748062dad52452a297569500dfd82ebfcacb2be115e27f8ae07dd4d8bb1df1"
+      },
+      "positive_by_split": {
+        "TEST": 3132,
+        "TRAIN": 24759,
+        "VALIDATION": 2997
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25162,
+        "TRAIN": 200005,
+        "VALIDATION": 24833
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0033.npy",
+        "sha256": "c770f07bfec112012d2b6404c377f6f47cccc09ee70e21c05b933d7697ef4caa"
+      },
+      "group": 33,
+      "metadata": {
+        "bytes": 1221833,
+        "path": "0033.parquet",
+        "sha256": "3c4d41076bc6ea314822f386bb792795aa6fdf7b5ea9d772ab11d5624510e6c7"
+      },
+      "positive_by_split": {
+        "TEST": 3113,
+        "TRAIN": 24730,
+        "VALIDATION": 3011
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25005,
+        "TRAIN": 199715,
+        "VALIDATION": 25280
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0034.npy",
+        "sha256": "aa71527751b3045fbddc55bf608f47ee58df57f8bf95ecbc3876136b2c2f7218"
+      },
+      "group": 34,
+      "metadata": {
+        "bytes": 1229330,
+        "path": "0034.parquet",
+        "sha256": "0df574fa0264c9aeb89918b04b6524a5b63b1e3346679b1c0c67e5832e846e54"
+      },
+      "positive_by_split": {
+        "TEST": 4395,
+        "TRAIN": 35355,
+        "VALIDATION": 4363
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25122,
+        "TRAIN": 200022,
+        "VALIDATION": 24856
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0035.npy",
+        "sha256": "fadd5a43b26c5de96fce42dad8e22d9baaa3a3aa04bcd6874f9788413133a70b"
+      },
+      "group": 35,
+      "metadata": {
+        "bytes": 1202697,
+        "path": "0035.parquet",
+        "sha256": "7a11e2025a7bb49720f6eb87ee0775e030fa5bdbea13c30a0c62f474cacca83d"
+      },
+      "positive_by_split": {
+        "TEST": 6482,
+        "TRAIN": 51684,
+        "VALIDATION": 6556
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25217,
+        "TRAIN": 199640,
+        "VALIDATION": 25143
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0036.npy",
+        "sha256": "1cda201e4aebc63cb77530977c786fbebd9b69d486de6fa0eea5973db95ade6d"
+      },
+      "group": 36,
+      "metadata": {
+        "bytes": 1197579,
+        "path": "0036.parquet",
+        "sha256": "48bd47485faa03c66a0b94f0b554bdc915ee7decad8502fcc7910f98728c86ee"
+      },
+      "positive_by_split": {
+        "TEST": 6710,
+        "TRAIN": 53601,
+        "VALIDATION": 6814
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24803,
+        "TRAIN": 200271,
+        "VALIDATION": 24926
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0037.npy",
+        "sha256": "6c98445c0a11b2f185d26d763c412a7518efa060c084a18e2c50b98a460d4789"
+      },
+      "group": 37,
+      "metadata": {
+        "bytes": 1197077,
+        "path": "0037.parquet",
+        "sha256": "47c95464c9086b184acdc9a13178afdbec65d2de317bc0ce08cf63f1cf249209"
+      },
+      "positive_by_split": {
+        "TEST": 6990,
+        "TRAIN": 56292,
+        "VALIDATION": 6845
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24797,
+        "TRAIN": 200241,
+        "VALIDATION": 24962
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0038.npy",
+        "sha256": "8288b6a8e88d685f2bec22310bb305565330296044eccb92977dd4cf3c1ca7de"
+      },
+      "group": 38,
+      "metadata": {
+        "bytes": 1213771,
+        "path": "0038.parquet",
+        "sha256": "16474965c821648256ee30998ff985f786911dda913975847caa855783fefbb9"
+      },
+      "positive_by_split": {
+        "TEST": 8237,
+        "TRAIN": 66578,
+        "VALIDATION": 8265
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24875,
+        "TRAIN": 200008,
+        "VALIDATION": 25117
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0039.npy",
+        "sha256": "e1e69388d8a0660f644010b6b5ca807941797cdb28d40d5814fa7370cba4df39"
+      },
+      "group": 39,
+      "metadata": {
+        "bytes": 1209797,
+        "path": "0039.parquet",
+        "sha256": "964e0c06a96fb20cafcacbf35c6c590084f96854eb8c31af9245d32a2b2fc047"
+      },
+      "positive_by_split": {
+        "TEST": 6943,
+        "TRAIN": 56384,
+        "VALIDATION": 7037
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24814,
+        "TRAIN": 200238,
+        "VALIDATION": 24948
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0040.npy",
+        "sha256": "009ba90925778a119b8ee56774ce7d892c967c0d3cd1628a96dad1dfdc5ac883"
+      },
+      "group": 40,
+      "metadata": {
+        "bytes": 1252280,
+        "path": "0040.parquet",
+        "sha256": "e9ee0ff45dacc6132a92b3f08609349ae627b1fd5c73ab7bec8731450bdfb024"
+      },
+      "positive_by_split": {
+        "TEST": 3567,
+        "TRAIN": 28794,
+        "VALIDATION": 3642
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25010,
+        "TRAIN": 199741,
+        "VALIDATION": 25249
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0041.npy",
+        "sha256": "2b5640ee450c4cf00da3c26d4609f91665587f7764bf3ff95615bad79ca3ed23"
+      },
+      "group": 41,
+      "metadata": {
+        "bytes": 1248993,
+        "path": "0041.parquet",
+        "sha256": "0633fae85c16f80958bce1d27b763538a08bb185fecaa6bc98118181f86a3713"
+      },
+      "positive_by_split": {
+        "TEST": 2692,
+        "TRAIN": 21502,
+        "VALIDATION": 2674
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24854,
+        "TRAIN": 200146,
+        "VALIDATION": 25000
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0042.npy",
+        "sha256": "ea849f725acf0074361d5115ac7fd31e900d52ee0a5310acf1de508d280afb62"
+      },
+      "group": 42,
+      "metadata": {
+        "bytes": 1227407,
+        "path": "0042.parquet",
+        "sha256": "b4bb70687ba48e8df22f5f62052d5af1e3c3f4f70ec5ff8e7a3282ee3e53292e"
+      },
+      "positive_by_split": {
+        "TEST": 2581,
+        "TRAIN": 20802,
+        "VALIDATION": 2663
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24961,
+        "TRAIN": 200211,
+        "VALIDATION": 24828
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0043.npy",
+        "sha256": "17baec6e48b952462d11e1f570b0246b135fd7e32e0c4f967dba4de14fd0da63"
+      },
+      "group": 43,
+      "metadata": {
+        "bytes": 1241488,
+        "path": "0043.parquet",
+        "sha256": "6eef56c890dd4e18f85f59243412007490aaeeb71c8457b19091d49f90898aa8"
+      },
+      "positive_by_split": {
+        "TEST": 3195,
+        "TRAIN": 26108,
+        "VALIDATION": 3301
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25053,
+        "TRAIN": 200022,
+        "VALIDATION": 24925
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0044.npy",
+        "sha256": "ba518661764eb6fe7358aa43e64ed2005bd3d450aa97275e26100aa91c73887e"
+      },
+      "group": 44,
+      "metadata": {
+        "bytes": 1213513,
+        "path": "0044.parquet",
+        "sha256": "eb6f7565209b18b2dfe538e53579c335754c87e8860dca498617dd6410b4876d"
+      },
+      "positive_by_split": {
+        "TEST": 5453,
+        "TRAIN": 44009,
+        "VALIDATION": 5583
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24776,
+        "TRAIN": 200432,
+        "VALIDATION": 24792
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0045.npy",
+        "sha256": "495684adc943f7b837dcab4d4f9c0075dfff349dcb3f0410c2e4e464a2ad5f16"
+      },
+      "group": 45,
+      "metadata": {
+        "bytes": 1217754,
+        "path": "0045.parquet",
+        "sha256": "2191105395163bd2fb147efeadfa12472b59f6ca0a4c6e951f032dc46580582d"
+      },
+      "positive_by_split": {
+        "TEST": 6410,
+        "TRAIN": 52503,
+        "VALIDATION": 6376
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24813,
+        "TRAIN": 200267,
+        "VALIDATION": 24920
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0046.npy",
+        "sha256": "6d136f782e3af64a825534eb75b4ac32feda5bf3202b79763b875ead396d9c06"
+      },
+      "group": 46,
+      "metadata": {
+        "bytes": 1216638,
+        "path": "0046.parquet",
+        "sha256": "0b4a7c056a8d084440ec989d501cd0728cb48a2646a9faf1d5fa4c3f1bcfce6e"
+      },
+      "positive_by_split": {
+        "TEST": 7429,
+        "TRAIN": 60438,
+        "VALIDATION": 7495
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25055,
+        "TRAIN": 199640,
+        "VALIDATION": 25305
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0047.npy",
+        "sha256": "51fe72f9bad23fdfd99245846e878a41a25afe79a47d73d0a88c59c42fbf9d14"
+      },
+      "group": 47,
+      "metadata": {
+        "bytes": 1233238,
+        "path": "0047.parquet",
+        "sha256": "57dcb503104a80da3ba31324f3686a7adc2310300e548ca036ff65f8bee6771a"
+      },
+      "positive_by_split": {
+        "TEST": 6177,
+        "TRAIN": 49246,
+        "VALIDATION": 6295
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25018,
+        "TRAIN": 199971,
+        "VALIDATION": 25011
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0048.npy",
+        "sha256": "3f68606feb3f7c405e7872247203a7666a94293fa9f5418440eeb5f3d6592a74"
+      },
+      "group": 48,
+      "metadata": {
+        "bytes": 1248256,
+        "path": "0048.parquet",
+        "sha256": "c778c66c4a0b3bc429b65c55110abb1686ac135c4f2d47c101e088fd75f16bb7"
+      },
+      "positive_by_split": {
+        "TEST": 2727,
+        "TRAIN": 21856,
+        "VALIDATION": 2763
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25187,
+        "TRAIN": 199745,
+        "VALIDATION": 25068
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0049.npy",
+        "sha256": "7c0d4e4d7c74f950a283515d2692b63fec8fcf021ec63bb66a244778f1256aa0"
+      },
+      "group": 49,
+      "metadata": {
+        "bytes": 1251020,
+        "path": "0049.parquet",
+        "sha256": "e7e47458e237d42b2e75c648ce5cb42224818a283f65ebc3c8ff33157b829f4a"
+      },
+      "positive_by_split": {
+        "TEST": 2197,
+        "TRAIN": 17615,
+        "VALIDATION": 2173
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25349,
+        "TRAIN": 199787,
+        "VALIDATION": 24864
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0050.npy",
+        "sha256": "bdb8ac0f0493ab92cba8aec43e8f50d00a1168733b295f23d2d1ba91eb21adb9"
+      },
+      "group": 50,
+      "metadata": {
+        "bytes": 1235163,
+        "path": "0050.parquet",
+        "sha256": "05e3d3d31e634e62b8ef8d3a1c3b538b74163407cf67b9aa759584cd9b0c9cd3"
+      },
+      "positive_by_split": {
+        "TEST": 4623,
+        "TRAIN": 36937,
+        "VALIDATION": 4629
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25216,
+        "TRAIN": 200073,
+        "VALIDATION": 24711
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0051.npy",
+        "sha256": "52445c8bb78fb3370029ee4ab5c990607e40f6421cca702e1eef84da7fcde856"
+      },
+      "group": 51,
+      "metadata": {
+        "bytes": 1224567,
+        "path": "0051.parquet",
+        "sha256": "73b151126881ca14f59e20d6a356cb4cbfd8ed266254347b2f9d82702ba5c891"
+      },
+      "positive_by_split": {
+        "TEST": 5072,
+        "TRAIN": 38920,
+        "VALIDATION": 4755
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25126,
+        "TRAIN": 199911,
+        "VALIDATION": 24963
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0052.npy",
+        "sha256": "653b61f2e5399ad740238653e75b583e0559dda157e9cc5e11ebfefd14d7899d"
+      },
+      "group": 52,
+      "metadata": {
+        "bytes": 1244581,
+        "path": "0052.parquet",
+        "sha256": "72f8725816a7923dc52107bf1cc1e89a17f3fc563fc56c833db8f14460dcf150"
+      },
+      "positive_by_split": {
+        "TEST": 3662,
+        "TRAIN": 28819,
+        "VALIDATION": 3532
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24709,
+        "TRAIN": 200224,
+        "VALIDATION": 25067
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0053.npy",
+        "sha256": "3ec20e363d353b70465a5e756a8e187fa50a5f42fed0ecefffd02431e17abbe4"
+      },
+      "group": 53,
+      "metadata": {
+        "bytes": 1247436,
+        "path": "0053.parquet",
+        "sha256": "449a9d7afce3c65b2fbf01d571b798124f5823d82299bde9e48319893fb7b1b0"
+      },
+      "positive_by_split": {
+        "TEST": 1849,
+        "TRAIN": 15325,
+        "VALIDATION": 1895
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24949,
+        "TRAIN": 200357,
+        "VALIDATION": 24694
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0054.npy",
+        "sha256": "1a41b117cafe6a929cdecb75e03c27615419bad05eeca83efb2fd1adbcde2374"
+      },
+      "group": 54,
+      "metadata": {
+        "bytes": 1227897,
+        "path": "0054.parquet",
+        "sha256": "7da87a8a96dc881eca22e9a03746fa5124742421332b130b92cb5a01866ebb44"
+      },
+      "positive_by_split": {
+        "TEST": 3649,
+        "TRAIN": 29498,
+        "VALIDATION": 3691
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24895,
+        "TRAIN": 200013,
+        "VALIDATION": 25092
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0055.npy",
+        "sha256": "0750f0ec76a4f008c67a851bc430fae75147e7d89afda8bd75a09ff3d6d6d4da"
+      },
+      "group": 55,
+      "metadata": {
+        "bytes": 1246627,
+        "path": "0055.parquet",
+        "sha256": "a7d9115ba5a2a2bb63ec199a7e1baeee433a0c178638f13e23bcd19406ebd1f5"
+      },
+      "positive_by_split": {
+        "TEST": 3877,
+        "TRAIN": 30661,
+        "VALIDATION": 3936
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25054,
+        "TRAIN": 199989,
+        "VALIDATION": 24957
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0056.npy",
+        "sha256": "d801f379e4ba40e2a05c448482b3f6b83aefeeee88b9dcd114a5be9a7e56ba09"
+      },
+      "group": 56,
+      "metadata": {
+        "bytes": 1244303,
+        "path": "0056.parquet",
+        "sha256": "8ca9607df912ac5ce23c30a51e3f3a1cc0813544b166a69587d051c708bd8ca7"
+      },
+      "positive_by_split": {
+        "TEST": 2277,
+        "TRAIN": 17978,
+        "VALIDATION": 2271
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25056,
+        "TRAIN": 199961,
+        "VALIDATION": 24983
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0057.npy",
+        "sha256": "0267bedac60f29c48a85c1941be1add0f89cc8389f304ea842f3a3e465508f24"
+      },
+      "group": 57,
+      "metadata": {
+        "bytes": 1247868,
+        "path": "0057.parquet",
+        "sha256": "db4b673834113217dc73e074e2b9a9dc38e6f52c01920377fba3eccaef3f34e0"
+      },
+      "positive_by_split": {
+        "TEST": 2414,
+        "TRAIN": 19353,
+        "VALIDATION": 2407
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 24882,
+        "TRAIN": 200092,
+        "VALIDATION": 25026
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0058.npy",
+        "sha256": "05a0edb847470487cf9d929d6887cf4dcdb343cdbe1495b055aced7e2b07b8d9"
+      },
+      "group": 58,
+      "metadata": {
+        "bytes": 1252551,
+        "path": "0058.parquet",
+        "sha256": "05d8d1c6ffa1253cf138db0ae6c432ea61f2da3d56d1947b1dfade9d525e9c63"
+      },
+      "positive_by_split": {
+        "TEST": 2283,
+        "TRAIN": 18197,
+        "VALIDATION": 2293
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 25216,
+        "TRAIN": 199866,
+        "VALIDATION": 24918
+      },
+      "features": {
+        "bytes": 1792000128,
+        "path": "0059.npy",
+        "sha256": "09817ade05e0bc16dc7b9fdc504d0531335c4c5770d0b74dc656378c32b05f2a"
+      },
+      "group": 59,
+      "metadata": {
+        "bytes": 1262172,
+        "path": "0059.parquet",
+        "sha256": "1fe85c98d1dd63b101dbd17e0af64aecb36c5a86bea5dd3dc004928ffb696a85"
+      },
+      "positive_by_split": {
+        "TEST": 2174,
+        "TRAIN": 17891,
+        "VALIDATION": 2195
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 250000
+    },
+    {
+      "by_split": {
+        "TEST": 10229,
+        "TRAIN": 80248,
+        "VALIDATION": 10115
+      },
+      "features": {
+        "bytes": 721043584,
+        "path": "0060.npy",
+        "sha256": "129395afa2b2ea99a27423e76048d708cf6c67cdea4f7134ddb140a4dbbaafa2"
+      },
+      "group": 60,
+      "metadata": {
+        "bytes": 567241,
+        "path": "0060.parquet",
+        "sha256": "2d92b1fb26ec8a60a764af99d72aef7ad1d6394ddde3a0939970fd5f1d9fc1d2"
+      },
+      "positive_by_split": {
+        "TEST": 514,
+        "TRAIN": 3957,
+        "VALIDATION": 454
+      },
+      "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+      "rows": 100592
+    }
+  ],
+  "by_split": {
+    "TEST": {
+      "negative": 1125248,
+      "positive": 384156,
+      "rows": 1509404
+    },
+    "TRAIN": {
+      "negative": 9006997,
+      "positive": 3076633,
+      "rows": 12083630
+    },
+    "VALIDATION": {
+      "negative": 1123719,
+      "positive": 383839,
+      "rows": 1507558
+    }
+  },
+  "cache_evidence": "Existing baseline staging, only read. Exact secondary keys and inline vectors rechecked; prior provenance retained for archival compact entries and staged primary batches.",
+  "d1_manifest": "results/nap_cnb_v2_d1_original_manifest/manifest.json",
+  "dimension": 1792,
+  "dtype": "<f4",
+  "elapsed_seconds": 1065.34,
+  "feature_order": [
+    {
+      "dimension": 1024,
+      "model": "ProtT5"
+    },
+    {
+      "dimension": 768,
+      "model": "SecondaryBERT"
+    }
+  ],
+  "normalization": "none",
+  "observations": 15100592,
+  "payload_bytes": 108314131222,
+  "provenance": {
+    "builder": "34e99ca1582351765e58d675546d7157a9aacb3f936c7be30b249a04c54d747f",
+    "cache_file_signatures": {
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0000.npy": [
+        1477073,
+        409600128,
+        1795381107619408597,
+        1795381107619408597
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0001.npy": [
+        1477074,
+        409600128,
+        1795381111997560288,
+        1795381111997560288
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0002.npy": [
+        1477075,
+        409600128,
+        1795381115796691919,
+        1795381115796691919
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0003.npy": [
+        1477076,
+        409600128,
+        1795381120512855323,
+        1795381120512855323
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0004.npy": [
+        1477077,
+        409600128,
+        1795381124697000292,
+        1795381124697000292
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0005.npy": [
+        1477078,
+        409600128,
+        1795381129084152296,
+        1795381129084152296
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0006.npy": [
+        1477079,
+        409600128,
+        1795381133798315630,
+        1795381133798315630
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0007.npy": [
+        1477080,
+        409600128,
+        1795381138976495040,
+        1795381138976495040
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0008.npy": [
+        1477081,
+        409600128,
+        1795381143724659552,
+        1795381143724659552
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0009.npy": [
+        1477082,
+        409600128,
+        1795381149414856704,
+        1795381149414856704
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0010.npy": [
+        1477083,
+        409600128,
+        1795381154438030745,
+        1795381154438030745
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0011.npy": [
+        1477084,
+        409600128,
+        1795381158303164662,
+        1795381158303164662
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0012.npy": [
+        1477085,
+        409600128,
+        1795381163209334649,
+        1795381163209334649
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0013.npy": [
+        1477086,
+        409600128,
+        1795381168587520990,
+        1795381168587520990
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0014.npy": [
+        1477087,
+        409600128,
+        1795381173224681657,
+        1795381173224681657
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0015.npy": [
+        1477088,
+        409600128,
+        1795381177470828777,
+        1795381177470828777
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0016.npy": [
+        1477089,
+        409600128,
+        1795381181782978183,
+        1795381181782978183
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0017.npy": [
+        1477090,
+        409600128,
+        1795381185945122392,
+        1795381185945122392
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0018.npy": [
+        1477091,
+        409600128,
+        1795381191078300245,
+        1795381191078300245
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0019.npy": [
+        1477092,
+        409600128,
+        1795381196779497779,
+        1795381196779497779
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0020.npy": [
+        1477093,
+        409600128,
+        1795381202441693963,
+        1795381202441693963
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0021.npy": [
+        1477094,
+        409600128,
+        1795381208526904806,
+        1795381208526904806
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0022.npy": [
+        1477095,
+        409600128,
+        1795381212183031483,
+        1795381212183031483
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0023.npy": [
+        1477096,
+        409600128,
+        1795381218104236641,
+        1795381218104236641
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0024.npy": [
+        1477097,
+        409600128,
+        1795381223017406871,
+        1795381223017406871
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0025.npy": [
+        1477098,
+        409600128,
+        1795381228715604301,
+        1795381228715604301
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0026.npy": [
+        1477099,
+        409600128,
+        1795381234289797437,
+        1795381234289797437
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0027.npy": [
+        1477100,
+        409600128,
+        1795381239364973284,
+        1795381239364973284
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0028.npy": [
+        1477101,
+        409600128,
+        1795381244784161050,
+        1795381244784161050
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0029.npy": [
+        1477102,
+        409600128,
+        1795381248319283535,
+        1795381248319283535
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0030.npy": [
+        1477103,
+        409600128,
+        1795381251812404565,
+        1795381251812404565
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0031.npy": [
+        1477104,
+        409600128,
+        1795381257064586543,
+        1795381257064586543
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0032.npy": [
+        1477105,
+        409600128,
+        1795381262413771883,
+        1795381262413771883
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0033.npy": [
+        1477106,
+        409600128,
+        1795381267965964256,
+        1795381267965964256
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0034.npy": [
+        1477107,
+        409600128,
+        1795381272586124337,
+        1795381272586124337
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0035.npy": [
+        1477108,
+        409600128,
+        1795381277389290758,
+        1795381277389290758
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0036.npy": [
+        1477109,
+        409600128,
+        1795381283198492037,
+        1795381283198492037
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0037.npy": [
+        1477110,
+        409600128,
+        1795381288830687183,
+        1795381288830687183
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0038.npy": [
+        1477111,
+        409600128,
+        1795381295295911193,
+        1795381295295911193
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0039.npy": [
+        1477112,
+        409600128,
+        1795381301261117879,
+        1795381301261117879
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0040.npy": [
+        1477113,
+        409600128,
+        1795381306536300656,
+        1795381306536300656
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0041.npy": [
+        1477114,
+        409600128,
+        1795381311509472968,
+        1795381311509472968
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0042.npy": [
+        1477115,
+        409600128,
+        1795381317303673728,
+        1795381317303673728
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0043.npy": [
+        1477116,
+        409600128,
+        1795381320903798468,
+        1795381320903798468
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0044.npy": [
+        1477117,
+        409600128,
+        1795381324904937102,
+        1795381324904937102
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0045.npy": [
+        1477118,
+        409600128,
+        1795381329781106055,
+        1795381329781106055
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0046.npy": [
+        1477119,
+        409600128,
+        1795381334770278924,
+        1795381334770278924
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0047.npy": [
+        1477120,
+        409600128,
+        1795381340392473725,
+        1795381340392473725
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0048.npy": [
+        1477121,
+        409600128,
+        1795381345177639524,
+        1795381345177639524
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0049.npy": [
+        1477122,
+        409600128,
+        1795381350953839664,
+        1795381350953839664
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0050.npy": [
+        1477123,
+        409600128,
+        1795381356419029026,
+        1795381356419029026
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0051.npy": [
+        1477124,
+        409600128,
+        1795381361617209137,
+        1795381361617209137
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0052.npy": [
+        1477125,
+        409600128,
+        1795381368129434776,
+        1795381368129434776
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0053.npy": [
+        1477126,
+        409600128,
+        1795381373658626355,
+        1795381373658626355
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0054.npy": [
+        1477127,
+        409600128,
+        1795381379624833076,
+        1795381379624833076
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0055.npy": [
+        1477128,
+        409600128,
+        1795381384147989798,
+        1795381384147989798
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0056.npy": [
+        1477129,
+        409600128,
+        1795381389621179438,
+        1795381389621179438
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0057.npy": [
+        1477130,
+        409600128,
+        1795381393501313880,
+        1795381393501313880
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0058.npy": [
+        1477131,
+        409600128,
+        1795381397563454628,
+        1795381397563454628
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0059.npy": [
+        1477132,
+        409600128,
+        1795381401945606465,
+        1795381401945606465
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0060.npy": [
+        1477133,
+        409600128,
+        1795381406813775140,
+        1795381406813775140
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0061.npy": [
+        1477134,
+        409600128,
+        1795381413244997975,
+        1795381413244997975
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0062.npy": [
+        1477135,
+        409600128,
+        1795381418506180269,
+        1795381418506180269
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0063.npy": [
+        1477136,
+        409600128,
+        1795381424274379512,
+        1795381424274379512
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0064.npy": [
+        1477137,
+        409600128,
+        1795381428814536189,
+        1795381428814536189
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0065.npy": [
+        1477138,
+        409600128,
+        1795381433352692800,
+        1795381433352692800
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0066.npy": [
+        1477139,
+        409600128,
+        1795381438678876617,
+        1795381438678876617
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0067.npy": [
+        1477140,
+        409600128,
+        1795381443555044908,
+        1795381443555044908
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0068.npy": [
+        1477141,
+        409600128,
+        1795381448882228769,
+        1795381448882228769
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0069.npy": [
+        1477142,
+        409600128,
+        1795381453629392616,
+        1795381453629392616
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0070.npy": [
+        1477143,
+        409600128,
+        1795381458250552120,
+        1795381458250552120
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0071.npy": [
+        1477144,
+        409600128,
+        1795381462246690053,
+        1795381462246690053
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0072.npy": [
+        1477145,
+        409600128,
+        1795381464343762438,
+        1795381464343762438
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0073.npy": [
+        1477146,
+        409600128,
+        1795381466965852947,
+        1795381466965852947
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0074.npy": [
+        1477147,
+        409600128,
+        1795381469395936830,
+        1795381469395936830
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0075.npy": [
+        1477148,
+        409600128,
+        1795381471426006905,
+        1795381471426006905
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0076.npy": [
+        1477149,
+        409600128,
+        1795381476806192627,
+        1795381476806192627
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0077.npy": [
+        1477150,
+        409600128,
+        1795381479406282383,
+        1795381479406282383
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0078.npy": [
+        1477151,
+        409600128,
+        1795381482653394476,
+        1795381482653394476
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0079.npy": [
+        1477152,
+        409600128,
+        1795381486107513719,
+        1795381486107513719
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0080.npy": [
+        1477153,
+        409600128,
+        1795381488748604895,
+        1795381488748604895
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0081.npy": [
+        1477154,
+        409600128,
+        1795381490859677776,
+        1795381490859677776
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0082.npy": [
+        1477155,
+        409600128,
+        1795381492964750450,
+        1795381492964750450
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0083.npy": [
+        1477156,
+        409600128,
+        1795381496290865282,
+        1795381496290865282
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0084.npy": [
+        1477157,
+        409600128,
+        1795381503126101269,
+        1795381503126101269
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0085.npy": [
+        1477158,
+        409600128,
+        1795381508850298903,
+        1795381508850298903
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0086.npy": [
+        1477159,
+        409600128,
+        1795381513268451450,
+        1795381513268451450
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0087.npy": [
+        1477160,
+        409600128,
+        1795381515365523857,
+        1795381515365523857
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0088.npy": [
+        1477161,
+        409600128,
+        1795381517514598061,
+        1795381517514598061
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0089.npy": [
+        1477162,
+        409600128,
+        1795381520327695194,
+        1795381520327695194
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0090.npy": [
+        1477163,
+        409600128,
+        1795381523160793018,
+        1795381523160793018
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0091.npy": [
+        1477164,
+        409600128,
+        1795381527812953659,
+        1795381527812953659
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0092.npy": [
+        1477165,
+        409600128,
+        1795381531947096414,
+        1795381531947096414
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0093.npy": [
+        1477166,
+        409600128,
+        1795381534447182746,
+        1795381534447182746
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0094.npy": [
+        1477167,
+        409600128,
+        1795381536553255473,
+        1795381536553255473
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0095.npy": [
+        1477168,
+        409600128,
+        1795381538718330238,
+        1795381538718330238
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0096.npy": [
+        1477169,
+        409600128,
+        1795381545392560720,
+        1795381545392560720
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0097.npy": [
+        1477170,
+        409600128,
+        1795381554042859452,
+        1795381554042859452
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0098.npy": [
+        1477171,
+        409600128,
+        1795381557890992351,
+        1795381557890992351
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0099.npy": [
+        1477172,
+        409600128,
+        1795381561029100730,
+        1795381561029100730
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0100.npy": [
+        1477173,
+        409600128,
+        1795381563221176438,
+        1795381563221176438
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0101.npy": [
+        1477174,
+        409600128,
+        1795381565578257845,
+        1795381565578257845
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0102.npy": [
+        1477175,
+        409600128,
+        1795381568790368783,
+        1795381568790368783
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0103.npy": [
+        1477176,
+        409600128,
+        1795381572678503073,
+        1795381572678503073
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0104.npy": [
+        1477177,
+        409600128,
+        1795381576425632495,
+        1795381576425632495
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0105.npy": [
+        1477178,
+        409600128,
+        1795381583236867752,
+        1795381583236867752
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0106.npy": [
+        1477179,
+        409600128,
+        1795381586343975073,
+        1795381586343975073
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0107.npy": [
+        1477180,
+        409600128,
+        1795381588485049029,
+        1795381588485049029
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0108.npy": [
+        1477181,
+        409600128,
+        1795381590545120187,
+        1795381590545120187
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0109.npy": [
+        1477182,
+        409600128,
+        1795381592694194420,
+        1795381592694194420
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0110.npy": [
+        1477183,
+        409600128,
+        1795381595868304061,
+        1795381595868304061
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0111.npy": [
+        1477184,
+        409600128,
+        1795381601236489494,
+        1795381601236489494
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0112.npy": [
+        1477185,
+        409600128,
+        1795381605130624013,
+        1795381605130624013
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0113.npy": [
+        1477186,
+        409600128,
+        1795381608619744543,
+        1795381608619744543
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0114.npy": [
+        1477187,
+        409600128,
+        1795381612113865247,
+        1795381612113865247
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0115.npy": [
+        1477188,
+        409600128,
+        1795381614279940075,
+        1795381614279940075
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0116.npy": [
+        1477189,
+        409600128,
+        1795381616435014524,
+        1795381616435014524
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0117.npy": [
+        1477190,
+        409600128,
+        1795381618554087729,
+        1795381618554087729
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0118.npy": [
+        1477191,
+        409600128,
+        1795381622186213207,
+        1795381622186213207
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0119.npy": [
+        1477192,
+        409600128,
+        1795381625680333919,
+        1795381625680333919
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0120.npy": [
+        1477193,
+        409600128,
+        1795381628258422986,
+        1795381628258422986
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0121.npy": [
+        1477194,
+        409600128,
+        1795381630889513886,
+        1795381630889513886
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0122.npy": [
+        1477195,
+        409600128,
+        1795381635741681523,
+        1795381635741681523
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0123.npy": [
+        1477196,
+        409600128,
+        1795381638331771009,
+        1795381638331771009
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0124.npy": [
+        1477197,
+        409600128,
+        1795381640456844429,
+        1795381640456844429
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0125.npy": [
+        1477198,
+        409600128,
+        1795381642661920614,
+        1795381642661920614
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0126.npy": [
+        1477199,
+        409600128,
+        1795381644955999876,
+        1795381644955999876
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0127.npy": [
+        1477200,
+        409600128,
+        1795381647685094167,
+        1795381647685094167
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0128.npy": [
+        1477201,
+        409600128,
+        1795381651426223427,
+        1795381651426223427
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0129.npy": [
+        1477202,
+        409600128,
+        1795381655322358045,
+        1795381655322358045
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0130.npy": [
+        1477203,
+        409600128,
+        1795381657884446571,
+        1795381657884446571
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0131.npy": [
+        1477204,
+        409600128,
+        1795381660031520758,
+        1795381660031520758
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0132.npy": [
+        1477205,
+        409600128,
+        1795381662258597710,
+        1795381662258597710
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0133.npy": [
+        1477206,
+        409600128,
+        1795381665419706938,
+        1795381665419706938
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0134.npy": [
+        1477207,
+        409600128,
+        1795381668548815061,
+        1795381668548815061
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0135.npy": [
+        1477208,
+        409600128,
+        1795381671865929680,
+        1795381671865929680
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0136.npy": [
+        1477209,
+        409600128,
+        1795381674274012890,
+        1795381674274012890
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0137.npy": [
+        1477210,
+        409600128,
+        1795381676363085078,
+        1795381676363085078
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0138.npy": [
+        1477211,
+        409600128,
+        1795381678469157854,
+        1795381678469157854
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0139.npy": [
+        1477212,
+        409600128,
+        1795381680645233050,
+        1795381680645233050
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0140.npy": [
+        1477213,
+        409600128,
+        1795381685142388453,
+        1795381685142388453
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0141.npy": [
+        1477214,
+        409600128,
+        1795381689924553709,
+        1795381689924553709
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0142.npy": [
+        1477215,
+        409600128,
+        1795381693250668651,
+        1795381693250668651
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0143.npy": [
+        1477216,
+        409600128,
+        1795381695504746547,
+        1795381695504746547
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0144.npy": [
+        1477217,
+        409600128,
+        1795381697712822852,
+        1795381697712822852
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/primary/shard-0145.npy": [
+        1477218,
+        124207232,
+        1795381699107871062,
+        1795381699107871062
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/secondary.npy": [
+        1477071,
+        5675323520,
+        1795380908539511201,
+        1795380909383540443
+      ],
+      "/tmp/nap-d1-baseline.Y5UoRytF/secondary_keys.npy": [
+        1477070,
+        46186028,
+        1795380256153912597,
+        1795380256153912597
+      ]
+    },
+    "d1": "2063fa8656d87fa10adcd0f8c5292574ee889950f582246094e2965ca7cf82cf",
+    "primary_marker": "947fb28b7c9337bc0764b39ec889a7f08531ea0b77e0006cb570cc0047356fa3",
+    "secondary_preparation": "591f8e665d596d5266db5a16e79b3d0fb034085b4c4d7329f9b52500f1899473"
+  },
+  "revision": "4eae4710c7b136d8893e5294f1e627e1c87724a7429a311c31e3114a83aad174",
+  "schema_version": 1,
+  "status": "complete"
+}

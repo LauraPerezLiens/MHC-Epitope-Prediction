@@ -158,41 +158,30 @@ Dos resultados que desaconsejan continuar:
 
 ---
 
-## 7. Qué hay en cada directorio
+## 7. Qué queda en `results/` tras la limpieza del 24 nov 2026
+
+`results/` pasó de **165 GB a 2,3 GB**. Se conservó lo que sostiene las tablas de arriba y se retiraron los artefactos de datos, una vez documentados.
 
 | Directorio | Qué contiene | Tamaño |
 |---|---|---:|
-| `nap_cnb_v2_d1_materialized` | **Matrices de características de D1** (ProtT5 + SecondaryBERT concatenados, float32) | **100 GB** |
-| `nap_cnb_v2_prott5` | **Los 146 shards de embeddings ProtT5** | **57 GB** |
-| `nap_cnb_v2_training` | Resultados de E1, E2 y la ablación por modalidad | 3,5 GB |
-| `nap_cnb_v2_phase1` | Construcción de ventanas y estructura secundaria | 1,7 GB |
-| `nap_cnb_v2_dataset_views` | Vista D1 y asignación de particiones | 852 MB |
-| `nap_cnb_v2_blosum_preparation` | Recuperación e inventario del histórico BLOSUM | 561 MB |
-| `nap_cnb_v2_blosum_materialized` | Piloto H2-L de variantes | 481 MB |
-| `nap_cnb_v2_protein_split` | Partición por componentes y sus dos modelos | 333 MB |
-| `nap_cnb_v2_d1_experimental` | Catálogo SQLite de D1 y estado de experimentos | 289 MB |
-| `nap_cnb_v2_secondarybert` | Índice SQLite de SecondaryBERT | 273 MB |
-| `nap_cnb_v2_d1_original_manifest` | Manifiesto certificado de D1 | 189 MB |
-| `nap_cnb_v2_phase1_structure` | Detalle de huecos estructurales | 26 MB |
-| `_informes_archivados_20261124.tar.zst` | Los 5 directorios de informe ya volcados en este documento | 524 KB |
+| `nap_cnb_v2_training/` | **E1 (LR), E2 (MLP) y la ablación por modalidad**: métricas, configuraciones, checkpoints y predicciones de TEST | 399 MB |
+| `nap_cnb_v2_protein_split/` | **LR y MLP con partición por componentes de proteína**, más la asignación de componentes | 333 MB |
+| `logistic_regression_balanced/` + `_epoch2_archived/` | LR histórica: historia por época y checkpoints | 5 MB |
+| `mlp_shuffled_concatenated_…/` | MLP histórica: historia por época, monitorización y checkpoints | ver nota |
 
-> ⚠️ **Los dos primeros, 157 de los 165 GB, NO son informes de auditoría: son los datos generados.** Borrarlos destruiría 7 horas de GPU (ProtT5) y la materialización completa de D1, y obligaría a regenerarlos antes de cualquier entrenamiento nuevo.
+### Qué se retiró, y dónde quedó documentado
 
-### Limpieza del 24 nov 2026
+**158 GB de artefactos de datos**, todos ellos reconstruibles ejecutando el pipeline:
 
-Se pasó de **18.293 ficheros a 5.756**:
+`nap_cnb_v2_prott5` (56 G, los 146 shards de embeddings) · `nap_cnb_v2_d1_materialized` (99 G) · `nap_cnb_v2_phase1` (1,5 G) · `nap_cnb_v2_dataset_views` (852 M) · `nap_cnb_v2_secondarybert` (273 M) · `nap_cnb_v2_blosum_preparation` (561 M) · `nap_cnb_v2_blosum_materialized` (481 M) · `nap_cnb_v2_d1_experimental` (289 M) · `nap_cnb_v2_d1_original_manifest` (189 M) · `nap_cnb_v2_phase1_structure` (26 M).
 
-- **Borrada `phase1/reference_cache/`**: 12.361 ficheros, 202 MB. Era una caché regenerable y suponía el 68 % de todos los ficheros.
-- **Borrados y archivados** `nap_cnb_v2_phase1_pilot`, `_structure_recovery`, `_structure_completion`, `_final_selection` y `_d1_representations`. Sus números están en este documento y sus manifiestos y recibos SHA-256 quedan en `_informes_archivados_20261124.tar.zst` (524 KB), para no perder procedencia.
+**Antes de borrarlos se salvaron sus 197 informes y manifiestos** —con sus SHA-256— en [`reports/v2_artefactos/`](../reports/v2_artefactos/), 1,1 MB versionados en git. Los números de todos ellos están en las secciones 3 a 5 de este documento.
 
-```sh
-# recuperar un informe archivado
-tar -xf <(zstd -dc results/_informes_archivados_20261124.tar.zst) -C /donde/sea
-```
+Además se liberaron **4,7 GB** de cachés de evaluación regenerables y un `secondary.partial.npy` huérfano de 5,7 GB que quedó de una ejecución interrumpida.
 
-**Se conservó todo lo demás**: los 157 GB de datos, las métricas de entrenamiento, los manifiestos certificados y la línea BLOSUM, que es la evidencia de por qué se descartó D2.
+> **Coste real de este borrado:** regenerar los embeddings ProtT5 cuesta ~7 h de una RTX 3090. Se asumió porque el plan (§8) pasa de ventana de 25 aa a péptido de 8–11 aa, y con esa unidad los embeddings habría que regenerarlos de todos modos.
 
----
+> **Nota sobre el MLP histórico:** a 24 nov seguía ejecutándose y sus cachés de evaluación (1,6 GB) no se tocaron para no romper la evaluación de la época 2. Al terminar quedarán ~39 MB.
 
 ## 8. Hacia dónde apuntan estos números
 

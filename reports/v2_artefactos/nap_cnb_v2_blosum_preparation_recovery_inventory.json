@@ -1,0 +1,1378 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-11-23",
+  "path_base": "repository_root",
+  "intermedios": {
+    "path": "data/used_data/data_intermediate.tar.zst",
+    "receipt": "data/used_data/data_intermediate.verification.json",
+    "checksum_file": "data/used_data/data_intermediate.tar.zst.sha256",
+    "sha256": "17d7dfe210c1f6a10454a7d5747c5d2d36ed0778f5865c1c222a0ff657b879fe",
+    "bytes": 5078332109,
+    "verification": "coincide_previo",
+    "legacy_root": "/data/nap/lperez_nn/data/data_intermediate",
+    "blosum62_csv_members_reported": 11,
+    "row_count": null
+  },
+  "families": [
+    {
+      "family": "HLA-A",
+      "source_id": 0,
+      "species": "human",
+      "mhc_class": "mhc-I",
+      "blosum62": {
+        "tar_member": "data_intermediate/human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A_blosum.csv",
+        "columns": [
+          "protein_group_id",
+          "group_id",
+          "original_seq",
+          "blosum_seq",
+          "contains_epitope",
+          "selected_epitope",
+          "epitope_pos_score"
+        ],
+        "member_bytes": 20302046438,
+        "rows": 265581108,
+        "original_rows": 10214658,
+        "augmented_rows": 255366450,
+        "rows_missing_sequence": 0,
+        "rows_missing_source_id": 0,
+        "quoted_rows": 0,
+        "archive_id": "intermedios",
+        "local_identifiers": [
+          "protein_group_id",
+          "group_id"
+        ],
+        "augmented_availability": "secuencia_aumentada_documentada",
+        "unique_variants": null,
+        "individual_member_sha256": null
+      },
+      "prott5": {
+        "directory": "data/data_input_nn/human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A_blosum_ProtT5_chunks",
+        "blocks_pattern": "chunk_*_X.npy.zst",
+        "blocks": 2656,
+        "declared_rows": 265581108,
+        "dimension": 1024,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "coincide_previo": 1,
+            "pendiente": 2653,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "coincide_previo": 1,
+            "pendiente": 2653,
+            "coincide": 2
+          }
+        },
+        "metadata_pattern": "chunk_*_metadata.csv.zst",
+        "master_index": "data/data_input_nn/human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A_blosum_ProtT5_chunks/master_index.csv.zst",
+        "master_index_receipt": "data/data_input_nn/human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A_blosum_ProtT5_chunks/master_index.csv.archive.json",
+        "index_verification": {
+          "contenedor_zstd": {
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "pendiente": 1
+          }
+        },
+        "availability": "representacion_prott5_documentada",
+        "row_unit": "fila histórica declarada",
+        "legacy_flat_master_index": "data/data_input_nn/human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A_blosum_ProtT5_chunks/master_index.csv",
+        "legacy_flat_master_index_status": "ausente; copia .zst disponible"
+      },
+      "secondarybert": {
+        "directory": "data/data_input_nn/human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A_SecondaryBERT_by_group",
+        "blocks_pattern": "chunks/chunk_*_X_ss.npy.zst",
+        "blocks": 100,
+        "declared_rows": 10214658,
+        "dimension": 768,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "coincide_previo": 1,
+            "pendiente": 97,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "coincide_previo": 1,
+            "pendiente": 97,
+            "coincide": 2
+          }
+        },
+        "row_unit": "grupo",
+        "chunk_manifest": "data/data_input_nn/human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A_SecondaryBERT_by_group/chunks_manifest.csv.zst",
+        "configuration": "data/data_input_nn/human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A_SecondaryBERT_by_group/embedding_config.json.zst",
+        "configuration_version": 2,
+        "availability": "representacion_secondarybert_documentada"
+      },
+      "concatenated": {
+        "dataset_id": "mixto_concatenado",
+        "scope": "vista mixta",
+        "family_counts": null,
+        "source_reference": "reorder_manifest.sources.id",
+        "availability": "representacion_concatenada_documentada_en_vista_mixta"
+      },
+      "csv_rows_minus_prott5_declared_rows": 0,
+      "record_level_correspondence": "no_acreditada",
+      "records_with_missing_representation": null,
+      "physical_absence": [
+        "master_index.csv plano; se conserva master_index.csv.zst"
+      ]
+    },
+    {
+      "family": "HLA-B",
+      "source_id": 1,
+      "species": "human",
+      "mhc_class": "mhc-I",
+      "blosum62": {
+        "tar_member": "data_intermediate/human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B_blosum.csv",
+        "columns": [
+          "protein_group_id",
+          "group_id",
+          "original_seq",
+          "blosum_seq",
+          "contains_epitope",
+          "selected_epitope",
+          "epitope_pos_score"
+        ],
+        "member_bytes": 21345934686,
+        "rows": 276639038,
+        "original_rows": 10639963,
+        "augmented_rows": 265999075,
+        "rows_missing_sequence": 0,
+        "rows_missing_source_id": 0,
+        "quoted_rows": 0,
+        "archive_id": "intermedios",
+        "local_identifiers": [
+          "protein_group_id",
+          "group_id"
+        ],
+        "augmented_availability": "secuencia_aumentada_documentada",
+        "unique_variants": null,
+        "individual_member_sha256": null
+      },
+      "prott5": {
+        "directory": "data/data_input_nn/human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B_blosum_ProtT5_chunks",
+        "blocks_pattern": "chunk_*_X.npy.zst",
+        "blocks": 2767,
+        "declared_rows": 276639038,
+        "dimension": 1024,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 2765,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 2765,
+            "coincide": 2
+          }
+        },
+        "metadata_pattern": "chunk_*_metadata.csv.zst",
+        "master_index": "data/data_input_nn/human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B_blosum_ProtT5_chunks/master_index.csv.zst",
+        "master_index_receipt": "data/data_input_nn/human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B_blosum_ProtT5_chunks/master_index.csv.archive.json",
+        "index_verification": {
+          "contenedor_zstd": {
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "pendiente": 1
+          }
+        },
+        "availability": "representacion_prott5_documentada",
+        "row_unit": "fila histórica declarada",
+        "legacy_flat_master_index": "data/data_input_nn/human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B_blosum_ProtT5_chunks/master_index.csv",
+        "legacy_flat_master_index_status": "ausente; copia .zst disponible"
+      },
+      "secondarybert": {
+        "directory": "data/data_input_nn/human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B_SecondaryBERT_by_group",
+        "blocks_pattern": "chunks/chunk_*_X_ss.npy.zst",
+        "blocks": 104,
+        "declared_rows": 10639963,
+        "dimension": 768,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 102,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 102,
+            "coincide": 2
+          }
+        },
+        "row_unit": "grupo",
+        "chunk_manifest": "data/data_input_nn/human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B_SecondaryBERT_by_group/chunks_manifest.csv.zst",
+        "configuration": "data/data_input_nn/human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B_SecondaryBERT_by_group/embedding_config.json.zst",
+        "configuration_version": 2,
+        "availability": "representacion_secondarybert_documentada"
+      },
+      "concatenated": {
+        "dataset_id": "mixto_concatenado",
+        "scope": "vista mixta",
+        "family_counts": null,
+        "source_reference": "reorder_manifest.sources.id",
+        "availability": "representacion_concatenada_documentada_en_vista_mixta"
+      },
+      "csv_rows_minus_prott5_declared_rows": 0,
+      "record_level_correspondence": "no_acreditada",
+      "records_with_missing_representation": null,
+      "physical_absence": [
+        "master_index.csv plano; se conserva master_index.csv.zst"
+      ]
+    },
+    {
+      "family": "HLA-C",
+      "source_id": 2,
+      "species": "human",
+      "mhc_class": "mhc-I",
+      "blosum62": {
+        "tar_member": "data_intermediate/human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C_blosum.csv",
+        "columns": [
+          "protein_group_id",
+          "group_id",
+          "original_seq",
+          "blosum_seq",
+          "contains_epitope",
+          "selected_epitope",
+          "epitope_pos_score"
+        ],
+        "member_bytes": 15222339442,
+        "rows": 202499934,
+        "original_rows": 7788459,
+        "augmented_rows": 194711475,
+        "rows_missing_sequence": 0,
+        "rows_missing_source_id": 0,
+        "quoted_rows": 0,
+        "archive_id": "intermedios",
+        "local_identifiers": [
+          "protein_group_id",
+          "group_id"
+        ],
+        "augmented_availability": "secuencia_aumentada_documentada",
+        "unique_variants": null,
+        "individual_member_sha256": null
+      },
+      "prott5": {
+        "directory": "data/data_input_nn/human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C_blosum_ProtT5_chunks",
+        "blocks_pattern": "chunk_*_X.npy.zst",
+        "blocks": 2025,
+        "declared_rows": 202499934,
+        "dimension": 1024,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 2023,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 2023,
+            "coincide": 2
+          }
+        },
+        "metadata_pattern": "chunk_*_metadata.csv.zst",
+        "master_index": "data/data_input_nn/human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C_blosum_ProtT5_chunks/master_index.csv.zst",
+        "master_index_receipt": "data/data_input_nn/human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C_blosum_ProtT5_chunks/master_index.csv.archive.json",
+        "index_verification": {
+          "contenedor_zstd": {
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "pendiente": 1
+          }
+        },
+        "availability": "representacion_prott5_documentada",
+        "row_unit": "fila histórica declarada",
+        "legacy_flat_master_index": "data/data_input_nn/human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C_blosum_ProtT5_chunks/master_index.csv",
+        "legacy_flat_master_index_status": "ausente; copia .zst disponible"
+      },
+      "secondarybert": {
+        "directory": "data/data_input_nn/human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C_SecondaryBERT_by_group",
+        "blocks_pattern": "chunks/chunk_*_X_ss.npy.zst",
+        "blocks": 77,
+        "declared_rows": 7788459,
+        "dimension": 768,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 75,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 75,
+            "coincide": 2
+          }
+        },
+        "row_unit": "grupo",
+        "chunk_manifest": "data/data_input_nn/human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C_SecondaryBERT_by_group/chunks_manifest.csv.zst",
+        "configuration": "data/data_input_nn/human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C_SecondaryBERT_by_group/embedding_config.json.zst",
+        "configuration_version": 2,
+        "availability": "representacion_secondarybert_documentada"
+      },
+      "concatenated": {
+        "dataset_id": "mixto_concatenado",
+        "scope": "vista mixta",
+        "family_counts": null,
+        "source_reference": "reorder_manifest.sources.id",
+        "availability": "representacion_concatenada_documentada_en_vista_mixta"
+      },
+      "csv_rows_minus_prott5_declared_rows": 0,
+      "record_level_correspondence": "no_acreditada",
+      "records_with_missing_representation": null,
+      "physical_absence": [
+        "master_index.csv plano; se conserva master_index.csv.zst"
+      ]
+    },
+    {
+      "family": "HLA-DP",
+      "source_id": 3,
+      "species": "human",
+      "mhc_class": "mhc-II",
+      "blosum62": {
+        "tar_member": "data_intermediate/human/mhc-II/HLA-DP/classification_human_mhc-II_HLA-DP_blosum.csv",
+        "columns": [
+          "protein_group_id",
+          "group_id",
+          "original_seq",
+          "blosum_seq",
+          "contains_epitope",
+          "selected_epitope",
+          "epitope_pos_score"
+        ],
+        "member_bytes": 9947616430,
+        "rows": 130710450,
+        "original_rows": 5027325,
+        "augmented_rows": 125683125,
+        "rows_missing_sequence": 0,
+        "rows_missing_source_id": 0,
+        "quoted_rows": 0,
+        "archive_id": "intermedios",
+        "local_identifiers": [
+          "protein_group_id",
+          "group_id"
+        ],
+        "augmented_availability": "secuencia_aumentada_documentada",
+        "unique_variants": null,
+        "individual_member_sha256": null
+      },
+      "prott5": {
+        "directory": "data/data_input_nn/human/mhc-II/HLA-DP/classification_human_mhc-II_HLA-DP_blosum_ProtT5_chunks",
+        "blocks_pattern": "chunk_*_X.npy.zst",
+        "blocks": 1308,
+        "declared_rows": 130710450,
+        "dimension": 1024,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 1306,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 1306,
+            "coincide": 2
+          }
+        },
+        "metadata_pattern": "chunk_*_metadata.csv.zst",
+        "master_index": "data/data_input_nn/human/mhc-II/HLA-DP/classification_human_mhc-II_HLA-DP_blosum_ProtT5_chunks/master_index.csv.zst",
+        "master_index_receipt": "data/data_input_nn/human/mhc-II/HLA-DP/classification_human_mhc-II_HLA-DP_blosum_ProtT5_chunks/master_index.csv.archive.json",
+        "index_verification": {
+          "contenedor_zstd": {
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "pendiente": 1
+          }
+        },
+        "availability": "representacion_prott5_documentada",
+        "row_unit": "fila histórica declarada",
+        "legacy_flat_master_index": "data/data_input_nn/human/mhc-II/HLA-DP/classification_human_mhc-II_HLA-DP_blosum_ProtT5_chunks/master_index.csv",
+        "legacy_flat_master_index_status": "ausente; copia .zst disponible"
+      },
+      "secondarybert": {
+        "directory": "data/data_input_nn/human/mhc-II/HLA-DP/classification_human_mhc-II_HLA-DP_SecondaryBERT_by_group",
+        "blocks_pattern": "chunks/chunk_*_X_ss.npy.zst",
+        "blocks": 50,
+        "declared_rows": 5027325,
+        "dimension": 768,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 48,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 48,
+            "coincide": 2
+          }
+        },
+        "row_unit": "grupo",
+        "chunk_manifest": "data/data_input_nn/human/mhc-II/HLA-DP/classification_human_mhc-II_HLA-DP_SecondaryBERT_by_group/chunks_manifest.csv.zst",
+        "configuration": "data/data_input_nn/human/mhc-II/HLA-DP/classification_human_mhc-II_HLA-DP_SecondaryBERT_by_group/embedding_config.json.zst",
+        "configuration_version": 2,
+        "availability": "representacion_secondarybert_documentada"
+      },
+      "concatenated": {
+        "dataset_id": "mixto_concatenado",
+        "scope": "vista mixta",
+        "family_counts": null,
+        "source_reference": "reorder_manifest.sources.id",
+        "availability": "representacion_concatenada_documentada_en_vista_mixta"
+      },
+      "csv_rows_minus_prott5_declared_rows": 0,
+      "record_level_correspondence": "no_acreditada",
+      "records_with_missing_representation": null,
+      "physical_absence": [
+        "master_index.csv plano; se conserva master_index.csv.zst"
+      ]
+    },
+    {
+      "family": "HLA-DQ",
+      "source_id": 4,
+      "species": "human",
+      "mhc_class": "mhc-II",
+      "blosum62": {
+        "tar_member": "data_intermediate/human/mhc-II/HLA-DQ/classification_human_mhc-II_HLA-DQ_blosum.csv",
+        "columns": [
+          "protein_group_id",
+          "group_id",
+          "original_seq",
+          "blosum_seq",
+          "contains_epitope",
+          "selected_epitope",
+          "epitope_pos_score"
+        ],
+        "member_bytes": 4665432770,
+        "rows": 62125466,
+        "original_rows": 2389441,
+        "augmented_rows": 59736025,
+        "rows_missing_sequence": 0,
+        "rows_missing_source_id": 0,
+        "quoted_rows": 0,
+        "archive_id": "intermedios",
+        "local_identifiers": [
+          "protein_group_id",
+          "group_id"
+        ],
+        "augmented_availability": "secuencia_aumentada_documentada",
+        "unique_variants": null,
+        "individual_member_sha256": null
+      },
+      "prott5": {
+        "directory": "data/data_input_nn/human/mhc-II/HLA-DQ/classification_human_mhc-II_HLA-DQ_blosum_ProtT5_chunks",
+        "blocks_pattern": "chunk_*_X.npy.zst",
+        "blocks": 622,
+        "declared_rows": 62125466,
+        "dimension": 1024,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 620,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 620,
+            "coincide": 2
+          }
+        },
+        "metadata_pattern": "chunk_*_metadata.csv.zst",
+        "master_index": "data/data_input_nn/human/mhc-II/HLA-DQ/classification_human_mhc-II_HLA-DQ_blosum_ProtT5_chunks/master_index.csv.zst",
+        "master_index_receipt": "data/data_input_nn/human/mhc-II/HLA-DQ/classification_human_mhc-II_HLA-DQ_blosum_ProtT5_chunks/master_index.csv.archive.json",
+        "index_verification": {
+          "contenedor_zstd": {
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "pendiente": 1
+          }
+        },
+        "availability": "representacion_prott5_documentada",
+        "row_unit": "fila histórica declarada",
+        "legacy_flat_master_index": "data/data_input_nn/human/mhc-II/HLA-DQ/classification_human_mhc-II_HLA-DQ_blosum_ProtT5_chunks/master_index.csv",
+        "legacy_flat_master_index_status": "ausente; copia .zst disponible"
+      },
+      "secondarybert": {
+        "directory": "data/data_input_nn/human/mhc-II/HLA-DQ/classification_human_mhc-II_HLA-DQ_SecondaryBERT_by_group",
+        "blocks_pattern": "chunks/chunk_*_X_ss.npy.zst",
+        "blocks": 24,
+        "declared_rows": 2389441,
+        "dimension": 768,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 22,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 22,
+            "coincide": 2
+          }
+        },
+        "row_unit": "grupo",
+        "chunk_manifest": "data/data_input_nn/human/mhc-II/HLA-DQ/classification_human_mhc-II_HLA-DQ_SecondaryBERT_by_group/chunks_manifest.csv.zst",
+        "configuration": "data/data_input_nn/human/mhc-II/HLA-DQ/classification_human_mhc-II_HLA-DQ_SecondaryBERT_by_group/embedding_config.json.zst",
+        "configuration_version": 2,
+        "availability": "representacion_secondarybert_documentada"
+      },
+      "concatenated": {
+        "dataset_id": "mixto_concatenado",
+        "scope": "vista mixta",
+        "family_counts": null,
+        "source_reference": "reorder_manifest.sources.id",
+        "availability": "representacion_concatenada_documentada_en_vista_mixta"
+      },
+      "csv_rows_minus_prott5_declared_rows": 0,
+      "record_level_correspondence": "no_acreditada",
+      "records_with_missing_representation": null,
+      "physical_absence": [
+        "master_index.csv plano; se conserva master_index.csv.zst"
+      ]
+    },
+    {
+      "family": "HLA-DR",
+      "source_id": 5,
+      "species": "human",
+      "mhc_class": "mhc-II",
+      "blosum62": {
+        "tar_member": "data_intermediate/human/mhc-II/HLA-DR/classification_human_mhc-II_HLA-DR_blosum.csv",
+        "columns": [
+          "protein_group_id",
+          "group_id",
+          "original_seq",
+          "blosum_seq",
+          "contains_epitope",
+          "selected_epitope",
+          "epitope_pos_score"
+        ],
+        "member_bytes": 15166440066,
+        "rows": 197293902,
+        "original_rows": 7588227,
+        "augmented_rows": 189705675,
+        "rows_missing_sequence": 0,
+        "rows_missing_source_id": 0,
+        "quoted_rows": 0,
+        "archive_id": "intermedios",
+        "local_identifiers": [
+          "protein_group_id",
+          "group_id"
+        ],
+        "augmented_availability": "secuencia_aumentada_documentada",
+        "unique_variants": null,
+        "individual_member_sha256": null
+      },
+      "prott5": {
+        "directory": "data/data_input_nn/human/mhc-II/HLA-DR/classification_human_mhc-II_HLA-DR_blosum_ProtT5_chunks",
+        "blocks_pattern": "chunk_*_X.npy.zst",
+        "blocks": 1973,
+        "declared_rows": 197293902,
+        "dimension": 1024,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 1971,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 1971,
+            "coincide": 2
+          }
+        },
+        "metadata_pattern": "chunk_*_metadata.csv.zst",
+        "master_index": "data/data_input_nn/human/mhc-II/HLA-DR/classification_human_mhc-II_HLA-DR_blosum_ProtT5_chunks/master_index.csv.zst",
+        "master_index_receipt": "data/data_input_nn/human/mhc-II/HLA-DR/classification_human_mhc-II_HLA-DR_blosum_ProtT5_chunks/master_index.csv.archive.json",
+        "index_verification": {
+          "contenedor_zstd": {
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "pendiente": 1
+          }
+        },
+        "availability": "representacion_prott5_documentada",
+        "row_unit": "fila histórica declarada",
+        "legacy_flat_master_index": "data/data_input_nn/human/mhc-II/HLA-DR/classification_human_mhc-II_HLA-DR_blosum_ProtT5_chunks/master_index.csv",
+        "legacy_flat_master_index_status": "ausente; copia .zst disponible"
+      },
+      "secondarybert": {
+        "directory": "data/data_input_nn/human/mhc-II/HLA-DR/classification_human_mhc-II_HLA-DR_SecondaryBERT_by_group",
+        "blocks_pattern": "chunks/chunk_*_X_ss.npy.zst",
+        "blocks": 75,
+        "declared_rows": 7588227,
+        "dimension": 768,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 73,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 73,
+            "coincide": 2
+          }
+        },
+        "row_unit": "grupo",
+        "chunk_manifest": "data/data_input_nn/human/mhc-II/HLA-DR/classification_human_mhc-II_HLA-DR_SecondaryBERT_by_group/chunks_manifest.csv.zst",
+        "configuration": "data/data_input_nn/human/mhc-II/HLA-DR/classification_human_mhc-II_HLA-DR_SecondaryBERT_by_group/embedding_config.json.zst",
+        "configuration_version": 2,
+        "availability": "representacion_secondarybert_documentada"
+      },
+      "concatenated": {
+        "dataset_id": "mixto_concatenado",
+        "scope": "vista mixta",
+        "family_counts": null,
+        "source_reference": "reorder_manifest.sources.id",
+        "availability": "representacion_concatenada_documentada_en_vista_mixta"
+      },
+      "csv_rows_minus_prott5_declared_rows": 0,
+      "record_level_correspondence": "no_acreditada",
+      "records_with_missing_representation": null,
+      "physical_absence": [
+        "master_index.csv plano; se conserva master_index.csv.zst"
+      ]
+    },
+    {
+      "family": "H2-D",
+      "source_id": 6,
+      "species": "mouse",
+      "mhc_class": "mhc-I",
+      "blosum62": {
+        "tar_member": "data_intermediate/mouse/mhc-I/H2-D/classification_mouse_mhc-I_H2-D_blosum.csv",
+        "columns": [
+          "protein_group_id",
+          "group_id",
+          "original_seq",
+          "blosum_seq",
+          "contains_epitope",
+          "selected_epitope",
+          "epitope_pos_score"
+        ],
+        "member_bytes": 8179496804,
+        "rows": 110365892,
+        "original_rows": 4244842,
+        "augmented_rows": 106121050,
+        "rows_missing_sequence": 0,
+        "rows_missing_source_id": 0,
+        "quoted_rows": 0,
+        "archive_id": "intermedios",
+        "local_identifiers": [
+          "protein_group_id",
+          "group_id"
+        ],
+        "augmented_availability": "secuencia_aumentada_documentada",
+        "unique_variants": null,
+        "individual_member_sha256": null
+      },
+      "prott5": {
+        "directory": "data/data_input_nn/mouse/mhc-I/H2-D/classification_mouse_mhc-I_H2-D_blosum_ProtT5_chunks",
+        "blocks_pattern": "chunk_*_X.npy.zst",
+        "blocks": 1104,
+        "declared_rows": 110365892,
+        "dimension": 1024,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 1102,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 1102,
+            "coincide": 2
+          }
+        },
+        "metadata_pattern": "chunk_*_metadata.csv.zst",
+        "master_index": "data/data_input_nn/mouse/mhc-I/H2-D/classification_mouse_mhc-I_H2-D_blosum_ProtT5_chunks/master_index.csv.zst",
+        "master_index_receipt": "data/data_input_nn/mouse/mhc-I/H2-D/classification_mouse_mhc-I_H2-D_blosum_ProtT5_chunks/master_index.csv.archive.json",
+        "index_verification": {
+          "contenedor_zstd": {
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "pendiente": 1
+          }
+        },
+        "availability": "representacion_prott5_documentada",
+        "row_unit": "fila histórica declarada",
+        "legacy_flat_master_index": "data/data_input_nn/mouse/mhc-I/H2-D/classification_mouse_mhc-I_H2-D_blosum_ProtT5_chunks/master_index.csv",
+        "legacy_flat_master_index_status": "ausente; copia .zst disponible"
+      },
+      "secondarybert": {
+        "directory": "data/data_input_nn/mouse/mhc-I/H2-D/classification_mouse_mhc-I_H2-D_SecondaryBERT_by_group",
+        "blocks_pattern": "chunks/chunk_*_X_ss.npy.zst",
+        "blocks": 42,
+        "declared_rows": 4244842,
+        "dimension": 768,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 40,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 40,
+            "coincide": 2
+          }
+        },
+        "row_unit": "grupo",
+        "chunk_manifest": "data/data_input_nn/mouse/mhc-I/H2-D/classification_mouse_mhc-I_H2-D_SecondaryBERT_by_group/chunks_manifest.csv.zst",
+        "configuration": "data/data_input_nn/mouse/mhc-I/H2-D/classification_mouse_mhc-I_H2-D_SecondaryBERT_by_group/embedding_config.json.zst",
+        "configuration_version": 2,
+        "availability": "representacion_secondarybert_documentada"
+      },
+      "concatenated": {
+        "dataset_id": "mixto_concatenado",
+        "scope": "vista mixta",
+        "family_counts": null,
+        "source_reference": "reorder_manifest.sources.id",
+        "availability": "representacion_concatenada_documentada_en_vista_mixta"
+      },
+      "csv_rows_minus_prott5_declared_rows": 0,
+      "record_level_correspondence": "no_acreditada",
+      "records_with_missing_representation": null,
+      "physical_absence": [
+        "master_index.csv plano; se conserva master_index.csv.zst"
+      ]
+    },
+    {
+      "family": "H2-K",
+      "source_id": 7,
+      "species": "mouse",
+      "mhc_class": "mhc-I",
+      "blosum62": {
+        "tar_member": "data_intermediate/mouse/mhc-I/H2-K/classification_mouse_mhc-I_H2-K_blosum.csv",
+        "columns": [
+          "protein_group_id",
+          "group_id",
+          "original_seq",
+          "blosum_seq",
+          "contains_epitope",
+          "selected_epitope",
+          "epitope_pos_score"
+        ],
+        "member_bytes": 11680984612,
+        "rows": 156593450,
+        "original_rows": 6022825,
+        "augmented_rows": 150570625,
+        "rows_missing_sequence": 0,
+        "rows_missing_source_id": 0,
+        "quoted_rows": 0,
+        "archive_id": "intermedios",
+        "local_identifiers": [
+          "protein_group_id",
+          "group_id"
+        ],
+        "augmented_availability": "secuencia_aumentada_documentada",
+        "unique_variants": null,
+        "individual_member_sha256": null
+      },
+      "prott5": {
+        "directory": "data/data_input_nn/mouse/mhc-I/H2-K/classification_mouse_mhc-I_H2-K_blosum_ProtT5_chunks",
+        "blocks_pattern": "chunk_*_X.npy.zst",
+        "blocks": 1566,
+        "declared_rows": 156593450,
+        "dimension": 1024,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 1564,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 1564,
+            "coincide": 2
+          }
+        },
+        "metadata_pattern": "chunk_*_metadata.csv.zst",
+        "master_index": "data/data_input_nn/mouse/mhc-I/H2-K/classification_mouse_mhc-I_H2-K_blosum_ProtT5_chunks/master_index.csv.zst",
+        "master_index_receipt": "data/data_input_nn/mouse/mhc-I/H2-K/classification_mouse_mhc-I_H2-K_blosum_ProtT5_chunks/master_index.csv.archive.json",
+        "index_verification": {
+          "contenedor_zstd": {
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "pendiente": 1
+          }
+        },
+        "availability": "representacion_prott5_documentada",
+        "row_unit": "fila histórica declarada",
+        "legacy_flat_master_index": "data/data_input_nn/mouse/mhc-I/H2-K/classification_mouse_mhc-I_H2-K_blosum_ProtT5_chunks/master_index.csv",
+        "legacy_flat_master_index_status": "ausente; copia .zst disponible"
+      },
+      "secondarybert": {
+        "directory": "data/data_input_nn/mouse/mhc-I/H2-K/classification_mouse_mhc-I_H2-K_SecondaryBERT_by_group",
+        "blocks_pattern": "chunks/chunk_*_X_ss.npy.zst",
+        "blocks": 59,
+        "declared_rows": 6022825,
+        "dimension": 768,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 57,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 57,
+            "coincide": 2
+          }
+        },
+        "row_unit": "grupo",
+        "chunk_manifest": "data/data_input_nn/mouse/mhc-I/H2-K/classification_mouse_mhc-I_H2-K_SecondaryBERT_by_group/chunks_manifest.csv.zst",
+        "configuration": "data/data_input_nn/mouse/mhc-I/H2-K/classification_mouse_mhc-I_H2-K_SecondaryBERT_by_group/embedding_config.json.zst",
+        "configuration_version": 2,
+        "availability": "representacion_secondarybert_documentada"
+      },
+      "concatenated": {
+        "dataset_id": "mixto_concatenado",
+        "scope": "vista mixta",
+        "family_counts": null,
+        "source_reference": "reorder_manifest.sources.id",
+        "availability": "representacion_concatenada_documentada_en_vista_mixta"
+      },
+      "csv_rows_minus_prott5_declared_rows": 0,
+      "record_level_correspondence": "no_acreditada",
+      "records_with_missing_representation": null,
+      "physical_absence": [
+        "master_index.csv plano; se conserva master_index.csv.zst"
+      ]
+    },
+    {
+      "family": "H2-L",
+      "source_id": 8,
+      "species": "mouse",
+      "mhc_class": "mhc-I",
+      "blosum62": {
+        "tar_member": "data_intermediate/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_blosum.csv",
+        "columns": [
+          "protein_group_id",
+          "group_id",
+          "original_seq",
+          "blosum_seq",
+          "contains_epitope",
+          "selected_epitope",
+          "epitope_pos_score"
+        ],
+        "member_bytes": 7869132,
+        "rows": 115648,
+        "original_rows": 4448,
+        "augmented_rows": 111200,
+        "rows_missing_sequence": 0,
+        "rows_missing_source_id": 0,
+        "quoted_rows": 0,
+        "archive_id": "intermedios",
+        "local_identifiers": [
+          "protein_group_id",
+          "group_id"
+        ],
+        "augmented_availability": "secuencia_aumentada_documentada",
+        "unique_variants": null,
+        "individual_member_sha256": null
+      },
+      "prott5": {
+        "directory": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_blosum_ProtT5_chunks",
+        "blocks_pattern": "chunk_*_X.npy.zst",
+        "blocks": 2,
+        "declared_rows": 115648,
+        "dimension": 1024,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 1,
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "pendiente": 1,
+            "coincide": 1
+          }
+        },
+        "metadata_pattern": "chunk_*_metadata.csv.zst",
+        "master_index": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_blosum_ProtT5_chunks/master_index.csv.zst",
+        "master_index_receipt": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_blosum_ProtT5_chunks/master_index.csv.archive.json",
+        "index_verification": {
+          "contenedor_zstd": {
+            "coincide_previo": 1
+          },
+          "contenido_expandido": {
+            "coincide_previo": 1
+          }
+        },
+        "availability": "representacion_prott5_documentada",
+        "row_unit": "fila histórica declarada",
+        "legacy_flat_master_index": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_blosum_ProtT5_chunks/master_index.csv",
+        "legacy_flat_master_index_status": "ausente; copia .zst disponible"
+      },
+      "secondarybert": {
+        "directory": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_SecondaryBERT_by_group",
+        "blocks_pattern": "chunks/chunk_*_X_ss.npy.zst",
+        "blocks": 1,
+        "declared_rows": 4448,
+        "dimension": 768,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "coincide": 1
+          }
+        },
+        "row_unit": "grupo",
+        "chunk_manifest": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_SecondaryBERT_by_group/chunks_manifest.csv.zst",
+        "configuration": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_SecondaryBERT_by_group/embedding_config.json.zst",
+        "configuration_version": 2,
+        "availability": "representacion_secondarybert_documentada"
+      },
+      "concatenated": {
+        "dataset_id": "mixto_concatenado",
+        "scope": "vista mixta",
+        "family_counts": null,
+        "source_reference": "reorder_manifest.sources.id",
+        "availability": "representacion_concatenada_documentada_en_vista_mixta"
+      },
+      "csv_rows_minus_prott5_declared_rows": 0,
+      "record_level_correspondence": "no_acreditada",
+      "records_with_missing_representation": null,
+      "physical_absence": [
+        "master_index.csv plano; se conserva master_index.csv.zst"
+      ]
+    },
+    {
+      "family": "H2-IA",
+      "source_id": 9,
+      "species": "mouse",
+      "mhc_class": "mhc-II",
+      "blosum62": {
+        "tar_member": "data_intermediate/mouse/mhc-II/H2-IA/classification_mouse_mhc-II_H2-IA_blosum.csv",
+        "columns": [
+          "protein_group_id",
+          "group_id",
+          "original_seq",
+          "blosum_seq",
+          "contains_epitope",
+          "selected_epitope",
+          "epitope_pos_score"
+        ],
+        "member_bytes": 3438512322,
+        "rows": 46559006,
+        "original_rows": 1790731,
+        "augmented_rows": 44768275,
+        "rows_missing_sequence": 0,
+        "rows_missing_source_id": 0,
+        "quoted_rows": 0,
+        "archive_id": "intermedios",
+        "local_identifiers": [
+          "protein_group_id",
+          "group_id"
+        ],
+        "augmented_availability": "secuencia_aumentada_documentada",
+        "unique_variants": null,
+        "individual_member_sha256": null
+      },
+      "prott5": {
+        "directory": "data/data_input_nn/mouse/mhc-II/H2-IA/classification_mouse_mhc-II_H2-IA_blosum_ProtT5_chunks",
+        "blocks_pattern": "chunk_*_X.npy.zst",
+        "blocks": 466,
+        "declared_rows": 46559006,
+        "dimension": 1024,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 464,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 464,
+            "coincide": 2
+          }
+        },
+        "metadata_pattern": "chunk_*_metadata.csv.zst",
+        "master_index": "data/data_input_nn/mouse/mhc-II/H2-IA/classification_mouse_mhc-II_H2-IA_blosum_ProtT5_chunks/master_index.csv.zst",
+        "master_index_receipt": "data/data_input_nn/mouse/mhc-II/H2-IA/classification_mouse_mhc-II_H2-IA_blosum_ProtT5_chunks/master_index.csv.archive.json",
+        "index_verification": {
+          "contenedor_zstd": {
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "pendiente": 1
+          }
+        },
+        "availability": "representacion_prott5_documentada",
+        "row_unit": "fila histórica declarada",
+        "legacy_flat_master_index": "data/data_input_nn/mouse/mhc-II/H2-IA/classification_mouse_mhc-II_H2-IA_blosum_ProtT5_chunks/master_index.csv",
+        "legacy_flat_master_index_status": "ausente; copia .zst disponible"
+      },
+      "secondarybert": {
+        "directory": "data/data_input_nn/mouse/mhc-II/H2-IA/classification_mouse_mhc-II_H2-IA_SecondaryBERT_by_group",
+        "blocks_pattern": "chunks/chunk_*_X_ss.npy.zst",
+        "blocks": 18,
+        "declared_rows": 1790731,
+        "dimension": 768,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 16,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 16,
+            "coincide": 2
+          }
+        },
+        "row_unit": "grupo",
+        "chunk_manifest": "data/data_input_nn/mouse/mhc-II/H2-IA/classification_mouse_mhc-II_H2-IA_SecondaryBERT_by_group/chunks_manifest.csv.zst",
+        "configuration": "data/data_input_nn/mouse/mhc-II/H2-IA/classification_mouse_mhc-II_H2-IA_SecondaryBERT_by_group/embedding_config.json.zst",
+        "configuration_version": 2,
+        "availability": "representacion_secondarybert_documentada"
+      },
+      "concatenated": {
+        "dataset_id": "mixto_concatenado",
+        "scope": "vista mixta",
+        "family_counts": null,
+        "source_reference": "reorder_manifest.sources.id",
+        "availability": "representacion_concatenada_documentada_en_vista_mixta"
+      },
+      "csv_rows_minus_prott5_declared_rows": 0,
+      "record_level_correspondence": "no_acreditada",
+      "records_with_missing_representation": null,
+      "physical_absence": [
+        "master_index.csv plano; se conserva master_index.csv.zst"
+      ]
+    },
+    {
+      "family": "H2-IE",
+      "source_id": 10,
+      "species": "mouse",
+      "mhc_class": "mhc-II",
+      "blosum62": {
+        "tar_member": "data_intermediate/mouse/mhc-II/H2-IE/classification_mouse_mhc-II_H2-IE_blosum.csv",
+        "columns": [
+          "protein_group_id",
+          "group_id",
+          "original_seq",
+          "blosum_seq",
+          "contains_epitope",
+          "selected_epitope",
+          "epitope_pos_score"
+        ],
+        "member_bytes": 95972914,
+        "rows": 1369056,
+        "original_rows": 52656,
+        "augmented_rows": 1316400,
+        "rows_missing_sequence": 0,
+        "rows_missing_source_id": 0,
+        "quoted_rows": 0,
+        "archive_id": "intermedios",
+        "local_identifiers": [
+          "protein_group_id",
+          "group_id"
+        ],
+        "augmented_availability": "secuencia_aumentada_documentada",
+        "unique_variants": null,
+        "individual_member_sha256": null
+      },
+      "prott5": {
+        "directory": "data/data_input_nn/mouse/mhc-II/H2-IE/classification_mouse_mhc-II_H2-IE_blosum_ProtT5_chunks",
+        "blocks_pattern": "chunk_*_X.npy.zst",
+        "blocks": 14,
+        "declared_rows": 1369056,
+        "dimension": 1024,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "pendiente": 12,
+            "coincide": 2
+          },
+          "contenido_expandido": {
+            "pendiente": 12,
+            "coincide": 2
+          }
+        },
+        "metadata_pattern": "chunk_*_metadata.csv.zst",
+        "master_index": "data/data_input_nn/mouse/mhc-II/H2-IE/classification_mouse_mhc-II_H2-IE_blosum_ProtT5_chunks/master_index.csv.zst",
+        "master_index_receipt": "data/data_input_nn/mouse/mhc-II/H2-IE/classification_mouse_mhc-II_H2-IE_blosum_ProtT5_chunks/master_index.csv.archive.json",
+        "index_verification": {
+          "contenedor_zstd": {
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "pendiente": 1
+          }
+        },
+        "availability": "representacion_prott5_documentada",
+        "row_unit": "fila histórica declarada",
+        "legacy_flat_master_index": "data/data_input_nn/mouse/mhc-II/H2-IE/classification_mouse_mhc-II_H2-IE_blosum_ProtT5_chunks/master_index.csv",
+        "legacy_flat_master_index_status": "ausente; copia .zst disponible"
+      },
+      "secondarybert": {
+        "directory": "data/data_input_nn/mouse/mhc-II/H2-IE/classification_mouse_mhc-II_H2-IE_SecondaryBERT_by_group",
+        "blocks_pattern": "chunks/chunk_*_X_ss.npy.zst",
+        "blocks": 1,
+        "declared_rows": 52656,
+        "dimension": 768,
+        "dtype": "float32",
+        "format": "NPY.ZST",
+        "verification": {
+          "contenedor_zstd": {
+            "coincide": 1
+          },
+          "contenido_expandido": {
+            "coincide": 1
+          }
+        },
+        "row_unit": "grupo",
+        "chunk_manifest": "data/data_input_nn/mouse/mhc-II/H2-IE/classification_mouse_mhc-II_H2-IE_SecondaryBERT_by_group/chunks_manifest.csv.zst",
+        "configuration": "data/data_input_nn/mouse/mhc-II/H2-IE/classification_mouse_mhc-II_H2-IE_SecondaryBERT_by_group/embedding_config.json.zst",
+        "configuration_version": 2,
+        "availability": "representacion_secondarybert_documentada"
+      },
+      "concatenated": {
+        "dataset_id": "mixto_concatenado",
+        "scope": "vista mixta",
+        "family_counts": null,
+        "source_reference": "reorder_manifest.sources.id",
+        "availability": "representacion_concatenada_documentada_en_vista_mixta"
+      },
+      "csv_rows_minus_prott5_declared_rows": 0,
+      "record_level_correspondence": "no_acreditada",
+      "records_with_missing_representation": null,
+      "physical_absence": [
+        "master_index.csv plano; se conserva master_index.csv.zst"
+      ]
+    }
+  ],
+  "csv_totals": {
+    "member_bytes": 110052645616,
+    "rows": 1449852950,
+    "original_rows": 55763575,
+    "augmented_rows": 1394089375,
+    "rows_missing_sequence": 0,
+    "rows_missing_source_id": 0,
+    "quoted_rows": 0
+  },
+  "mixed_concatenated": {
+    "directory": "data/data_input_nn_shuffled_concatenate/mixed/classification_mixed_ProtT5_chunks",
+    "blocks_pattern": "chunk_*_X.npy",
+    "receipt_pattern": "chunk_*_X.json",
+    "metadata_pattern": "chunk_metadata/chunk_*_{y,group_id,split_id}.npy",
+    "blocks": 14499,
+    "declared_rows": 1449852950,
+    "dimension": 1792,
+    "dtype": "float32",
+    "feature_layout": "data/data_input_nn_shuffled_concatenate/feature_layout.json",
+    "format_version": "primary_secondary_float32_v1",
+    "manifest": "data/data_input_nn_shuffled_concatenate/reorder_manifest.json",
+    "verification": {
+      "contenido_npy": {
+        "coincide_previo": 2,
+        "pendiente": 14493,
+        "coincide": 4
+      }
+    },
+    "family_slices": null
+  },
+  "mixed_reordered": {
+    "directory": "data/data_input_nn_shuffled",
+    "blocks_directory": "data/data_input_nn_shuffled/mixed/classification_mixed_ProtT5_chunks",
+    "blocks_pattern": "chunk_*_X.npy.zst",
+    "blocks": 14499,
+    "declared_rows": 1449852950,
+    "dimension": 1024,
+    "dtype": "float32",
+    "master_index": "data/data_input_nn_shuffled/mixed/classification_mixed_ProtT5_chunks/master_index.csv.zst",
+    "master_split": "data/data_input_nn_shuffled/mixed/classification_mixed_ProtT5_chunks/master_split.csv.zst",
+    "manifest": "data/data_input_nn_shuffled/reorder_manifest.json.zst",
+    "archive_marker": "data/data_input_nn_shuffled/ARCHIVED.json",
+    "archive_format": "verified_zstd_v1",
+    "verification_scope": "informe de procedencia; revisión posterior incluye dependencias seleccionadas"
+  },
+  "dependencies": {
+    "organization": "results/nap_cnb_v2_blosum_preparation/organization/artifact_catalog.json",
+    "inventory": "reports/experiments/d1_blosum_existing_inventory.md",
+    "report": "reports/experiments/d1_blosum_artifact_provenance.md",
+    "verification_report": "reports/experiments/d1_blosum_integrity_verification.md",
+    "file_integrity": "reports/experiments/d1_blosum_integrity_manifest.jsonl",
+    "join_field": "path",
+    "historical_sources": "results/nap_cnb_v2_embedding_audit/embedding_sources.tsv",
+    "historical_reorder_manifest_has_schema_version": false,
+    "canonical_paths": "Rutas del catálogo relativas a la raíz. Los manifiestos históricos mantienen /data/nap/lperez_nn y algunas configuraciones /home/nap/lperez_nn.",
+    "flat_archive_rule": "Las rutas archivadas se identifican con .zst y el lateral .archive.json conforme al manifiesto de integridad. El TAR se consulta como contenedor; sus miembros requieren el nombre interno exacto.",
+    "historical_group_ids": "Los identificadores son locales al CSV. Usar source_id o nombre interno para su ámbito."
+  },
+  "archive_run": {
+    "mode": "GNU tar selectivo sobre zstd en streaming",
+    "compressed_bytes": 5078332109,
+    "selected_member_bytes": 110052645616,
+    "new_content_hashes": 0,
+    "elapsed_seconds": 160.856
+  },
+  "record_level_classification": {
+    "documented_augmented_row_rule": "Ambas columnas de secuencia presentes y distintas.",
+    "original_row_rule": "Ambas columnas de secuencia presentes e iguales.",
+    "missing_representation_rule": "Requiere evidencia de una ausencia para un artefacto o registro identificado.",
+    "uncertified_correspondence_rule": "Presencia de un almacén y coincidencia de recuentos no prueban una asociación individual.",
+    "representation_absent_per_record": null
+  },
+  "metadata_compatibility_checks": [
+    {
+      "checked_utc_date": "2026-11-23",
+      "method": "Cotejo de manifiestos, configuraciones pequeñas y referencias de recibos. No se leyeron payloads de embeddings.",
+      "d1_resolution": "results/nap_cnb_v2_d1_representations/manifest.json",
+      "d1_profile_manifest": "results/nap_cnb_v2_d1_experimental/manifest.json",
+      "family_sources": {
+        "HLA-A": {
+          "source_id": 0,
+          "csv_member": "data_intermediate/human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A_blosum.csv",
+          "secondarybert_configuration": "data/data_input_nn/human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A_SecondaryBERT_by_group/embedding_config.json.zst",
+          "historical_model_fingerprint": "7714351fc71dd4c3b929d9835d00bdb7d4869e982b9fb32054e4bf9c3846b72d",
+          "configuration_compatible_with_d1_profile": true,
+          "certified_d1_archive_references": 100,
+          "archive_references_outside_d1_selection": 0
+        },
+        "HLA-B": {
+          "source_id": 1,
+          "csv_member": "data_intermediate/human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B_blosum.csv",
+          "secondarybert_configuration": "data/data_input_nn/human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B_SecondaryBERT_by_group/embedding_config.json.zst",
+          "historical_model_fingerprint": "7714351fc71dd4c3b929d9835d00bdb7d4869e982b9fb32054e4bf9c3846b72d",
+          "configuration_compatible_with_d1_profile": true,
+          "certified_d1_archive_references": 103,
+          "archive_references_outside_d1_selection": 1
+        },
+        "HLA-C": {
+          "source_id": 2,
+          "csv_member": "data_intermediate/human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C_blosum.csv",
+          "secondarybert_configuration": "data/data_input_nn/human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C_SecondaryBERT_by_group/embedding_config.json.zst",
+          "historical_model_fingerprint": "7714351fc71dd4c3b929d9835d00bdb7d4869e982b9fb32054e4bf9c3846b72d",
+          "configuration_compatible_with_d1_profile": true,
+          "certified_d1_archive_references": 76,
+          "archive_references_outside_d1_selection": 1
+        },
+        "HLA-DP": {
+          "source_id": 3,
+          "csv_member": "data_intermediate/human/mhc-II/HLA-DP/classification_human_mhc-II_HLA-DP_blosum.csv",
+          "secondarybert_configuration": "data/data_input_nn/human/mhc-II/HLA-DP/classification_human_mhc-II_HLA-DP_SecondaryBERT_by_group/embedding_config.json.zst",
+          "historical_model_fingerprint": "7714351fc71dd4c3b929d9835d00bdb7d4869e982b9fb32054e4bf9c3846b72d",
+          "configuration_compatible_with_d1_profile": true,
+          "certified_d1_archive_references": 50,
+          "archive_references_outside_d1_selection": 0
+        },
+        "HLA-DQ": {
+          "source_id": 4,
+          "csv_member": "data_intermediate/human/mhc-II/HLA-DQ/classification_human_mhc-II_HLA-DQ_blosum.csv",
+          "secondarybert_configuration": "data/data_input_nn/human/mhc-II/HLA-DQ/classification_human_mhc-II_HLA-DQ_SecondaryBERT_by_group/embedding_config.json.zst",
+          "historical_model_fingerprint": "7714351fc71dd4c3b929d9835d00bdb7d4869e982b9fb32054e4bf9c3846b72d",
+          "configuration_compatible_with_d1_profile": true,
+          "certified_d1_archive_references": 24,
+          "archive_references_outside_d1_selection": 0
+        },
+        "HLA-DR": {
+          "source_id": 5,
+          "csv_member": "data_intermediate/human/mhc-II/HLA-DR/classification_human_mhc-II_HLA-DR_blosum.csv",
+          "secondarybert_configuration": "data/data_input_nn/human/mhc-II/HLA-DR/classification_human_mhc-II_HLA-DR_SecondaryBERT_by_group/embedding_config.json.zst",
+          "historical_model_fingerprint": "7714351fc71dd4c3b929d9835d00bdb7d4869e982b9fb32054e4bf9c3846b72d",
+          "configuration_compatible_with_d1_profile": true,
+          "certified_d1_archive_references": 75,
+          "archive_references_outside_d1_selection": 0
+        },
+        "H2-D": {
+          "source_id": 6,
+          "csv_member": "data_intermediate/mouse/mhc-I/H2-D/classification_mouse_mhc-I_H2-D_blosum.csv",
+          "secondarybert_configuration": "data/data_input_nn/mouse/mhc-I/H2-D/classification_mouse_mhc-I_H2-D_SecondaryBERT_by_group/embedding_config.json.zst",
+          "historical_model_fingerprint": "7714351fc71dd4c3b929d9835d00bdb7d4869e982b9fb32054e4bf9c3846b72d",
+          "configuration_compatible_with_d1_profile": true,
+          "certified_d1_archive_references": 42,
+          "archive_references_outside_d1_selection": 0
+        },
+        "H2-K": {
+          "source_id": 7,
+          "csv_member": "data_intermediate/mouse/mhc-I/H2-K/classification_mouse_mhc-I_H2-K_blosum.csv",
+          "secondarybert_configuration": "data/data_input_nn/mouse/mhc-I/H2-K/classification_mouse_mhc-I_H2-K_SecondaryBERT_by_group/embedding_config.json.zst",
+          "historical_model_fingerprint": "7714351fc71dd4c3b929d9835d00bdb7d4869e982b9fb32054e4bf9c3846b72d",
+          "configuration_compatible_with_d1_profile": true,
+          "certified_d1_archive_references": 59,
+          "archive_references_outside_d1_selection": 0
+        },
+        "H2-L": {
+          "source_id": 8,
+          "csv_member": "data_intermediate/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_blosum.csv",
+          "secondarybert_configuration": "data/data_input_nn/mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L_SecondaryBERT_by_group/embedding_config.json.zst",
+          "historical_model_fingerprint": "7714351fc71dd4c3b929d9835d00bdb7d4869e982b9fb32054e4bf9c3846b72d",
+          "configuration_compatible_with_d1_profile": true,
+          "certified_d1_archive_references": 1,
+          "archive_references_outside_d1_selection": 0
+        },
+        "H2-IA": {
+          "source_id": 9,
+          "csv_member": "data_intermediate/mouse/mhc-II/H2-IA/classification_mouse_mhc-II_H2-IA_blosum.csv",
+          "secondarybert_configuration": "data/data_input_nn/mouse/mhc-II/H2-IA/classification_mouse_mhc-II_H2-IA_SecondaryBERT_by_group/embedding_config.json.zst",
+          "historical_model_fingerprint": "7714351fc71dd4c3b929d9835d00bdb7d4869e982b9fb32054e4bf9c3846b72d",
+          "configuration_compatible_with_d1_profile": true,
+          "certified_d1_archive_references": 18,
+          "archive_references_outside_d1_selection": 0
+        },
+        "H2-IE": {
+          "source_id": 10,
+          "csv_member": "data_intermediate/mouse/mhc-II/H2-IE/classification_mouse_mhc-II_H2-IE_blosum.csv",
+          "secondarybert_configuration": "data/data_input_nn/mouse/mhc-II/H2-IE/classification_mouse_mhc-II_H2-IE_SecondaryBERT_by_group/embedding_config.json.zst",
+          "historical_model_fingerprint": "7714351fc71dd4c3b929d9835d00bdb7d4869e982b9fb32054e4bf9c3846b72d",
+          "configuration_compatible_with_d1_profile": true,
+          "certified_d1_archive_references": 1,
+          "archive_references_outside_d1_selection": 0
+        }
+      },
+      "relationships": {
+        "csv_blosum62": {
+          "state": "documentada_por_fuente_historica",
+          "identity_scope": "miembro TAR, protein_group_id y group_id locales",
+          "gap": "Falta vínculo acreditado con observation_id D1 y huella individual del miembro."
+        },
+        "prott5_familiar": {
+          "state": "documentada_sin_acreditar_equivalencia_d1",
+          "identity_scope": "Índice de direcciones por familia y metadatos por bloque; 1024 float32.",
+          "gap": "Modelo documentado; revisión efectiva de pesos, tokenizador y configuración sin fijar por bloque.",
+          "model_evidence": "results/nap_cnb_v2_prott5_audit_3a3/prott5_phase_3a3_report.md"
+        },
+        "secondarybert_familiar": {
+          "state": "acreditada_para_referencias_certificadas_d1",
+          "identity_scope": "Claves C/H/E exactas seleccionadas por el índice D1; coincidencia comprobada de rutas, recibos y geometría.",
+          "archived_d1_keys": 1819032,
+          "historical_manifest_archives": 551,
+          "d1_referenced_archives": 549,
+          "other_archives": [
+            "data/data_input_nn/human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B_SecondaryBERT_by_group/chunks/chunk_000021_X_ss.npy.zst",
+            "data/data_input_nn/human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C_SecondaryBERT_by_group/chunks/chunk_000076_X_ss.npy.zst"
+          ],
+          "expanded_hash_states_from_previous_verification": {
+            "coincide": 19,
+            "pendiente": 529,
+            "coincide_previo": 1
+          },
+          "gap": "La certificación por clave y offset cubre el subconjunto indexado en D1. La configuración familiar por sí sola deja abierta la correspondencia de los demás registros."
+        },
+        "reordered_and_concatenated": {
+          "state": "documentada_por_direccion_historica",
+          "identity_scope": "ID de fuente, grupo y direcciones de origen en el índice mixto; concatenado identificado por bloque.",
+          "gap": "Las direcciones y firmas de dependencias no acreditan equivalencia de claves o vectores con D1."
+        }
+      }
+    }
+  ]
+}

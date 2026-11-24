@@ -1,0 +1,628 @@
+{
+  "families": {
+    "HLA-A": {
+      "eligible_proteins": 15818,
+      "generated_windows": 9583585,
+      "windows": 9502740,
+      "positive": 1521405,
+      "negative": 7981335,
+      "held_out": 80845,
+      "structure_matched": 9319991,
+      "old_rows": 10214658,
+      "old_positions": 9523132,
+      "old_positive_positions": 1542748,
+      "remapping": {
+        "shifted_assay_records": 33546,
+        "positive_windows_supported_only_by_shifted_records": 68316
+      },
+      "historical": {
+        "old_rows": 10214658,
+        "old_unique_positions": 9523132,
+        "old_positive_positions": 1542748,
+        "old_duplicate_position_rows": 691526,
+        "positions_unchanged": 9159516,
+        "new_positions": 282488,
+        "new_positive_positions": 12524,
+        "positions_on_previously_omitted_proteins": 282488,
+        "position_0_to_1": 55378,
+        "position_1_to_0": 5358,
+        "old_positions_in_holdouts": 80463,
+        "old_positive_positions_in_holdouts": 77430,
+        "old_positions_missing_in_rebuild": 302880,
+        "old_positive_positions_elsewhere_excluded": 6457
+      },
+      "verification_methods": {
+        "iedb_explicit_parent_reference": 462388,
+        "full_reference_alignment": 5653,
+        "exact_whole_reference_identity": 3900,
+        "verified_prior_coordinate_audit": 5579
+      },
+      "pending_candidate_windows": 15512,
+      "holdout_reasons": {
+        "modified_peptide_excluded": 80845
+      },
+      "modified_assay_records": 47941,
+      "structural_windows": {
+        "matched": 9319991,
+        "missing_prediction": 17658,
+        "unverified_archived_reference": 165091
+      },
+      "structural_proteins": {
+        "matched": 15471,
+        "missing_prediction": 66,
+        "unverified_archived_reference": 281
+      }
+    },
+    "HLA-B": {
+      "eligible_proteins": 16181,
+      "generated_windows": 9643627,
+      "windows": 9531009,
+      "positive": 2001316,
+      "negative": 7529693,
+      "held_out": 112618,
+      "structure_matched": 9312062,
+      "old_rows": 10639963,
+      "old_positions": 9620155,
+      "old_positive_positions": 2039694,
+      "remapping": {
+        "shifted_assay_records": 61885,
+        "positive_windows_supported_only_by_shifted_records": 128904
+      },
+      "historical": {
+        "old_rows": 10639963,
+        "old_unique_positions": 9620155,
+        "old_positive_positions": 2039694,
+        "old_duplicate_position_rows": 1019808,
+        "positions_unchanged": 9102481,
+        "position_0_to_1": 105092,
+        "position_1_to_0": 45087,
+        "new_positions": 278349,
+        "new_positive_positions": 16992,
+        "positions_on_previously_omitted_proteins": 278349,
+        "old_positions_in_holdouts": 112028,
+        "old_positive_positions_in_holdouts": 107185,
+        "old_positions_missing_in_rebuild": 367495,
+        "old_positive_positions_elsewhere_excluded": 8190
+      },
+      "verification_methods": {
+        "iedb_explicit_parent_reference": 505209,
+        "full_reference_alignment": 11839,
+        "verified_prior_coordinate_audit": 11990,
+        "exact_whole_reference_identity": 8872
+      },
+      "pending_candidate_windows": 146818,
+      "holdout_reasons": {
+        "modified_peptide_excluded": 112618
+      },
+      "modified_assay_records": 41536,
+      "structural_windows": {
+        "matched": 9312062,
+        "missing_prediction": 15513,
+        "unverified_archived_reference": 203434
+      },
+      "structural_proteins": {
+        "matched": 15703,
+        "missing_prediction": 77,
+        "unverified_archived_reference": 401
+      }
+    },
+    "HLA-C": {
+      "eligible_proteins": 11833,
+      "generated_windows": 7547836,
+      "windows": 7513895,
+      "positive": 781899,
+      "negative": 6731996,
+      "held_out": 33941,
+      "structure_matched": 7485498,
+      "old_rows": 7788459,
+      "old_positions": 7596123,
+      "old_positive_positions": 799606,
+      "remapping": {
+        "shifted_assay_records": 4453,
+        "positive_windows_supported_only_by_shifted_records": 20299
+      },
+      "historical": {
+        "old_rows": 7788459,
+        "old_unique_positions": 7596123,
+        "old_positive_positions": 799606,
+        "old_duplicate_position_rows": 192336,
+        "positions_unchanged": 7358438,
+        "new_positions": 140746,
+        "new_positive_positions": 7578,
+        "positions_on_previously_omitted_proteins": 140746,
+        "position_1_to_0": 1620,
+        "position_0_to_1": 13091,
+        "old_positions_in_holdouts": 33679,
+        "old_positive_positions_in_holdouts": 31932,
+        "old_positions_missing_in_rebuild": 222974,
+        "old_positive_positions_elsewhere_excluded": 4824
+      },
+      "verification_methods": {
+        "iedb_explicit_parent_reference": 120722,
+        "full_reference_alignment": 1419,
+        "verified_prior_coordinate_audit": 1150,
+        "exact_whole_reference_identity": 654
+      },
+      "pending_candidate_windows": 3759,
+      "holdout_reasons": {
+        "modified_peptide_excluded": 33941
+      },
+      "modified_assay_records": 11661,
+      "structural_windows": {
+        "matched": 7485498,
+        "missing_prediction": 6011,
+        "unverified_archived_reference": 22386
+      },
+      "structural_proteins": {
+        "matched": 11761,
+        "missing_prediction": 24,
+        "unverified_archived_reference": 48
+      }
+    },
+    "HLA-DP": {
+      "eligible_proteins": 6695,
+      "generated_windows": 4294875,
+      "windows": 4291091,
+      "positive": 238576,
+      "negative": 4052515,
+      "held_out": 3784,
+      "structure_matched": 4284889,
+      "old_rows": 5027325,
+      "old_positions": 4464776,
+      "old_positive_positions": 243947,
+      "remapping": {
+        "shifted_assay_records": 1432,
+        "positive_windows_supported_only_by_shifted_records": 1896
+      },
+      "historical": {
+        "old_rows": 5027325,
+        "old_unique_positions": 4464776,
+        "old_positive_positions": 243947,
+        "old_duplicate_position_rows": 562549,
+        "positions_unchanged": 4236099,
+        "position_1_to_0": 1083,
+        "new_positions": 53442,
+        "new_positive_positions": 1707,
+        "positions_on_previously_omitted_proteins": 53442,
+        "position_0_to_1": 467,
+        "old_positions_in_holdouts": 3729,
+        "old_positive_positions_in_holdouts": 3717,
+        "old_positions_missing_in_rebuild": 227127,
+        "old_positive_positions_elsewhere_excluded": 2745
+      },
+      "verification_methods": {
+        "iedb_explicit_parent_reference": 148358,
+        "full_reference_alignment": 1673,
+        "exact_whole_reference_identity": 129,
+        "verified_prior_coordinate_audit": 709
+      },
+      "pending_candidate_windows": 2387,
+      "holdout_reasons": {
+        "modified_peptide_excluded": 3784
+      },
+      "modified_assay_records": 8208,
+      "structural_windows": {
+        "matched": 4284889,
+        "missing_prediction": 2989,
+        "unverified_archived_reference": 3213
+      },
+      "structural_proteins": {
+        "matched": 6680,
+        "missing_prediction": 11,
+        "unverified_archived_reference": 4
+      }
+    },
+    "HLA-DQ": {
+      "eligible_proteins": 3386,
+      "generated_windows": 2116686,
+      "windows": 2114393,
+      "positive": 108805,
+      "negative": 2005588,
+      "held_out": 2293,
+      "structure_matched": 2102586,
+      "old_rows": 2389441,
+      "old_positions": 2194959,
+      "old_positive_positions": 108383,
+      "remapping": {
+        "shifted_assay_records": 2201,
+        "positive_windows_supported_only_by_shifted_records": 5464
+      },
+      "historical": {
+        "old_rows": 2389441,
+        "old_unique_positions": 2194959,
+        "old_positive_positions": 108383,
+        "old_duplicate_position_rows": 194482,
+        "positions_unchanged": 2031973,
+        "position_0_to_1": 3736,
+        "new_positions": 77790,
+        "new_positive_positions": 1730,
+        "positions_on_previously_omitted_proteins": 77790,
+        "position_1_to_0": 894,
+        "old_positions_in_holdouts": 2180,
+        "old_positive_positions_in_holdouts": 2081,
+        "old_positions_missing_in_rebuild": 158356,
+        "old_positive_positions_elsewhere_excluded": 2069
+      },
+      "verification_methods": {
+        "iedb_explicit_parent_reference": 39218,
+        "full_reference_alignment": 2539,
+        "verified_prior_coordinate_audit": 1287,
+        "exact_whole_reference_identity": 1223
+      },
+      "pending_candidate_windows": 1571,
+      "holdout_reasons": {
+        "modified_peptide_excluded": 2293
+      },
+      "modified_assay_records": 2232,
+      "structural_windows": {
+        "matched": 2102586,
+        "missing_prediction": 1725,
+        "unverified_archived_reference": 10082
+      },
+      "structural_proteins": {
+        "matched": 3361,
+        "missing_prediction": 4,
+        "unverified_archived_reference": 21
+      }
+    },
+    "HLA-DR": {
+      "eligible_proteins": 9353,
+      "generated_windows": 5907133,
+      "windows": 5889056,
+      "positive": 420357,
+      "negative": 5468699,
+      "held_out": 18077,
+      "structure_matched": 5841887,
+      "old_rows": 7588227,
+      "old_positions": 6482302,
+      "old_positive_positions": 440835,
+      "remapping": {
+        "shifted_assay_records": 14494,
+        "positive_windows_supported_only_by_shifted_records": 17357
+      },
+      "historical": {
+        "old_rows": 7588227,
+        "old_unique_positions": 6482302,
+        "old_positive_positions": 440835,
+        "old_duplicate_position_rows": 1105925,
+        "positions_unchanged": 5707212,
+        "new_positions": 157502,
+        "new_positive_positions": 3340,
+        "positions_on_previously_omitted_proteins": 157502,
+        "position_0_to_1": 13613,
+        "position_1_to_0": 10729,
+        "old_positions_in_holdouts": 17864,
+        "old_positive_positions_in_holdouts": 16036,
+        "old_positions_missing_in_rebuild": 750748,
+        "old_positive_positions_elsewhere_excluded": 10666
+      },
+      "verification_methods": {
+        "iedb_explicit_parent_reference": 291064,
+        "verified_prior_coordinate_audit": 4054,
+        "full_reference_alignment": 7577,
+        "exact_whole_reference_identity": 4175
+      },
+      "pending_candidate_windows": 9558,
+      "holdout_reasons": {
+        "modified_peptide_excluded": 18077
+      },
+      "modified_assay_records": 21367,
+      "structural_windows": {
+        "matched": 5841887,
+        "missing_prediction": 4309,
+        "unverified_archived_reference": 42860
+      },
+      "structural_proteins": {
+        "matched": 9265,
+        "missing_prediction": 15,
+        "unverified_archived_reference": 73
+      }
+    },
+    "H2-D": {
+      "eligible_proteins": 4406,
+      "generated_windows": 3080035,
+      "windows": 3072856,
+      "positive": 126584,
+      "negative": 2946272,
+      "held_out": 7179,
+      "structure_matched": 3057989,
+      "old_rows": 4244842,
+      "old_positions": 4185817,
+      "old_positive_positions": 181137,
+      "remapping": {
+        "shifted_assay_records": 6369,
+        "positive_windows_supported_only_by_shifted_records": 5623
+      },
+      "historical": {
+        "old_rows": 4244842,
+        "old_unique_positions": 4185817,
+        "old_positive_positions": 181137,
+        "old_duplicate_position_rows": 59025,
+        "positions_unchanged": 2856937,
+        "new_positions": 194395,
+        "new_positive_positions": 3196,
+        "positions_on_previously_omitted_proteins": 194395,
+        "position_1_to_0": 19341,
+        "position_0_to_1": 2183,
+        "old_positions_in_holdouts": 6968,
+        "old_positive_positions_in_holdouts": 6586,
+        "old_positions_missing_in_rebuild": 1307356,
+        "old_positive_positions_elsewhere_excluded": 34005
+      },
+      "verification_methods": {
+        "verified_prior_coordinate_audit": 239,
+        "full_reference_alignment": 398,
+        "iedb_explicit_parent_reference": 33516,
+        "exact_whole_reference_identity": 214
+      },
+      "pending_candidate_windows": 33078,
+      "holdout_reasons": {
+        "modified_peptide_excluded": 7179
+      },
+      "modified_assay_records": 2974,
+      "structural_windows": {
+        "matched": 3057989,
+        "missing_prediction": 14037,
+        "unverified_archived_reference": 830
+      },
+      "structural_proteins": {
+        "matched": 4390,
+        "missing_prediction": 14,
+        "unverified_archived_reference": 2
+      }
+    },
+    "H2-K": {
+      "eligible_proteins": 8359,
+      "generated_windows": 5521496,
+      "windows": 5501215,
+      "positive": 346276,
+      "negative": 5154939,
+      "held_out": 20281,
+      "structure_matched": 5472862,
+      "old_rows": 6022825,
+      "old_positions": 5848668,
+      "old_positive_positions": 382785,
+      "remapping": {
+        "shifted_assay_records": 6752,
+        "positive_windows_supported_only_by_shifted_records": 10708
+      },
+      "historical": {
+        "old_rows": 6022825,
+        "old_unique_positions": 5848668,
+        "old_positive_positions": 382785,
+        "old_duplicate_position_rows": 174157,
+        "new_positions": 191037,
+        "new_positive_positions": 6085,
+        "positions_on_previously_omitted_proteins": 191037,
+        "positions_unchanged": 5291955,
+        "position_0_to_1": 4936,
+        "position_1_to_0": 13287,
+        "old_positions_in_holdouts": 19743,
+        "old_positive_positions_in_holdouts": 19420,
+        "old_positions_missing_in_rebuild": 538490,
+        "old_positive_positions_elsewhere_excluded": 14823
+      },
+      "verification_methods": {
+        "exact_whole_reference_identity": 512,
+        "verified_prior_coordinate_audit": 791,
+        "iedb_explicit_parent_reference": 73781,
+        "full_reference_alignment": 917
+      },
+      "pending_candidate_windows": 23785,
+      "holdout_reasons": {
+        "modified_peptide_excluded": 20281
+      },
+      "modified_assay_records": 8024,
+      "structural_windows": {
+        "missing_prediction": 15672,
+        "matched": 5472862,
+        "unverified_archived_reference": 12681
+      },
+      "structural_proteins": {
+        "missing_prediction": 22,
+        "matched": 8322,
+        "unverified_archived_reference": 15
+      }
+    },
+    "H2-L": {
+      "eligible_proteins": 7,
+      "generated_windows": 4819,
+      "windows": 4819,
+      "positive": 145,
+      "negative": 4674,
+      "held_out": 0,
+      "structure_matched": 4421,
+      "old_rows": 4448,
+      "old_positions": 4421,
+      "old_positive_positions": 99,
+      "remapping": {
+        "shifted_assay_records": 16,
+        "positive_windows_supported_only_by_shifted_records": 46
+      },
+      "historical": {
+        "old_rows": 4448,
+        "old_unique_positions": 4421,
+        "old_positive_positions": 99,
+        "old_duplicate_position_rows": 27,
+        "new_positions": 398,
+        "new_positive_positions": 46,
+        "positions_on_previously_omitted_proteins": 398,
+        "positions_unchanged": 4421,
+        "old_positions_missing_in_rebuild": 0,
+        "old_positive_positions_elsewhere_excluded": 0
+      },
+      "verification_methods": {
+        "iedb_explicit_parent_reference": 131,
+        "full_reference_alignment": 5
+      },
+      "pending_candidate_windows": 0,
+      "holdout_reasons": {},
+      "modified_assay_records": 1,
+      "structural_windows": {
+        "missing_prediction": 398,
+        "matched": 4421
+      },
+      "structural_proteins": {
+        "missing_prediction": 1,
+        "matched": 6
+      }
+    },
+    "H2-IA": {
+      "eligible_proteins": 2448,
+      "generated_windows": 1715746,
+      "windows": 1713218,
+      "positive": 47581,
+      "negative": 1665637,
+      "held_out": 2528,
+      "structure_matched": 1702399,
+      "old_rows": 1790731,
+      "old_positions": 1726584,
+      "old_positive_positions": 50779,
+      "remapping": {
+        "shifted_assay_records": 2788,
+        "positive_windows_supported_only_by_shifted_records": 5574
+      },
+      "historical": {
+        "old_rows": 1790731,
+        "old_unique_positions": 1726584,
+        "old_positive_positions": 50779,
+        "old_duplicate_position_rows": 64147,
+        "positions_unchanged": 1458601,
+        "new_positions": 250068,
+        "new_positive_positions": 3584,
+        "positions_on_previously_omitted_proteins": 250068,
+        "position_0_to_1": 1923,
+        "position_1_to_0": 2626,
+        "old_positions_in_holdouts": 2433,
+        "old_positive_positions_in_holdouts": 2155,
+        "old_positions_missing_in_rebuild": 263434,
+        "old_positive_positions_elsewhere_excluded": 3924
+      },
+      "verification_methods": {
+        "iedb_explicit_parent_reference": 12752,
+        "full_reference_alignment": 1114,
+        "exact_whole_reference_identity": 1280,
+        "verified_prior_coordinate_audit": 838
+      },
+      "pending_candidate_windows": 5555,
+      "holdout_reasons": {
+        "modified_peptide_excluded": 2528
+      },
+      "modified_assay_records": 2879,
+      "structural_windows": {
+        "matched": 1702399,
+        "missing_prediction": 3289,
+        "unverified_archived_reference": 7530
+      },
+      "structural_proteins": {
+        "matched": 2422,
+        "missing_prediction": 11,
+        "unverified_archived_reference": 15
+      }
+    },
+    "H2-IE": {
+      "eligible_proteins": 134,
+      "generated_windows": 70821,
+      "windows": 70812,
+      "positive": 1585,
+      "negative": 69227,
+      "held_out": 9,
+      "structure_matched": 70360,
+      "old_rows": 52656,
+      "old_positions": 52373,
+      "old_positive_positions": 1269,
+      "remapping": {
+        "shifted_assay_records": 76,
+        "positive_windows_supported_only_by_shifted_records": 325
+      },
+      "historical": {
+        "old_rows": 52656,
+        "old_unique_positions": 52373,
+        "old_positive_positions": 1269,
+        "old_duplicate_position_rows": 283,
+        "new_positions": 18448,
+        "new_positive_positions": 288,
+        "positions_on_previously_omitted_proteins": 18448,
+        "positions_unchanged": 52327,
+        "position_0_to_1": 37,
+        "old_positions_in_holdouts": 9,
+        "old_positive_positions_in_holdouts": 9,
+        "old_positions_missing_in_rebuild": 9,
+        "old_positive_positions_elsewhere_excluded": 0
+      },
+      "verification_methods": {
+        "full_reference_alignment": 84,
+        "iedb_explicit_parent_reference": 110,
+        "verified_prior_coordinate_audit": 60,
+        "exact_whole_reference_identity": 84
+      },
+      "pending_candidate_windows": 15,
+      "holdout_reasons": {
+        "modified_peptide_excluded": 9
+      },
+      "modified_assay_records": 25,
+      "structural_windows": {
+        "matched": 70360,
+        "unverified_archived_reference": 452
+      },
+      "structural_proteins": {
+        "matched": 132,
+        "unverified_archived_reference": 2
+      }
+    }
+  },
+  "totals": {
+    "eligible_proteins": 78620,
+    "generated_windows": 49486659,
+    "windows": 49205104,
+    "positive": 5594529,
+    "negative": 43610575,
+    "held_out": 281555,
+    "structure_matched": 48654944,
+    "old_rows": 55763575,
+    "old_positions": 51699310,
+    "old_positive_positions": 5791282
+  },
+  "global_index": {
+    "unique_sequences": 14554919,
+    "positive_sequences": 3582354,
+    "observations": 49205104,
+    "positive_observations": 5594529,
+    "unique_primary_secondary_pairs": 15006963
+  },
+  "structure_coverage_percent": 98.88190460892025,
+  "structural_proteins": {
+    "matched": 77513,
+    "missing_prediction": 245,
+    "unverified_archived_reference": 862
+  },
+  "structural_windows": {
+    "matched": 48654944,
+    "missing_prediction": 81601,
+    "unverified_archived_reference": 468559
+  },
+  "historical": {
+    "old_rows": 55763575,
+    "old_unique_positions": 51699310,
+    "old_positive_positions": 5791282,
+    "old_duplicate_position_rows": 4064265,
+    "positions_unchanged": 47259960,
+    "new_positions": 1644663,
+    "new_positive_positions": 57070,
+    "positions_on_previously_omitted_proteins": 1644663,
+    "position_0_to_1": 200456,
+    "position_1_to_0": 100025,
+    "old_positions_in_holdouts": 279096,
+    "old_positive_positions_in_holdouts": 266551,
+    "old_positions_missing_in_rebuild": 4138869,
+    "old_positive_positions_elsewhere_excluded": 87703
+  },
+  "remapping": {
+    "shifted_assay_records": 134012,
+    "positive_windows_supported_only_by_shifted_records": 264512
+  },
+  "holdout_reasons": {
+    "modified_peptide_excluded": 281555
+  },
+  "permanent_bytes": 2001337497
+}

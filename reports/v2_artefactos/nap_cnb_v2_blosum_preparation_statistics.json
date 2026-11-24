@@ -1,0 +1,100 @@
+{
+  "matrix": {
+    "matrix": "BLOSUM62",
+    "biopython_version": "1.86",
+    "matrix_file_sha256": "85510d3846ee6d5f4778e425cf8daf6e0dbb889b306f2d13434e1254780efb40",
+    "alphabet": "ARNDCQEGHILKMFPSTWYVBZX*",
+    "dimensions": [
+      24,
+      24
+    ],
+    "symmetric": true,
+    "diagonal": {
+      "A": 4,
+      "R": 5,
+      "N": 6,
+      "D": 6,
+      "C": 9,
+      "Q": 5,
+      "E": 5,
+      "G": 6,
+      "H": 8,
+      "I": 4,
+      "L": 4,
+      "K": 5,
+      "M": 5,
+      "F": 6,
+      "P": 7,
+      "S": 4,
+      "T": 5,
+      "W": 11,
+      "Y": 7,
+      "V": 4,
+      "B": 4,
+      "Z": 4,
+      "X": -1,
+      "*": 1
+    },
+    "all_cells": {
+      "-4": 66,
+      "-3": 110,
+      "-2": 110,
+      "-1": 137,
+      "0": 72,
+      "1": 33,
+      "2": 14,
+      "3": 8,
+      "4": 11,
+      "5": 6,
+      "6": 4,
+      "7": 2,
+      "8": 1,
+      "9": 1,
+      "11": 1
+    },
+    "canonical_distinct_unordered_pairs": {
+      "-4": 8,
+      "-3": 44,
+      "-2": 47,
+      "-1": 45,
+      "0": 25,
+      "1": 12,
+      "2": 7,
+      "3": 2
+    },
+    "canonical_pairs_by_sign": {
+      "positive": 21,
+      "zero": 25,
+      "negative": 144
+    }
+  },
+  "d1_original_alphabet": {
+    "path": "results/nap_cnb_v2_d1_original_manifest/original_observations.parquet",
+    "sha256": "5c90cddeab32d538e7b6d8ad1b73f7c2fd417f6e0c119660ac23f82b825e6c5f",
+    "observations": 15100592,
+    "residue_counts": {
+      "A": 26329024,
+      "C": 8216100,
+      "D": 18358108,
+      "E": 27286465,
+      "F": 13604086,
+      "G": 24776648,
+      "H": 9847627,
+      "I": 16307879,
+      "K": 21738512,
+      "L": 37525438,
+      "M": 7380180,
+      "N": 13625883,
+      "P": 23808415,
+      "Q": 18248851,
+      "R": 20913075,
+      "S": 31915223,
+      "T": 20346329,
+      "V": 22885559,
+      "W": 4442915,
+      "Y": 9958483
+    },
+    "out_of_matrix": {},
+    "noncanonical": {}
+  }
+}
