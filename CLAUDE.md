@@ -62,6 +62,31 @@ El servidor tiene cuatro RTX 3090 de 24 GB.
 
 Los artefactos temporales de `nap` en `/tmp` se pueden borrar **cuando se ha verificado que son de `nap` y que no están en uso** (reglas 1 y 2). Lo que deba sobrevivir a un reinicio **no puede vivir en `/tmp`**: va a `/data`.
 
+**No borrar registros a ciegas.** §19 obliga a conservar hashes, manifiestos y conteos. Un fichero de `/tmp` puede ser un certificado (se encontró `nap_hist_cert.sha` con los SHA-256 de los manifiestos de D1). Ante la duda, **se mueve a `/data`, no se borra**: el espacio que se gana es despreciable y la procedencia perdida no se recupera.
+
+**Dejar intactos los sockets y el runtime de la sesión viva**, aunque sean de `nap`: `ssh-*`, `pulse-*`, `dbus-*`, `vscode-*`, `code-*`, `jetbrainsd-*`, `jb.station.*`, `hsperfdata_*`, `.X11*`. Borrarlos rompe la sesión de VS Code, de JetBrains o de SSH en curso.
+
+#### Limpieza ejecutada el 24 nov 2026
+
+El volumen raíz llegó al **100 %** (877 G, 837 G usados) y dejó de poder escribirse, lo que bloqueó incluso la salida de los comandos. Actuación:
+
+| | |
+|---|---:|
+| Borrado: `nap-d1-baseline.Y5UoRytF` | 155.795 MB |
+| Borrado: `nap-d1-protein-split` | 20.664 MB |
+| Borrado: `nap_d1_stored_ss` | 6.555 MB |
+| Borrado: `nap_prott5_3a`, `nap_d1_tar_*`, `mhc_ci_*`, `nap_prott5_3a3`, `epitope_coordinate_recovery_*` | 8.872 MB |
+| Borrado: `a.json`, `b.json` (volcados de `diagnose_paging.py`) y las `.so` de catboost | ~128 MB |
+| **Total liberado** | **~187 GB** |
+| Rescatadas a `_tmp_rescatado_20261124/` (ignorado por git) | 383 entradas, 11 MB |
+| Dejadas intactas en `/tmp` | 9 sockets de la sesión viva |
+
+**Resultado: `/` al 78 %, 191 G libres.** Cada borrado se verificó con `stat -c '%U'` (= `nap`) y `lsof +D` (= 0 ficheros abiertos); se confirmó además que el MLP en ejecución tiene su `cwd` en `/data` y **ningún** descriptor abierto en `/tmp`. **No se tocó nada de `tomomd` (67 entradas en `/tmp`), de `root` (17) ni de `gdm` (1).**
+
+> **Queda pendiente de triage `_tmp_rescatado_20261124/`** (383 entradas, 11 MB): logs, scripts sueltos y certificados. Lo que valga va a `reports/audits/`; el resto se borra. **No se dejó en `/tmp` precisamente por la regla 5.**
+
+> ⚠️ **`/home/nap` ocupa 118 GB y NO se ha tocado**, porque no es basura temporal: `ScipionUserData` 43 GB (proyectos de Scipion), `miniconda3` 38 GB (**en uso ahora mismo**, `nap_env` es el intérprete de todo este trabajo), `apps` 5,6 GB y `scipion` 5,1 GB. Reducir eso exige decisión de Laura, no limpieza automática.
+
 ---
 
 ## 0. Estado verificado a 24 de noviembre de 2026
