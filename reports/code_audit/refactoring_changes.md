@@ -3,7 +3,7 @@
 | Archivos | Antes | Después | Pruebas y alcance |
 |---|---|---|---|
 | `data_pipeline/block_reader.py`, `tests/test_block_reader.py` | Una solicitud fuera del presupuesto de bytes abría un archivo nuevo y alteraba la LRU antes de fallar. El cálculo de tamaño de fila estaba duplicado. | La solicitud falla antes de tocar la caché o el disco. El cálculo de bytes de fila se comparte entre apertura, lectura y planificación de lotes. | Fixture con caché de un descriptor y fixture de lotes existentes. Los rangos válidos, el formato NPY y la API pública conservan su contrato. |
-| `docs/README.md`, `docs/architecture/README.md`, `README.md` | Las rutas y los puntos de entrada estaban dispersos. | Índice y mapa de dependencias con las rutas históricas intactas. | Verificación de enlaces locales. |
+| `docs/README.md`, `docs/README.md`, `README.md` | Las rutas y los puntos de entrada estaban dispersos. | Índice y mapa de dependencias con las rutas históricas intactas. | Verificación de enlaces locales. |
 | `reports/code_audit/` | Sin inventario de cobertura de este snapshot. | Inventario, hallazgos, validación y límites de revisión. | Comprobación de filas y referencias de los informes. |
 
 Se mantienen las rutas de todos los scripts. Durante este trabajo no se modificaron el motor histórico, sus configuraciones, checkpoints ni artefactos certificados. Los cambios quedan en el árbol local.

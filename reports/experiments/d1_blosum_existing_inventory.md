@@ -30,7 +30,7 @@ El manifiesto local del reordenamiento enumera once índices maestros familiares
 
 El cotejo de esta fase se limitó a inventario físico y evidencia publicada. No se construyó un cruce de secuencias derivadas con embeddings ni un listado por variante de representaciones faltantes. Ese cruce prepararía un corpus de proteínas mutadas para el entrenamiento del predictor de epítopos y queda fuera del alcance de esta revisión. Los recuentos coincidentes se trataron como evidencia de cardinalidad, nunca como prueba de identidad.
 
-- [Auditoría histórica y estado de D2](../../docs/NAP_CNB_v2_BLOSUM62_D2.md)
-- [Inspección previa de cabeceras, direcciones y recibos](../../docs/NAP_CNB_v2_BLOSUM62_storage.md)
+- [Auditoría histórica y estado de D2](../../docs/PIPELINE.md)
+- [Inspección previa de cabeceras, direcciones y recibos](../../docs/PIPELINE.md)
 - [Manifiesto histórico de reordenamiento](../../data/data_input_nn_shuffled_concatenate/reorder_manifest.json)
 - [Certificación del índice SecondaryBERT](../../results/nap_cnb_v2_secondarybert/secondarybert_report.md)

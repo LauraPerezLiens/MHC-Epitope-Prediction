@@ -98,7 +98,7 @@ The stored D1 modalities are separate. ProtT5 resolves a 1,024-value vector via 
 
 Structural recovery checks the source reference, coordinates, C/H/E crop and expected counts. It publishes through a staging directory and final rename. Each invocation requires a new output location. A controlled failure before rename was tested. Abrupt termination and detecting a different valid position with the same count remain open.
 
-See [D1 organization](../../docs/nap_cnb_v2_dataset_organization.md) and the [v2 training guide](../../docs/NAP_CNB_v2_training_guide.md).
+See [D1 organization](../../docs/PIPELINE.md) and the [v2 training guide](../../docs/HISTORIAL.md).
 
 ## Public availability
 

@@ -14,7 +14,7 @@ The historical MLP launcher creates a run directory with one `chunks_N/` directo
 | `run.log` | Stage execution output |
 | `eval_stage/`, `shared_global_eval/` | Fixed STAGE samples and shared ALL samples |
 
-`shared_global_eval/` belongs to the run directory; `eval_stage/` belongs to each stage. Use a new `RESULTS` path for an independent experiment. See [MLP instructions](../neural_network/MLP/README.md) for training and resumption, and [experiment history](../docs/mlp_experiment_history.md) for recorded earlier results.
+`shared_global_eval/` belongs to the run directory; `eval_stage/` belongs to each stage. Use a new `RESULTS` path for an independent experiment. See [MLP instructions](../neural_network/MLP/README.md) for training and resumption, and [experiment history](../docs/HISTORIAL.md) for recorded earlier results.
 
 
 ## Interpretation

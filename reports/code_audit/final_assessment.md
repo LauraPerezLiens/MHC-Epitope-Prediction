@@ -2,7 +2,7 @@
 
 ## 1. Resumen ejecutivo
 
-**D1 es la base para una comparación sobre primarias exactas no vistas.** Antes de lanzar nuevas corridas, se debe verificar el contenido del snapshot que utilizará el lector, ligar el scaler a TRAIN y validar el lanzamiento aislado con el protocolo v2. Para afirmar generalización a proteínas nuevas se requiere una evaluación separada por proteína y homología. La comparación histórica LR/MLP es descriptiva porque BEST se seleccionó con TEST STAGE y el reparto por fila fragmentó grupos. [Contrato D1](../../docs/nap_cnb_v2_dataset_organization.md) · [Historia técnica](../../docs/NAP_CNB_technical_history.md)
+**D1 es la base para una comparación sobre primarias exactas no vistas.** Antes de lanzar nuevas corridas, se debe verificar el contenido del snapshot que utilizará el lector, ligar el scaler a TRAIN y validar el lanzamiento aislado con el protocolo v2. Para afirmar generalización a proteínas nuevas se requiere una evaluación separada por proteína y homología. La comparación histórica LR/MLP es descriptiva porque BEST se seleccionó con TEST STAGE y el reparto por fila fragmentó grupos. [Contrato D1](../../docs/PIPELINE.md) · [Historia técnica](../../docs/HISTORIAL.md)
 
 ## 2. Estado final de la auditoría
 
@@ -73,7 +73,7 @@ Los P0 describen condiciones concretas de uso y de interpretación. Las priorida
 | Checkpoint y umbral | La integración v2 probó selección por pérdida de VALIDATION natural y TEST único al final. El legado balanceado elige por TEST STAGE. LR natural tiene su propio protocolo con VALIDATION. | La política manual de hiperparámetros y umbral debe quedar congelada antes de TEST. Los checkpoints históricos conservan valor descriptivo y BEST participa del sesgo de selección. |
 | Métricas y comparabilidad | ROC-AUC exacto agregado y pérdida por observación se contrastaron con oráculos. Los manifiestos STAGE y ALL correspondientes coinciden entre la LR balanceada y la MLP auditadas. | Comparar solo avances equivalentes bajo la misma muestra. TRAIN ONLINE acumula predicciones con pesos cambiantes. TEST ALL es una muestra balanceada, no el censo. AP histogramada y exacta requieren etiquetas distintas; estratos pequeños como H2-L deben incluir soporte e incertidumbre. |
 
-[Organización de D1 y resultados 4B–4D](../../docs/nap_cnb_v2_dataset_organization.md) · [Historia técnica](../../docs/NAP_CNB_technical_history.md) · [Hallazgos y oráculos](findings.md)
+[Organización de D1 y resultados 4B–4D](../../docs/PIPELINE.md) · [Historia técnica](../../docs/HISTORIAL.md) · [Hallazgos y oráculos](findings.md)
 
 ## 6. Reproducibilidad
 
@@ -89,7 +89,7 @@ Por **repetición exacta** se entiende replicar estado, población y resultados 
 | D1 con LR/MLP | Manifiestos y almacenes certificados, perfiles y guía; integración sintética CPU. Catálogos y reglas permiten verificar la preparación. Aún falta evidencia de una corrida D1 con resultado comparable. | Preparación trazable bajo recibos y snapshot; resultados de entrenamiento pendientes. |
 | Fixtures CPU | Código, semillas y entorno de prueba registrados. Equivalencia CPU en el caso de recuperación acotado. | Repetibles dentro de la configuración descrita; la suite omite dos casos CUDA. |
 
-Para cada ejecución retenida conviene generar una ficha con commit y diff, argumentos efectivos, hashes de dataset/split/embeddings/scaler, membresía de muestras, checkpoint y cursor, logs, logits por ID, método de métrica, versiones de paquetes, driver, GPU y semillas. Marcar como ausente aquello que el expediente no pueda acreditar. Un digest de un archivo eliminado solo identifica el artefacto histórico. [Historial MLP](../../docs/mlp_experiment_history.md) · [Inventario y dependencias](../NAP_CNB_repository_audit.md) · [Historia técnica](../../docs/NAP_CNB_technical_history.md) · [Validación](validation.md)
+Para cada ejecución retenida conviene generar una ficha con commit y diff, argumentos efectivos, hashes de dataset/split/embeddings/scaler, membresía de muestras, checkpoint y cursor, logs, logits por ID, método de métrica, versiones de paquetes, driver, GPU y semillas. Marcar como ausente aquello que el expediente no pueda acreditar. Un digest de un archivo eliminado solo identifica el artefacto histórico. [Historial MLP](../../docs/HISTORIAL.md) · [Inventario y dependencias](../NAP_CNB_repository_audit.md) · [Historia técnica](../../docs/HISTORIAL.md) · [Validación](validation.md)
 
 ## 7. Plan priorizado
 

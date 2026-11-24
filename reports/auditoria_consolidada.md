@@ -7,7 +7,7 @@ en consecuencia y qué se propone a continuación. Está escrito para que sustit
 la lectura de las 44 carpetas de `results/`: cada hallazgo queda aquí con sus
 cifras, de modo que los directorios que se archiven o borren más adelante dejen
 constancia previa. El índice carpeta por carpeta está en
-[docs/INDICE_EVIDENCIA.md](../docs/INDICE_EVIDENCIA.md).
+[results/RESULTADOS.md](../results/RESULTADOS.md).
 
 ---
 
@@ -612,6 +612,6 @@ Conviene no corregir lo que ya funciona:
 
 Cada hallazgo de la sección 2 procede de un informe en `results/`. La
 correspondencia completa, con tamaños y estado, está en
-[docs/INDICE_EVIDENCIA.md](../docs/INDICE_EVIDENCIA.md). Los experimentos E1 y E2
+[results/RESULTADOS.md](../results/RESULTADOS.md). Los experimentos E1 y E2
 tienen informe propio en [reports/experiments/](experiments/), con hashes de
 insumos, configuración, selección y matrices de confusión.

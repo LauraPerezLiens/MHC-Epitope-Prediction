@@ -27,7 +27,7 @@ The default repository root is derived from the module location. `status --root 
 | `UNKNOWN` | The bounded checks could not determine the state. |
 | `NOT AVAILABLE` | Outside the current release. D2 is optional and is not built. |
 
-Exit codes are `0` for a completed query without required-component errors, `1` for a required component that is missing, inconsistent or unknown, and `2` for invalid arguments, an invalid root or a query-level failure. Results describe file presence and prior evidence. The command does not run full integrity checks, inspect embedding matrices or start pipeline jobs. [Current data contracts](docs/nap_cnb_v2_dataset_organization.md)
+Exit codes are `0` for a completed query without required-component errors, `1` for a required component that is missing, inconsistent or unknown, and `2` for invalid arguments, an invalid root or a query-level failure. Results describe file presence and prior evidence. The command does not run full integrity checks, inspect embedding matrices or start pipeline jobs. [Current data contracts](docs/PIPELINE.md)
 
 ### Quick contract checks
 
@@ -54,7 +54,7 @@ These commands honor the same `--root`, `--json` and exit codes. ProtT5 checks i
 
 ### Training preflight
 
-`python -B -m data_pipeline.nap_cnb_v2 train --model lr --data original --label global --dry-run` resolves dataset metadata, feature references, splits and the selected historical profile. The v2 selector supports balanced LR and balanced MLP. The explicit engine hook uses balanced TRAIN and natural-prevalence VALIDATION and TEST. Launching from the CLI is disabled and both full TRAIN scalers are pending. [Training guide and compatibility matrix](docs/NAP_CNB_v2_training_guide.md)
+`python -B -m data_pipeline.nap_cnb_v2 train --model lr --data original --label global --dry-run` resolves dataset metadata, feature references, splits and the selected historical profile. The v2 selector supports balanced LR and balanced MLP. The explicit engine hook uses balanced TRAIN and natural-prevalence VALIDATION and TEST. Launching from the CLI is disabled and both full TRAIN scalers are pending. [Training guide and compatibility matrix](docs/HISTORIAL.md)
 
 ## Historical workflow
 
@@ -76,7 +76,7 @@ The data pipeline uses chunked processing, disk-backed statistics, restartable c
 |---|---|
 | [data_pipeline/](data_pipeline/README.md) | Data acquisition, classification, augmentation, structure prediction and embeddings |
 | [neural_network/](neural_network/README.md) | Dataset loading, normalization, MLP training and evaluation |
-| [docs/](docs/mlp_experiment_history.md) | Experiment history, results and evaluation limitations |
+| [docs/](docs/HISTORIAL.md) | Experiment history, results and evaluation limitations |
 | [env/](env/README.md) | PyTorch and ProteinUnet environment specifications |
 | [data/](data/README.md) | Local dataset inventory and archive documentation |
 | [model/](model/README.md) | Local pretrained model inventory |
@@ -136,4 +136,4 @@ A positive window contains a recorded positive epitope; other windows are labele
 
 **Historical protocol — exploratory experiments.** The objective is to check that the network learns and the training pipeline works with augmented data. Existing row-based splits, TRAIN/TEST STAGE/ALL monitoring and checkpoint selection by TEST STAGE are intentional and remain unchanged. Shared proteins/groups and checkpoint selection mean these results are not definitive generalization metrics.
 
-**v2 evaluation.** The v2 hook selects checkpoints using VALIDATION and evaluates TEST after selection. D1 assigns splits by exact primary sequence. Protein-level holdouts, homology checks and comparisons with external predictors remain separate study questions. Results and historical comparisons remain in the [experiment history](docs/mlp_experiment_history.md).
+**v2 evaluation.** The v2 hook selects checkpoints using VALIDATION and evaluates TEST after selection. D1 assigns splits by exact primary sequence. Protein-level holdouts, homology checks and comparisons with external predictors remain separate study questions. Results and historical comparisons remain in the [experiment history](docs/HISTORIAL.md).

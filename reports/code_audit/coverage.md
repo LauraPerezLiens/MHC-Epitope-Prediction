@@ -170,7 +170,7 @@ Cuatro archivos revisados íntegramente, **1.558 líneas de entrada**. Cobertura
 |---|---|
 | `data_pipeline/nap_cnb_v2.py` | CLI de lectura y planificación. Coteja manifiestos, sumas, nombres y tipos, footers, cabeceras NPY y consultas SQLite acotadas. Comprueba la clave y etiqueta declaradas de D1, dimensiones 1024 y 768, y el contrato publicado del split. Rechaza D2 por ausencia de un contrato actual. La comprobación de 25 caracteres en el catálogo secundario es puntual. No recorre filas para comprobar secuencias, etiquetas binarias, correspondencia por clave, variantes ni el determinismo de las asignaciones. |
 | `data_pipeline/nap_cnb_v2_training_profiles.json` | Dos perfiles balanceados, semillas e hiperparámetros comunes y parámetros MLP de dropout y scheduler. Referencias relativas para scripts y evidencias. El JSON describe el preflight y carece de efectos operativos. Mantenerlo junto a su consumidor evita duplicar defaults del plan. |
-| `docs/NAP_CNB_v2_training_guide.md` | Se cotejaron la unidad de observación de la base y de D1, el uso de TRAIN para el scaler, la ruta de datos común a LR/MLP y las políticas de evaluación. Los estados y medidas de recursos de la guía son observaciones fechadas. La guía documenta más garantías que las aplicadas por la CLI de metadatos. |
+| `docs/HISTORIAL.md` | Se cotejaron la unidad de observación de la base y de D1, el uso de TRAIN para el scaler, la ruta de datos común a LR/MLP y las políticas de evaluación. Los estados y medidas de recursos de la guía son observaciones fechadas. La guía documenta más garantías que las aplicadas por la CLI de metadatos. |
 | `tests/test_nap_cnb_v2_training.py` | Fixtures de manifiestos, precedencia de perfiles y overrides, rechazo de combinaciones, aislamiento del preflight y cotejo de procedencia del scaler. El payload deliberadamente inválido en la prueba de procedencia fija el alcance de `METADATA_MATCH`. |
 
 La CLI concentra presentación, consultas y planificación. Separar validadores especializados requeriría conservar los imports que usa el adaptador y las interfaces que usan las pruebas. Se conservó esa frontera. Siguiente archivo pendiente `tests/test_nap_cnb_v2_validation.py`, línea 1. Se añadió una prueba puntual sin contabilizar el resto del archivo.
@@ -337,14 +337,14 @@ Dos archivos revisados íntegramente, **29 líneas de entrada**. Cobertura **84 
 - `reports/README.md`, líneas 1–12. Cotejados columnas, cardinalidades y alcance del CSV histórico agregado. Se enlazaron procedencia e interpretación de resultados.
 - `results/README.md`, líneas 1–17. Cotejados rutas y artefactos de la MLP histórica con las auditorías del motor y lanzadores, y contraste con v2 y LR natural. Se documentaron selección, solapamiento y requisitos de trazabilidad.
 
-Siguiente ruta `docs/mlp_experiment_history.md`, línea 1.
+Siguiente ruta `docs/HISTORIAL.md`, línea 1.
 
 
 ## Historial experimental y ejemplo sintético
 
 Dos archivos revisados, **992 líneas de entrada**. Cobertura **86 de 144**, más un archivo local revisado anteriormente.
 
-- `docs/mlp_experiment_history.md`, líneas 1–968. Revisados cronología, tablas, definiciones de poblaciones, decisiones, comandos históricos y disponibilidad de fuentes. Se cotejaron mediante lectura y comprobación numérica las tres trayectorias TEST de la sección 17 y la suma de las matrices de confusión Best/Last.
+- `docs/HISTORIAL.md`, líneas 1–968. Revisados cronología, tablas, definiciones de poblaciones, decisiones, comandos históricos y disponibilidad de fuentes. Se cotejaron mediante lectura y comprobación numérica las tres trayectorias TEST de la sección 17 y la suma de las matrices de confusión Best/Last.
 - `examples/README.md`, líneas 1–24. Revisados requisitos, opciones y distinción de inferencia CPU sintética, entrenamiento y prueba de recuperación. No hubo cambios en este documento.
 
 Siguiente ruta `examples/synthetic_mlp.py`, línea 1.
@@ -393,7 +393,7 @@ Siguiente ruta `env/README.md`, línea 1.
 - `data_pipeline/scripts/source_audits/README.md` — líneas 1–60
 - `data_pipeline/scripts/rebuild_iedb/README.md` — líneas 1–67
 - `data_pipeline/scripts/rebuild_iedb/pilot_selection.json` — líneas 1–41
-- `docs/nap_cnb_v2_secondarybert.md` — líneas 1–34
+- `docs/PIPELINE.md` — líneas 1–34
 
 ### Evidencia y diagnósticos
 
@@ -444,9 +444,9 @@ Siete archivos revisados íntegramente, **1.120 líneas de entrada**. Cobertura 
 - `data_pipeline/scripts/iedb_pending_audit/impact.py`, 1–202. Reconciliación por posición, contrafactual, apoyo independiente y agregación por clave.
 - `data_pipeline/scripts/iedb_pending_audit/report.py`, 1–139. Coherencia del resumen, tablas y límites de la campaña.
 - `README.md`, 1–139 de entrada. Comandos de metadatos, estados, preflight, setup y evaluación histórica/v2.
-- `docs/nap_cnb_v2_prott5.md`, 1–97. Identidad por clave, hashes y ordinals, recibos, comandos históricos y dependencias locales.
-- `docs/nap_cnb_v2_consistencia_estructural.md`, 1–60. Evidencia limitada a la muestra, recortes e identidad de predicciones frente a vectores.
-- `docs/NAP_CNB_v2_BLOSUM62_D2.md`, 1–70. Inventario, trazabilidad, límites de reutilización y distinción explícita entre estimaciones, observaciones y escenario planificado.
+- `docs/PIPELINE.md`, 1–97. Identidad por clave, hashes y ordinals, recibos, comandos históricos y dependencias locales.
+- `docs/PIPELINE.md`, 1–60. Evidencia limitada a la muestra, recortes e identidad de predicciones frente a vectores.
+- `docs/PIPELINE.md`, 1–70. Inventario, trazabilidad, límites de reutilización y distinción explícita entre estimaciones, observaciones y escenario planificado.
 
 Siguiente ruta `data_pipeline/scripts/source_audits/exact_embeddings.py`, línea 1.
 
@@ -459,18 +459,18 @@ Cuatro archivos revisados íntegramente, 1.125 líneas de entrada. Cobertura acu
 - `data_pipeline/scripts/source_audits/omitted_epitopes.py`, 1–286. Desambiguación de FASTA, límites de intervalo, evidencia y deduplicación de ventanas.
 - `data_pipeline/scripts/source_audits/recover_epitope_coordinates.py`, 1–218. Ocurrencias solapadas, conciliación de categorías y agrupación de candidatos.
 
-Siguiente ruta `docs/NAP_CNB_pipeline_refactoring_plan.md`, línea 1.
+Siguiente ruta `docs/HISTORIAL.md`, línea 1.
 
 ## Cierre del inventario original
 
 Siete archivos documentales revisados íntegramente, 1.240 líneas de entrada.
 
-- `docs/NAP_CNB_pipeline_refactoring_plan.md`, 1–232. Dependencias, etapas de migración y alcance de los validadores propuestos.
-- `docs/NAP_CNB_technical_history.md`, 1–156. Cronología, definiciones de evidencia, comparabilidad de métricas y límites de D1.
-- `docs/NAP_CNB_v2_BLOSUM62_storage.md`, 1–112. Formatos, unidades, estimaciones, mediciones y límites de caché.
-- `docs/nap_cnb_v2_dataset_organization.md`, 1–265. Claves, procedencia, cardinalidades, asignación y contrato D1.
-- `docs/nap_cnb_v2_organizacion.md`, 1–112. Inventario de fase 3B, clasificación y dependencias de conservación.
-- `docs/nap_cnb_v2_reutilizacion.md`, 1–90. Alcance histórico de costes, mediciones y propuestas previas a la certificación.
+- `docs/HISTORIAL.md`, 1–232. Dependencias, etapas de migración y alcance de los validadores propuestos.
+- `docs/HISTORIAL.md`, 1–156. Cronología, definiciones de evidencia, comparabilidad de métricas y límites de D1.
+- `docs/PIPELINE.md`, 1–112. Formatos, unidades, estimaciones, mediciones y límites de caché.
+- `docs/PIPELINE.md`, 1–265. Claves, procedencia, cardinalidades, asignación y contrato D1.
+- `docs/PIPELINE.md`, 1–112. Inventario de fase 3B, clasificación y dependencias de conservación.
+- `docs/HISTORIAL.md`, 1–90. Alcance histórico de costes, mediciones y propuestas previas a la certificación.
 - `reports/NAP_CNB_repository_audit.md`, 1–273. Alcance de la medición, dependencias, huellas y escenarios de recuperación.
 
 Cobertura acumulada **144 de 144**. El archivo local adicional se contabiliza por separado. No queda una ruta de continuación en el inventario original.

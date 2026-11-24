@@ -7,7 +7,7 @@
 3. Ampliar fixtures del scaler, índices, splits inválidos y reanudación de extremo a extremo. Fijar primero el comportamiento exigido por cada contrato. Preservar las pruebas y checkpoints de formatos anteriores.
 4. Medir, en una ventana autorizada, picos de memoria y fallos de caché de la lectura v2. Terminar ese piloto antes de dimensionar el ajuste completo del scaler de D1.
 5. Revisar documentación y tests de todos los componentes restantes. Extraer código compartido solo después de verificar equivalencia. Conservar informes que forman parte de evidencia publicada.
-6. Revisar el alcance de generalización de D1 con una auditoría de similitud aprobada y separada de la entrega certificada. D2 permanece pendiente. El almacenamiento histórico dispone de un lector por rangos y una comparación piloto de catálogos. [Informe previo](../../docs/NAP_CNB_v2_BLOSUM62_storage.md)
+6. Revisar el alcance de generalización de D1 con una auditoría de similitud aprobada y separada de la entrega certificada. D2 permanece pendiente. El almacenamiento histórico dispone de un lector por rangos y una comparación piloto de catálogos. [Informe previo](../../docs/PIPELINE.md)
 7. Definir la integración de PR-AUC y average precision con ejemplos de clases ausentes y un contrato de salida versionado. Probar por separado la selección de checkpoint y el momento de evaluación TEST.
 
 ## Punto de continuación del bloque A
@@ -141,7 +141,7 @@ Retomar `reports/README.md`, línea 1. Continúan pendientes procedencia indepen
 
 ## Continuación del historial experimental
 
-Retomar `docs/mlp_experiment_history.md`, línea 1. Queda cotejar trazabilidad de cada ejecución histórica y conservar los pendientes de identidad de datos y vectores, independencia, integridad D1, cachés, reanudación, D2 y publicación enumerados previamente.
+Retomar `docs/HISTORIAL.md`, línea 1. Queda cotejar trazabilidad de cada ejecución histórica y conservar los pendientes de identidad de datos y vectores, independencia, integridad D1, cachés, reanudación, D2 y publicación enumerados previamente.
 
 
 ## Continuación del ejemplo CPU
@@ -176,7 +176,7 @@ Retomar `data_pipeline/scripts/source_audits/exact_embeddings.py`, línea 1. Que
 
 ## Continuación documental
 
-Retomar `docs/NAP_CNB_pipeline_refactoring_plan.md`, línea 1. Quedan siete archivos documentales. En las auditorías de fuentes quedan por validar con fixtures la publicación parcial, la dependencia del orden en el recuento de candidatos recuperados y las métricas para pares cuyo coseno no está definido.
+Retomar `docs/HISTORIAL.md`, línea 1. Quedan siete archivos documentales. En las auditorías de fuentes quedan por validar con fixtures la publicación parcial, la dependencia del orden en el recuento de candidatos recuperados y las métricas para pares cuyo coseno no está definido.
 
 ## Inventario original completo
 

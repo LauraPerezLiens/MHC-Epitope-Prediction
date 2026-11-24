@@ -93,7 +93,7 @@ El volumen raíz llegó al **100 %** (877 G, 837 G usados) y dejó de poder escr
 
 ## 0. Estado verificado a 24 de noviembre de 2026
 
-Esta sección se apoya en artefactos del repositorio y en los artículos publicados del grupo, no en resúmenes de conversación. Fuente autoritativa del diagnóstico: [`reports/auditoria_consolidada.md`](reports/auditoria_consolidada.md); índice de evidencia en [`docs/INDICE_EVIDENCIA.md`](docs/INDICE_EVIDENCIA.md).
+Esta sección se apoya en artefactos del repositorio y en los artículos publicados del grupo, no en resúmenes de conversación. Fuente autoritativa del diagnóstico: [`reports/auditoria_consolidada.md`](reports/auditoria_consolidada.md); índice de evidencia en [`results/RESULTADOS.md`](results/RESULTADOS.md).
 
 ### 0.1. Correcciones a secciones posteriores
 
