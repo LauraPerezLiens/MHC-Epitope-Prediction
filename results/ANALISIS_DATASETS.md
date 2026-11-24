@@ -676,4 +676,44 @@ Los 25 alelos más frecuentes.
 
 ---
 
+## 9. El dataset de Wert2021 frente al nuestro
+
+Comparación por **secuencia de péptido**, que es la única clave común: su CSV procede de otro export de IEDB.
+
+> **Aviso previo:** Wert2021 **no trabaja solo con H-2Kb.** Su código cubre **nueve haplotipos de ratón** —`H-2Db`, `H-2Dd`, `H-2Dq`, `H-2Kb`, `H-2Kd`, `H-2Kq`, `H-2Kk`, `H-2Ld`, `H-2Lq`— y entrena **un modelo por haplotipo**. H-2Kb es simplemente **el único cuyos datos publica** (`H2Kb_data.csv`), así que es el único con el que se puede hacer esta comparación.
+
+| Magnitud | Histórico (`legacy`) | **Nuevo (`full`)** |
+|---|---:|---:|
+| Péptidos únicos en nuestro H2-K | 45.150 | **56.101** |
+| Positivos de Wert presentes | 5.504 | **9.235** |
+| **% recuperado** | **56,01 %** | **93,98 %** |
+| Positivos de Wert ausentes | 4.323 | **592** |
+| **Negativos de Wert presentes** | **0** | **2.567 (100 %)** |
+| Nuestros que Wert no tiene | 39.646 | 44.299 |
+
+### Los 592 que todavía faltan no son una pérdida nuestra
+
+Clasificados uno a uno:
+
+| Qué son | Péptidos |
+|---|---:|
+| **Sin resultado de ensayo** (`Assay.4` vacío) | **587** |
+| Con resultado, pero **no son péptido canónico** | 5 |
+| **Positivos legítimos que nos falten** | **0** |
+
+Los 587 entran en su conjunto positivo porque su filtro es `!= "Negative"`, no `== "Positive"`: **admite filas que no tienen resultado de ensayo**. Los otros 5 son grupos químicos y péptidos modificados —`2,4,6-TRINITROPHENYL GROUP`, `RGYVFQGL + MCM(5F)`— que nuestro filtro `epitope__object_type = Linear peptide` excluye con razón. Hay incluso una fila cuyo péptido es la palabra `DESCRIPTION`: cabecera filtrada a los datos.
+
+> **Conclusión: con el perfil `full` recuperamos el 100 % de los positivos legítimos de Wert2021, y además sus 2.567 negativos.** La diferencia del 44 % que medimos contra el `legacy` era enteramente el filtro de organismo fuente. **La comparación con su modelo ya puede ser homogénea.**
+
+### Lo que sigue sin ser comparable
+
+Que los datos coincidan no hace comparables los modelos. Quedan dos diferencias de diseño:
+
+1. **Él entrena un modelo por haplotipo; nosotros uno por familia.** Metemos `H2-Kb`, `H2-Kd`, `H2-Kk` y `H2-Kq` bajo la etiqueta `H2-K`, y **H-2Kb y H-2Kd solo comparten 17 de los 34 residuos** del surco. Él demostró que la predicción cruzada Kb↔Kd es subóptima: mezclamos justo lo que él separó.
+2. **Su unidad es un 12-mero centrado en la mutación; la nuestra una ventana de 25 aa.** Y su prevalencia es del 2,67 % frente al 25,45 % nuestro.
+
+> **Sobre el 0,865:** es el **10 % held-out agregado**, no una cifra de H-2Kb. Sus AUC por haplotipo en validación cruzada van de **0,7 ± 0,1 (H-2Db)** a **0,96 ± 0,06 (H-2Kk)**.
+
+---
+
 *Generado con `data_pipeline/scripts/data_processing/analisis_datasets.py`. Los perfiles crudos en JSON están en `reports/audits/perfil_dataset_*_20261124.json`.*
