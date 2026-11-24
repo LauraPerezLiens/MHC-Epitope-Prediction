@@ -1,0 +1,142 @@
+[
+  {
+    "familia": "human/mhc-I/HLA-A",
+    "export": "mhc",
+    "viejo": 522162,
+    "nuevo": 569013,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 46851,
+    "comun": 522162
+  },
+  {
+    "familia": "human/mhc-I/HLA-A",
+    "export": "tcell",
+    "viejo": 10197,
+    "nuevo": 10484,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 287,
+    "comun": 10197
+  },
+  {
+    "familia": "human/mhc-I/HLA-B",
+    "export": "mhc",
+    "viejo": 593273,
+    "nuevo": 664053,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 70780,
+    "comun": 593273
+  },
+  {
+    "familia": "human/mhc-I/HLA-B",
+    "export": "tcell",
+    "viejo": 1045,
+    "nuevo": 1114,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 69,
+    "comun": 1045
+  },
+  {
+    "familia": "mouse/mhc-I/H2-D",
+    "export": "mhc",
+    "viejo": 45517,
+    "nuevo": 45583,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 66,
+    "comun": 45517
+  },
+  {
+    "familia": "mouse/mhc-I/H2-D",
+    "export": "tcell",
+    "viejo": 519,
+    "nuevo": 528,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 9,
+    "comun": 519
+  },
+  {
+    "familia": "mouse/mhc-I/H2-K",
+    "export": "mhc",
+    "viejo": 87256,
+    "nuevo": 87593,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 337,
+    "comun": 87256
+  },
+  {
+    "familia": "mouse/mhc-I/H2-K",
+    "export": "tcell",
+    "viejo": 1050,
+    "nuevo": 1076,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 26,
+    "comun": 1050
+  },
+  {
+    "familia": "mouse/mhc-I/H2-L",
+    "export": "mhc",
+    "viejo": 44,
+    "nuevo": 44,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 0,
+    "comun": 44
+  },
+  {
+    "familia": "mouse/mhc-I/H2-L",
+    "export": "tcell",
+    "viejo": 114,
+    "nuevo": 114,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 0,
+    "comun": 114
+  },
+  {
+    "familia": "mouse/mhc-II/H2-IA",
+    "export": "mhc",
+    "viejo": 20679,
+    "nuevo": 29895,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 9216,
+    "comun": 20679
+  },
+  {
+    "familia": "mouse/mhc-II/H2-IA",
+    "export": "tcell",
+    "viejo": 2101,
+    "nuevo": 2113,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 1,
+    "solo_nuevo": 13,
+    "comun": 2100
+  },
+  {
+    "familia": "mouse/mhc-II/H2-IE",
+    "export": "mhc",
+    "viejo": 233,
+    "nuevo": 233,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 0,
+    "comun": 233
+  },
+  {
+    "familia": "mouse/mhc-II/H2-IE",
+    "export": "tcell",
+    "viejo": 173,
+    "nuevo": 173,
+    "duplicados_en_viejo": 0,
+    "solo_viejo": 0,
+    "solo_nuevo": 0,
+    "comun": 173
+  }
+]

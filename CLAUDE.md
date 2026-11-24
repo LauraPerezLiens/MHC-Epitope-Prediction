@@ -137,6 +137,23 @@ Tampoco están en git, por reglas previas: `data/` (salvo READMEs), `logs/`, `mo
 
 **A. El paginado histórico es sospechoso por diseño.** `build_iedb_dataset.py` usa `offset` sin `order`. La re-descarga usa paginación *keyset* sobre `assay_id` (`order=assay_id.asc`, `assay_id=gt.<último>`), que sí es estable. Los filtros se han mantenido **idénticos** para que la única variable sea el paginado.
 
+**A bis. El paginado antiguo NO estaba roto. La sospecha que motivó la re-descarga era infundada.** Comparación por `assay_id` sobre las 7 familias ya re-descargadas (`compare_downloads.py`):
+
+| | Filas |
+|---|---:|
+| `data_raw` del 10 nov | 1.284.363 |
+| **Duplicadas en el viejo** | **0** |
+| `data_raw_20261124` | 1.412.016 |
+| **Solo en el viejo** | **1** (una fila de H2-IA `tcell`, retirada de IEDB) |
+| Solo en el nuevo | 127.654 |
+| En común | 1.284.362 |
+
+Y las 127.654 filas nuevas son **crecimiento real de IEDB, no filas que el viejo se saltara** (`newonly_distribution.py`): su `assay_id` es **estrictamente mayor** que el máximo del snapshot viejo en todas las familias (0,0 % intercaladas; única excepción, 10 filas en HLA-A `tcell`, el 3,5 %). Un paginado que pierde páginas deja huecos repartidos por todo el rango de identificadores; aquí no hay ninguno.
+
+**Conclusión: `data_raw` del 10 nov es un snapshot fiel y completo de IEDB a esa fecha, y D1 no necesita reconstruirse por este motivo.** `offset` sin `order` es frágil por diseño y debe corregirse para el futuro, pero de hecho no dañó estos datos. La re-descarga sigue valiendo la pena por otra razón: da datos más frescos y procedencia certificada con manifiesto.
+
+> Nota para interpretar el crecimiento: +9.216 filas en H2-IA (+45 %), +70.780 en HLA-B (+12 %) y +46.851 en HLA-A (+9 %) en dos semanas corresponden a importaciones masivas de IEDB, coherentes con identificadores consecutivos altos.
+
 **B. El `H2Kb_data.csv` que distribuye Wert no es el snapshot del paper.** Cadena de filtrado reproducida (`wert_chain.py`), replicando `peptides_extraction.py`:
 
 | Paso | Filas |
@@ -201,8 +218,8 @@ Pendiente: `human/mhc-I/{HLA-A,HLA-B,HLA-C}` y `human/mhc-II/{HLA-DR,HLA-DQ,HLA-
 ### 0.6.5. Pendiente, en orden
 
 1. **Esperar a que termine la re-descarga** de las seis familias humanas.
-2. **Ejecutar la comparación** `data_pipeline/scripts/iedb_verification_20261124/compare_downloads.py` (requiere el snapshot viejo extraído; si el scratchpad se ha limpiado, re-extraer con `zstd -d` desde `data/used_data/data_raw.tar.zst`). Ojo: la ruta `OLD` del script apunta al scratchpad de la sesión anterior — **hay que actualizarla**. Da, por familia y export: filas viejas, nuevas, duplicadas en el viejo, solo-viejo, solo-nuevo y comunes, todo sobre `assay_id`.
-3. **Cuantificar el daño del paginado antiguo**: cuántas filas que D1 debería tener nunca se descargaron, y cuántas se contaron dos veces. Esto decide si D1 hay que reconstruirlo o basta documentar el sesgo.
+2. ~~Ejecutar la comparación por `assay_id`.~~ **Hecho para 7 de 11 familias** → hallazgo A bis. Repetir sobre las 11 cuando termine la descarga. Antiguo texto: `data_pipeline/scripts/iedb_verification_20261124/compare_downloads.py` (requiere el snapshot viejo extraído; si el scratchpad se ha limpiado, re-extraer con `zstd -d` desde `data/used_data/data_raw.tar.zst`). Ojo: la ruta `OLD` del script apunta al scratchpad de la sesión anterior — **hay que actualizarla**. Da, por familia y export: filas viejas, nuevas, duplicadas en el viejo, solo-viejo, solo-nuevo y comunes, todo sobre `assay_id`.
+3. ~~Cuantificar el daño del paginado antiguo.~~ **Hecho: el daño es 1 fila.** D1 no se reconstruye por este motivo.
 4. ~~Comparar el H-2K nuevo contra el `H2Kb_data.csv` de Wert.~~ **Hecho** → hallazgos C y D.
 5. ~~Explicar las 666 filas *Mus musculus* que el filtro de organismo no justifica.~~ **Hecho** → hallazgo E: defecto del preprocesado de Wert, no pérdida nuestra.
 6. **Decidir y documentar el universo de epítopos** de la tarea: solo propio/murino (actual, defendible para neoantígenos) o todo IEDB por alelo (lo de Wert2021). Condiciona qué comparación con el 0,865 es legítima.

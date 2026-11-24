@@ -27,6 +27,11 @@ def ids(path):
 
 
 fams = sorted("/".join(p.split("/")[-3:]) for p in glob.glob(OLD + "/*/*/*"))
+# FAMS: lista separada por comas para restringir la comparacion a familias
+# ya descargadas (la re-descarga va por tandas).
+_only = [f.strip() for f in os.environ.get("FAMS", "").split(",") if f.strip()]
+if _only:
+    fams = [f for f in fams if f in _only]
 print("%-22s %-6s %9s %9s %7s %9s %9s %9s" % (
     "familia", "export", "viejo", "nuevo", "dup_v", "solo_viejo", "solo_nuevo", "comun"))
 tot = {k: 0 for k in ("old", "new", "dup", "only_old", "only_new", "common")}
