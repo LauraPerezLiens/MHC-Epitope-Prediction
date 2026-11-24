@@ -11,6 +11,7 @@
 /results/*
 !/results/README.md
 !/results/RESULTADOS.md
+!/results/ANALISIS_DATASETS.md
 
 # Local operational logs
 /logs/
