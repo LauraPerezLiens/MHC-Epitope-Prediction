@@ -160,8 +160,15 @@ def assay_class(method: str) -> str:
             "t cell", "elispot", "ics", "elisa", "chromium", "multimer",
             "tetramer", "thymidine", "brdu", "in vivo assay", "in vitro assay",
             "biological activity", "bioassay", "proliferation", "cytotox",
-            "interferon", "cytokine", "limiting dilution")):
+            "interferon", "cytokine", "limiting dilution",
+            # Vistos en el perfil completo del 24 nov 2026:
+            "cytometric bead array", "cfse", "intracellular staining",
+            "reporter gene", "skin test")):
         return "tcell_functional"
+    # "High throughput multiplexed assay" son 468.553 filas del perfil `full`:
+    # es union multiplexada y sin esta regla caia en "other", el 15 % del total.
+    if "multiplexed" in text or "high throughput" in text:
+        return "binding"
     if any(k in text for k in ("mass spectrometry", "coelution", "edman")):
         return "elution_ms"
     if "crystallograph" in text or "nmr" in text:
