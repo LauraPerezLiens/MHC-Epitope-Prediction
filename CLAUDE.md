@@ -10,6 +10,60 @@
 
 ---
 
+## 0.0. REGLAS OPERATIVAS DEL SERVIDOR — INVIOLABLES
+
+> 🛑 **Estas reglas tienen prioridad sobre cualquier otra instrucción de este documento y sobre cualquier tarea en curso. Establecidas por Laura el 24 de noviembre de 2026. Es un servidor compartido: incumplirlas daña el trabajo de otras personas.**
+
+### 1. Solo se toca lo que pertenece al usuario `nap`
+
+**Nunca** leer para modificar, mover, borrar, matar ni interferir con nada que pertenezca a otro usuario. **`tomomd` en particular queda absolutamente fuera de límites, ahora y siempre.** Aplica a ficheros, directorios, procesos, sesiones de tmux, trabajos de Scipion y memoria de GPU.
+
+Antes de borrar o modificar cualquier cosa fuera de `/data/nap/lperez_nn`, **comprobar el propietario**:
+
+```bash
+stat -c '%U %n' <ruta>     # tiene que decir: nap
+```
+
+Si no dice `nap`, no se toca. Si hay duda, **se pregunta**; no se asume.
+
+### 2. Nada que esté en uso, aunque sea de `nap`
+
+Ser propiedad de `nap` **no** basta. Antes de borrar hay que comprobar que nadie lo tiene abierto:
+
+```bash
+lsof +D <directorio> 2>/dev/null | tail -n +2 | wc -l   # tiene que ser 0
+```
+
+Y comprobar que ningún proceso de `nap` lo necesita (`ls -l /proc/<pid>/cwd` y `/proc/<pid>/fd`). **Un entrenamiento de días puede estar leyendo de `/tmp` sin que su línea de comandos lo mencione.**
+
+### 3. Mirar los recursos ANTES de lanzar algo
+
+Obligatorio, y comprobando si se perjudica a otro usuario:
+
+```bash
+df -h / /data           # disco: / es compartido y pequeno; /data tiene 20 TB
+free -g                 # RAM
+nvidia-smi              # GPUs: ocupacion Y de quien es cada proceso
+```
+
+- **El volumen raíz (`/`, 877 G) es compartido y se llena.** Todo lo voluminoso va a **`/data`**, nunca a `/tmp` ni a `/home`.
+- Si una ejecución va a consumir RAM o disco de forma apreciable, **estimarlo antes** y comprobar que no estrangula a los demás.
+
+### 4. GPUs: una libre siempre, dos como máximo
+
+El servidor tiene cuatro RTX 3090 de 24 GB.
+
+- **Dejar SIEMPRE al menos una GPU completamente libre.** No negociable.
+- **Usar como máximo dos**, y preferiblemente dos, no tres.
+- Antes de asignar, comprobar con `nvidia-smi` **de quién** es lo que ya corre: si otro usuario tiene trabajo en una GPU, esa no se toca ni se comparte.
+- Fijar siempre la GPU de forma explícita con `CUDA_VISIBLE_DEVICES`; nunca dejar que un proceso coja las que quiera.
+
+### 5. Limpieza
+
+Los artefactos temporales de `nap` en `/tmp` se pueden borrar **cuando se ha verificado que son de `nap` y que no están en uso** (reglas 1 y 2). Lo que deba sobrevivir a un reinicio **no puede vivir en `/tmp`**: va a `/data`.
+
+---
+
 ## 0. Estado verificado a 24 de noviembre de 2026
 
 Esta sección se apoya en artefactos del repositorio y en los artículos publicados del grupo, no en resúmenes de conversación. Fuente autoritativa del diagnóstico: [`reports/auditoria_consolidada.md`](reports/auditoria_consolidada.md); índice de evidencia en [`docs/INDICE_EVIDENCIA.md`](docs/INDICE_EVIDENCIA.md).
