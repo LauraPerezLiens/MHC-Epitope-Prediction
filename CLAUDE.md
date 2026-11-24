@@ -41,6 +41,18 @@ Ablación por modalidad (mismas particiones): solo ProtT5 **0,682302**; ProtT5+S
 
 Estas cifras provienen de los artículos y son el único punto de comparación legítimo.
 
+**PDFs de referencia, todos accesibles en `i2pc.es/coss/Articulos/`** (añadidos el 24 nov 2026 para poder reconsultarlos sin pedirlos de nuevo):
+
+| Trabajo | Enlace | Qué aporta |
+|---|---|---|
+| Wert-Carvajal et al., Sci Rep 2021 | https://i2pc.es/coss/Articulos/Wert2021.pdf | **La línea base real: AUC 0,865 en held-out, PR-AUC 0,4197, lift 15,9×.** Un modelo por haplotipo, 12-mer, one-hot, biLSTM, BLOSUM62 on-batch + post-proceso en inferencia (+7,6 %). |
+| Méndez-Pérez et al., eLife 2024 | https://i2pc.es/coss/Articulos/Mendez2024.pdf | Validación in vivo. **La expresión pesa más que la inmunogenicidad predicha.** No mejora ninguna métrica de modelo. |
+| Guillén 2021 (TFG) | https://i2pc.es/coss/Articulos/Guillen2021.pdf | Origen de la ventana de 30 aa, ProteinUnet y los BERT de primaria/secundaria. val accuracy 0,70–0,73. |
+| Ballesteros 2022 (TFG) | https://i2pc.es/coss/Articulos/Ballesteros2022.pdf | Pipeline humano/ratón y detección flexible de mutaciones. **Ninguna métrica de modelo.** |
+| Sánchez 2024 (TFM) | https://i2pc.es/coss/Articulos/Sanchez2024.pdf | MLP de 1.536 dim. test acc 0,838–0,861, pero con undersampling y **split aleatorio por fila**: no es generalización. |
+
+> Las cifras de §0.3 se obtuvieron leyendo estos PDFs directamente. Si hace falta un detalle que no esté aquí, están en esas URLs; no reconstruirlo de memoria.
+
 **Wert-Carvajal et al., Sci Rep 2021;11:10780 — lo que sí se publicó.**
 Unidad: péptido de **12 aa** centrado en la SNV (probaron 8/10/12). Codificación **one-hot**; probaron tres embeddings de baja dimensión y no mejoraron sobre one-hot. Modelo: 3 × biLSTM + 3 densas + 2 dropouts. Negativos: Smith-Waterman del epítopo contra su proteína fuente, el resto de la proteína como negativo. **Un modelo por haplotipo**; reportan que la predicción cruzada H-2Kb↔H-2Kd es subóptima y concluyen que hacen falta redes individuales por haplotipo. Datos H-2Kb: 4.828 entradas IEDB → **251.049 secuencias, 6.714 positivas, 244.225 negativas, prevalencia 2,67 %**. BLOSUM62 **on-batch** durante el entrenamiento con tolerancia ajustada por grid search, nunca materializado a disco; y **post-proceso en inferencia** por voto de mayoría sobre sustituciones de un residuo, **+7,6 % de precisión**. Balanceo on-batch: la prevalencia virtual subió AUC y F1 un 20 %, más que la profundidad de la red. 5-fold CV, 80 modelos.
 
@@ -382,7 +394,7 @@ Salida: un Parquet por familia, **una fila por (alelo literal, péptido)**. Se a
 
 **Normalización de alelo.** IEDB y NetMHCpan no usan el mismo vocabulario: `HLA-A*02:01` → `HLA-A0201`, `H2-Kb` → `H-2-Kb`. Los mutantes y serotipos devuelven `None` y se quedan sin pseudosecuencia, como corresponde.
 
-> **Limitación: la tabla de pseudosecuencias es solo de clase I.** Comprobado: 11.839 entradas HLA-A/B/C más primates/bóvidos/cerdo, y **ninguna** de HLA-DR/DQ/DP ni de H2-IA/IE. Para clase II hacen falta las pseudosecuencias de NetMHCIIpan, que son de otra longitud y de dos cadenas. **La prioridad §0.5.3 es ejecutable hoy en clase I y está bloqueada en clase II** por falta de referencia.
+> **Limitación: NUESTRA tabla de pseudosecuencias es solo de clase I.** Comprobado: 11.839 entradas HLA-A/B/C más primates/bóvidos/cerdo, y **ninguna** de HLA-DR/DQ/DP ni de H2-IA/IE, de modo que las cuatro familias de clase II salen con `con_pseudosecuencia_pct` = 0,0 %. **No es un obstáculo conceptual: NetMHCIIpan también usa 34 residuos (15 de la cadena α + 19 de la β).** Falta el fichero, no el método — véase §0.7.1.
 
 Validado sobre tres familias:
 
@@ -414,7 +426,7 @@ Lo que queda, por orden:
    - **`conflicting`:** excluir, o conservar como medida de ruido irreducible.
    - **`allele_resolution`:** descartar los serotipos (2,5 % en HLA-A) o resolverlos aparte.
 4. **Medir la fuga por `pmid`** y anadir la particion por publicacion como control, al nivel de la particion por componentes de proteina de §0.2 (hallazgo O). No estaba contemplada y la particion por proteina no la cubre.
-5. **Probar el alelo como entrada** (§0.5.3): la columna `pseudosequence` ya esta. Ejecutable hoy en clase I; **bloqueado en clase II** por falta de pseudosecuencias de NetMHCIIpan.
+5. **Probar el alelo como entrada** (§0.5.3): la columna `pseudosequence` ya está poblada al 95–100 % en clase I, así que es ejecutable hoy. Para clase II hay que **conseguir primero la tabla de pseudosecuencias de NetMHCIIpan** (34 residuos, 15 α + 19 β); véase §0.7.1.
 6. **Escribir el informe de procedencia** en `reports/audits/iedb_provenance_20261124.md`, actualizar §3 con filtros y criterios reales, y anadir el hallazgo D a §0.4 como quinta decision de diseno.
 7. **Luego, no antes:** E0 (§0.5.1), con `LSTMcvonehot.py` como referencia, decidiendo primero si el brazo de control usa los 4.828 del paper o los 8.901 del CSV distribuido.
 
@@ -432,6 +444,81 @@ Lo que queda, por orden:
 - **La elección de objetivo supervisado (presentación / unión / inmunogenicidad) se posterga deliberadamente** hasta tener los recuentos por `assay_class` de las 11 familias. Es una decisión que no se puede tomar bien a ciegas y que hasta ahora se había tomado por omisión, mezclando los tres.
 - **Añadir un paso intermedio explícito al pipeline**: IEDB → tabla por (alelo, péptido) → ventanas/péptidos. El salto directo de IEDB a ventanas de 25 aa es lo que hacía invisibles los hallazgos L, N, O, Q y R.
 - **No volver a usar `build_iedb_dataset.py` para datos nuevos.** Se conserva únicamente para reproducir la procedencia de D1.
+
+---
+
+## 0.7. Preguntas abiertas de diseño (planteadas el 24 nov 2026)
+
+Cinco cuestiones que Laura planteó tras ver los hallazgos de §0.6. **No hay que resolverlas ya**; quedan aquí con lo que se sabe, lo que se ha medido y lo que falta por decidir. Dos de ellas traen decisión tomada.
+
+### 0.7.1. ¿Por qué NetMHCpan usa 34 aminoácidos? ¿Y qué hacemos con clase II?
+
+**Por qué 34.** No es un número arbitrario ni un hiperparámetro: son las **posiciones polimórficas del MHC que están a menos de 4,0 Å de un átomo pesado del péptido unido, con la cadena lateral orientada hacia él**, identificadas sobre estructuras cristalográficas representativas. Es decir, es **el surco de unión reducido a sus residuos que (a) tocan al péptido y (b) varían entre alelos**. Incluye además algunas posiciones que contactan a través de moléculas de agua (118 y 158). Lo que la pseudosecuencia codifica, por tanto, no es «el alelo» sino **la química del bolsillo que ve el péptido**, y eso es lo que permite que el método sea *pan-específico*: alelos nunca vistos en entrenamiento quedan interpolados por similitud de surco.
+
+**Clase II: me equivoqué al decir que estaba bloqueada.** **NetMHCIIpan sí tiene pseudosecuencia, y también es de 34 residuos: 15 de la cadena α y 19 de la cadena β**, construida con el mismo criterio de 4,0 Å (método de Karosiene et al., NetMHCIIpan-3.0). Lo que falta **no es el concepto, es nuestra tabla de referencia**: `reference/pseudosequences/pseudosequences.netmhcpan.34aa.csv` es solo de clase I (11.839 entradas HLA-A/B/C más primates, bóvidos y cerdo; cero de HLA-DR/DQ/DP y de H2-IA/IE). Verificado el 24 nov: las 11 familias de clase II salen con **`con_pseudosecuencia_pct` = 0,0 %**.
+
+Hay un detalle biológico que importa para clase II: **en HLA-DR el polimorfismo está casi todo en la cadena β, mientras que en DP y DQ ambas cadenas son polimórficas.** Por eso la pseudosecuencia de clase II necesita las dos cadenas, y por eso DQ/DP son más difíciles: hay que emparejar α y β, y IEDB no siempre anota las dos.
+
+**Pendiente:** conseguir la tabla de pseudosecuencias de NetMHCIIpan (servidor de DTU, o derivarla de los alineamientos de IPD-IMGT/HLA aplicando el criterio de 4,0 Å sobre estructuras de clase II). Hasta entonces la prioridad §0.5.3 es ejecutable en clase I y está a la espera en clase II **por falta de un fichero, no por un obstáculo conceptual**.
+
+**¿Probar otras representaciones y tamaños de pseudosecuencia?** Sí, y es una de las pocas vías de diferenciación con fundamento (ver §0.7.5). Pero con dos condiciones metodológicas: (a) **la de 34 aa es el brazo de control obligatorio** —sin él, «nuestra representación es mejor» no se sostiene—, y (b) la comparación debe hacerse con partición por alelo, no por fila, o se medirá memorización. Ideas ordenadas por coste: pseudosecuencia completa del dominio de unión (~180 aa) en lugar de los 34; embedding del MHC con ProtT5, que ya está en el pipeline; representación por bolsillo (agrupar los 34 residuos por bolsillo A–F en vez de como vector plano); y codificación explícita del par péptido-MHC por posición en lugar de concatenación.
+
+### 0.7.2. Usar epítopos de todas las especies — DECIDIDO
+
+**Decisión de Laura, 24 nov: sí.** El razonamiento es sólido y conviene dejarlo escrito: *lo que interesa es la función respecto al MHC; si esa secuencia se une, da igual de dónde provenga.* Biológicamente es correcto —el surco no sabe si el péptido es vírico o propio— y además **multiplica los datos**: solo en H-2Kb recupera los ~4.300 positivos de Wert que nos faltaban (hallazgo D), y en H2-L el factor fue 12×.
+
+Esto **refina** la decisión de los dos brazos de §0.6.9: el **brazo primario pasa a ser todos los organismos fuente**, y el subconjunto propio queda como **ablación** para cuantificar si el origen del epítopo aporta señal. Sigue derivándose por filtro sobre `source_is_self`, así que no cambia nada del pipeline de descarga.
+
+> **Dos matices que no invalidan la decisión pero hay que declarar.** Primero: los epítopos de patógeno tienen **composición y sesgo de longitud distintos** de los propios, y el modelo final se aplicará a neoantígenos tumorales, que son propios con una mutación; conviene medir el rendimiento **en el subconjunto propio** aunque se entrene con todo. Segundo: el 31,7 % de las filas de H2-L no tiene organismo anotado (hallazgo K); con esta decisión dejan de ser un problema, porque ya no se filtran.
+
+### 0.7.3. ¿Ampliar con otras bases de datos?
+
+Pregunta aparcada hasta tener resultados, que es lo correcto: **primero saber si el techo es de datos o de formulación.** §0.2 sugiere que es de formulación (eliminar toda la fuga por proteína cuesta 0,0054 de ROC-AUC), así que más datos de la misma clase podrían no mover nada. Candidatos a evaluar **cuando llegue el momento**, sin verificar todavía:
+
+- **Datos monoalélicos de inmunopeptidómica** (líneas celulares que expresan un solo alelo). Son el antídoto exacto al hallazgo L: alelo atribuido de forma directa en lugar de por anticuerpo. Probablemente la mejora de calidad más alta por unidad de esfuerzo.
+- **Atlas de inmunopeptidoma** (del tipo SysteMHC / HLA Ligand Atlas) para ampliar cobertura de alelos poco representados; recordar que `HLA-A*02:01` ya es el 38,5 % de HLA-A.
+- **Datos de entrenamiento de NetMHCpan/MHCflurry**, que son públicos. **Cuidado: usarlos contamina el benchmark contra esos mismos predictores.** Si se usan para entrenar, la comparación de §0.5.7 deja de ser limpia.
+- **Proteomas de referencia** (UniProt) para negativos emparejados por longitud del mismo proteoma, al estilo Wert2021. Esto **no es «otra base de datos de epítopos»**, es construcción de negativos, y es más urgente que ampliar positivos.
+
+> Antes de añadir cualquier fuente: **deduplicar por péptido contra lo que ya hay y volver a medir la fuga**. Añadir una base que solape con IEDB inflaría las métricas sin añadir información.
+
+### 0.7.4. Elución MS como primer objetivo — DECIDIDO
+
+**Decisión de Laura, 24 nov: empezar por elución MS**, es decir «¿se va a unir/presentar en MHC?», y dejar el reconocimiento por TCR para más adelante, como salida adicional de probabilidad de inmunogenicidad. **Los datos respaldan esta decisión de forma contundente.** Censo de `assay_class` sobre la tabla completa de las 11 familias (1.260.105 pares péptido-alelo):
+
+| Clase de ensayo | Pares péptido-alelo | % |
+|---|---:|---:|
+| **`elution_ms`** (presentación) | **1.243.014** | **98,64 %** |
+| `binding` (afinidad) | 14.258 | 1,13 % |
+| `tcell_functional` (inmunogenicidad) | 7.478 | 0,59 % |
+| `other` | 499 | 0,04 % |
+| `structural` | 234 | 0,02 % |
+
+Es decir: **no es solo la opción preferible, es la única con datos suficientes.** La inmunogenicidad tiene tres órdenes de magnitud menos. Implicaciones que conviene fijar ahora:
+
+1. **El objetivo es presentación, no afinidad ni inmunogenicidad.** Hay que decirlo así en el paper y en la documentación: lo que el modelo predice es «este péptido fue eluido de este MHC».
+2. **La comparación con NetMHCpan/MHCflurry debe usar sus modos de *eluted ligand*, no los de afinidad** (§0.5.7). Comparar contra su predicción de afinidad sería comparar tareas distintas.
+3. **La vía de inmunogenicidad es viable pero como modelo aparte y pequeño**, no como etiqueta mezclada. 7.478 pares no sostienen una red profunda, pero sí un clasificador sobre los embeddings ya calculados, o un *fine-tuning* del modelo de presentación. Encaja con lo que validó eLife 2024.
+4. **Un modelo de presentación es exactamente el que necesita el ranking por expresión × presentación** que sugiere el hallazgo central de eLife 2024.
+
+### 0.7.5. ¿En qué nos distinguimos de NetMHCpan? (la pregunta importante)
+
+Es la pregunta estratégica de la tesis y merece una respuesta honesta, no tranquilizadora.
+
+**Dónde NO está la diferenciación, según nuestra propia evidencia:**
+
+- **La estructura secundaria no es un diferenciador defendible hoy.** Hay **cuatro líneas de evidencia independientes que convergen en lo mismo**: Guillén 2021 se quedó en 0,70–0,73; Sánchez 2024 no aisló su aporte; la ablación de §0.2 da **+0,0088 sobre contar C/H/E en la ventana con una regresión logística** y **aporte negativo sobre ProtT5 solo** (0,680107 frente a 0,682302); y SecondaryBERT en solitario da 0,601431. §0.5.6 recomienda cerrar la línea y publicarla **como resultado negativo**, que es en sí una contribución legítima. Hacer de ella el eje diferencial sería ir contra lo que ya hemos medido. **Si se quiere rescatar, el camino no es insistir en la misma representación sino cambiarla** —estructura por residuo en vez de agregada por ventana, o estructura predicha del complejo péptido-MHC en vez de del péptido aislado— y entonces es una hipótesis nueva que hay que medir, no una continuación.
+- **«Hacer clase II» tampoco diferencia por sí solo:** NetMHCIIpan existe, está maduro y usa la misma estrategia de pseudosecuencia (§0.7.1). Cubrir clase II es necesario para ser competitivos, no suficiente para destacar.
+
+**Dónde sí está, y además encaja con lo que el grupo ya ha publicado:**
+
+1. **Expresión × presentación.** El hallazgo central de eLife 2024 es que **la expresión pesa más que la inmunogenicidad predicha**: \*Adar era el mejor puntuado y falló por ser el menos expresado. NetMHCpan **no modela expresión en absoluto**. Un sistema que integre RNA-seq con presentación ataca el cuello de botella que el propio grupo demostró experimentalmente. §0.5.8 ya dice que la línea RNA-seq/Scipion es camino crítico, no accesorio.
+2. **El post-proceso BLOSUM62 en inferencia.** Es **nuestro, publicado, y con evidencia de que funciona** (+7,6 % de precisión; y \*Wiz, el péptido con la mejor protección in vivo —100 % de ratones con tumor <100 mm³—, **solo apareció gracias a él**). Nadie más lo hace. Es la prioridad §0.5.2 y es barata: se aplica sobre los Parquet de predicciones que ya existen.
+3. **Reproducibilidad y trazabilidad de extremo a extremo en Scipion.** De FASTQ a candidato priorizado, con procedencia. NetMHCpan es un predictor, no un workflow. Esto es la línea A de la tesis y es un diferenciador real para un laboratorio que necesita ejecutar, no solo puntuar.
+4. **Validación experimental propia.** El grupo tiene ELISpot, ICS y modelo de ratón. Muy pocos predictores pueden cerrar el ciclo predicción → validación in vivo.
+5. **Honestidad metodológica como aportación.** Los hallazgos L, N, O, Q y R de §0.6.3 describen problemas que afectan a **todo el campo**, no solo a nosotros: etiquetas de alelo inferidas por predictores (circularidad), tres objetivos mezclados en una etiqueta, fuga por publicación. Un benchmark limpio y documentado es publicable por sí mismo.
+
+> **Resumen sin adornos:** competir con NetMHCpan en «predecir unión péptido-MHC a partir de secuencia» es competir en su terreno, con menos datos, menos tiempo de desarrollo y una representación que de momento rinde 0,68 frente a su estado del arte. **La diferenciación realista no es ser mejor en su tarea, sino resolver la tarea que ellos no abordan**: priorizar neoantígenos *reales* en un tumor *concreto*, integrando expresión, y de forma reproducible. E0 (§0.5.1) sigue siendo el primer paso obligatorio, porque sin saber reproducir 0,865 no se puede afirmar nada sobre mejoras.
 
 ---
 
