@@ -494,11 +494,15 @@ Pregunta aparcada hasta tener resultados, que es lo correcto: **primero saber si
 | `other` | 499 | 0,04 % |
 | `structural` | 234 | 0,02 % |
 
-Es decir: **no es solo la opción preferible, es la única con datos suficientes.** La inmunogenicidad tiene tres órdenes de magnitud menos. Implicaciones que conviene fijar ahora:
+Es decir: **la elución MS es la única clase con datos de sobra**, y la decisión de empezar por ella es robusta.
+
+> ⚠️ **Pero estas cifras son del perfil `legacy` y el 0,59 % de inmunogenicidad se queda corto.** Medido sobre las 5 familias de ratón ya descargadas con el perfil `full`, los `tcell_export` crecen de forma brutal: **H2-K de 1.076 a 15.626 filas (14,5×)** y **H2-D de 528 a 14.830 (28×)**; en conjunto el ratón pasa de 4.004 a 46.219. Es coherente: los ensayos funcionales de célula T son justo donde más negativos experimentales hay y más epítopos de patógeno se han estudiado, y el perfil `legacy` excluía ambas cosas. **Conclusión provisional: la vía de inmunogenicidad puede resultar bastante más viable de lo que sugiere la tabla de arriba.** Recalcular este censo sobre `data_raw_full_20261124` cuando termine, antes de dar por cerrada la proporción entre clases.
+
+Implicaciones que conviene fijar ahora:
 
 1. **El objetivo es presentación, no afinidad ni inmunogenicidad.** Hay que decirlo así en el paper y en la documentación: lo que el modelo predice es «este péptido fue eluido de este MHC».
 2. **La comparación con NetMHCpan/MHCflurry debe usar sus modos de *eluted ligand*, no los de afinidad** (§0.5.7). Comparar contra su predicción de afinidad sería comparar tareas distintas.
-3. **La vía de inmunogenicidad es viable pero como modelo aparte y pequeño**, no como etiqueta mezclada. 7.478 pares no sostienen una red profunda, pero sí un clasificador sobre los embeddings ya calculados, o un *fine-tuning* del modelo de presentación. Encaja con lo que validó eLife 2024.
+3. **La vía de inmunogenicidad va como modelo aparte**, no como etiqueta mezclada. Con las cifras del perfil `full` habrá que reevaluar su tamaño; si se queda en decenas de miles de pares, no sostiene una red profunda pero sí un clasificador sobre los embeddings ya calculados, o un *fine-tuning* del modelo de presentación. Encaja con lo que validó eLife 2024.
 4. **Un modelo de presentación es exactamente el que necesita el ranking por expresión × presentación** que sugiere el hallazgo central de eLife 2024.
 
 ### 0.7.5. ¿En qué nos distinguimos de NetMHCpan? (la pregunta importante)
