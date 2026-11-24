@@ -580,6 +580,63 @@ El punto clave es el primero: usar la misma proteína convierte el fondo en **di
 
 ---
 
+## 0.8. Revisión del MLP en ejecución (24 nov 2026, 15:30 UTC)
+
+Al revisar qué corría en el servidor apareció un **entrenamiento que lleva 6 días y 6 horas** y que nadie había documentado aquí. Esta sección es el diagnóstico.
+
+**Qué es.** PID 3348177, GPU 1. Lanzado el **17 nov a las 22:25**.
+
+```text
+neural_network/MLP/mlp_layernorm_shuffled_ladder100_dualeval.py
+  --root data/data_input_nn_shuffled_concatenate
+  --scaler-path neural_network/MLP/standardizer_all_train_chunks.npz
+  --features primary_secondary --epochs 10 --max-chunks 14499
+  --eval-target-per-class 29006 --learning-rate 0.001 --seed 42
+  --resume .../recovery_mlp_primary_secondary.pt
+```
+
+Salida en `results/mlp_shuffled_concatenated_14499chunks_10epochs_20261117_222538/`.
+
+**Dónde va.** **Epoch 2 de 10**, chunk 11.690/14.499 (80,6 % de la época). Ritmo actual ~15 s/chunk, es decir **~60 h por época**; la época 1 tardó 307.480 s (85,4 h) porque incluyó la construcción de los conjuntos de evaluación.
+
+| | |
+|---|---:|
+| Transcurrido | 6,24 días |
+| Épocas completadas | **1 de 10** |
+| Para terminar la época 2 | ~11,7 h |
+| Épocas 3–10 | ~483 h (20,1 d) |
+| **Total restante** | **~20,6 días** (terminaría ~15 dic) |
+
+**Resultado de la época 1** (único `epoch_end` registrado, el 21 nov a las 23:08):
+
+| | TRAIN | TEST |
+|---|---:|---:|
+| loss | 0,546633 | 0,542468 |
+| accuracy | 0,707819 | 0,713352 |
+| **ROC-AUC** | 0,790274 | **0,795539** |
+| MCC | 0,416067 | 0,427092 |
+| n | 58.012 | 58.012 |
+
+### Cinco problemas, en orden de gravedad
+
+1. **El 0,7955 es exactamente el número que §0.1 declara contaminado.** La tabla de §0.1 dice: «ROC-AUC histórico 0,7955 → Fuga: 99,70 % de los grupos en varias particiones, 87,38 % en las tres». **Esta ejecución está reproduciendo el artefacto de fuga, no midiendo generalización.** Verificado en el código: `meta['split_id'] == split` selecciona **por fila** dentro de cada chunk (líneas 477, 495, 520, 674, 725); `group_id` se usa **únicamente como clave para cargar el embedding secundario** (línea 573), **no para definir la partición**. Es la política histórica de §10.1, la que §11.3 decidió sustituir.
+
+2. **Selecciona el mejor modelo por la pérdida de TEST.** El log lo dice: `BEST by TEST STAGE loss`, y el código registra `"selection_metric": "stage_fixed_50_50_test_loss"`. **No hay VALIDATION.** Esto viola directamente §13.9 («seleccionar mediante VALIDATION, sin consultar TEST») y §19 («conservar el TEST congelado»): el TEST deja de ser una estimación independiente. El script **tiene** una rama que selecciona por VALIDATION, pero depende de `getattr(args, "v2_checkpoint_contract", None)` (línea 1116) y **ese argumento no existe en el parser**, así que siempre vale `None`: **es código muerto y la rama correcta es inalcanzable.**
+
+3. **TRAIN y evaluación están ambos forzados a 50/50.** El log: `Batch size / GPU: 8,192 (exact 50/50 TRAIN)` y `TRAIN/TEST eval per epoch: fixed STAGE and ALL 50/50 samples`. Con `--eval-target-per-class 29006` → n = 58.012 exactos. **La prevalencia real de D1 es 25,45 %**, así que este ROC-AUC **no es comparable** ni con el 0,654/0,680 honesto de §0.2 ni con el 0,865 de Wert2021 (prevalencia 2,64 %). §10.3 exige conservar la prevalencia natural en evaluación.
+
+4. **No calcula AP ni PR-AUC.** El script solo importa `roc_auc_score` (línea 30, usado en 297); **no hay `average_precision_score` en ninguna parte**. §0.2 reporta todo en AP y lift sobre prevalencia, y §10.3 dice que la PR-AUC es la métrica informativa con clase positiva minoritaria. **Esta ejecución no puede producir la métrica que el proyecto usa para comparar.**
+
+5. **Entrena sobre los datos aumentados.** 2.019.082.240 filas de TRAIN por época frente a 15,1 M de originales D1: expansión de ~134×, coherente con ventanas más aumento BLOSUM62 materializado. §0.5.5 dice **no ejecutar D2** y §0.4.4 explica por qué el aumento a disco no añade información (variantes a coseno 0,9883, más cerca entre sí que la distancia que separa etiquetas opuestas reales).
+
+> **Diagnóstico.** No es que la ejecución vaya mal: va exactamente como se diseñó. El problema es que **el diseño es el que §0.1, §0.5 y §11.3 ya declararon superado**, y produce un número que este mismo documento prohíbe citar. Gastar 20,6 días más de GPU 1 daría, en el mejor caso, diez épocas de un ROC-AUC con fuga, balanceado al 50/50, sin AP y con el modelo elegido mirando el TEST.
+
+**Recomendación: detenerla.** Los números honestos que la sustituyen **ya existen** (§0.2: 0,654641 LR y 0,680107 MLP con partición primaria exacta, y 0,662294/0,674668 con partición por componentes de proteína, todos con AP y prevalencia declaradas). Antes de volver a entrenar hay que arreglar cuatro cosas en el script: partición por grupo o por componentes en lugar de por fila, un VALIDATION real para seleccionar (añadiendo el argumento que falta), evaluación a prevalencia natural, y `average_precision_score`.
+
+> **No se detiene sin decisión de Laura.** Los checkpoints (`best_`, `last_`, `recovery_`) están guardados y la ejecución es reanudable con `--resume`, así que pararla no destruye el trabajo hecho. Pendiente de su respuesta a 24 nov, 15:30 UTC.
+
+---
+
 ## 1. Contexto doctoral y finalidad científica
 
 El trabajo se desarrolla en el Centro Nacional de Biotecnología (CNB-CSIC), dentro del proyecto RISE (PREX2023-000056), mediante contrato predoctoral FPI iniciado el 1 de enero de 2026. El doctorado pertenece al programa de Biociencias Moleculares de la Universidad Autónoma de Madrid, con matrícula del 17 de febrero de 2026. Título de tesis: «Desarrollo de algoritmos para el diseño de inmunoterapias en oncología (RISE)». Dirección: Esteban Veiga; Carlos Óscar S. Sorzano participa en la supervisión computacional. Tutora UAM: Blanca Lizarbe. Horizonte previsto: marzo de 2029.
