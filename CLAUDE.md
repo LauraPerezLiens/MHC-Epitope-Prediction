@@ -248,7 +248,7 @@ El pipeline colapsa **276 alelos en 11 etiquetas de familia**. Esto cuantifica �
 | `mhc_restriction__name` | `ilike.*{familia}*` | **Coincidencia por subcadena**, no por alelo. Es el mecanismo del colapso 276→11 (hallazgo F). |
 | `epitope__source_organism` | `ilike.*{especie}*` | **Causa del hallazgo D:** restringe a epítopos de origen propio y excluye los de patógeno. |
 
-**Consecuencia que conviene tener presente: no se descarga ni un solo ensayo negativo de IEDB.** El filtro `ilike.*Positive*` lo impide. Por tanto los «negativos» del dataset **no son negativos experimentales**, sino ventanas sin anotación positiva. Confirma §4.3 desde el código, y refuerza que la tarea es positive-unlabeled. Wert2021, en cambio, construía negativos explícitos por Smith-Waterman contra la proteína fuente.
+**Consecuencia que conviene tener presente: no se descarga ni un solo ensayo negativo de IEDB.** El filtro `ilike.*Positive*` lo impide. Por tanto los «negativos» del dataset **no son negativos experimentales**, sino ventanas sin anotación positiva. Confirma §4.3 desde el código, y refuerza que la tarea es positive-unlabeled. **Wert2021 tampoco tenía negativos experimentales** —eso lo corrige §0.7.6, leído de su código— pero sí construía **señuelos de la misma proteína fuente**, que es un fondo mucho más exigente que una ventana sin anotación cualquiera.
 
 **Lo que NO se filtra**, y debería documentarse como limitación: tipo de ensayo (unión frente a elución frente a célula T, todos mezclados), calidad o nivel de evidencia, y resolución del alelo (entran serotipos como `HLA-A2` junto a alelos de cuatro dígitos; véase hallazgo H).
 
@@ -266,7 +266,7 @@ El pipeline colapsa **276 alelos en 11 etiquetas de familia**. Esto cuantifica �
 | `Positive` + variantes High/Low/Intermediate | 324 | 970 |
 | Organismos fuente distintos | 69 | 84 |
 
-Es decir: para H2-L había **728 ensayos negativos experimentales en IEDB** que el pipeline nunca vio. §4.3 trataba la tarea como positive-unlabeled por necesidad; **en buena medida no era necesario**. Esto no elimina el carácter PU del problema (las ventanas sin anotación siguen siendo unlabeled), pero permite un conjunto de negativos *medidos* con el que calibrar, y acerca el diseño al de Wert2021, que construía negativos explícitos.
+Es decir: para H2-L había **728 ensayos negativos experimentales en IEDB** que el pipeline nunca vio. §4.3 trataba la tarea como positive-unlabeled por necesidad; **en buena medida no era necesario**. Esto no elimina el carácter PU del problema (las ventanas sin anotación siguen siendo unlabeled), pero permite un conjunto de negativos *medidos* con el que calibrar, y acerca el diseño al de Wert2021 — que **tampoco** tenía negativos experimentales, sino señuelos de la propia proteína fuente (§0.7.6).
 
 > Ojo al interpretar el 12× de H2-L: se debe a los negativos **y** a los epítopos de patógeno a la vez. No es comparable sin desglosar, y H2-L es la familia más pequeña; no extrapolar el factor a HLA-A.
 
@@ -530,6 +530,53 @@ Es la pregunta estratégica de la tesis y merece una respuesta honesta, no tranq
 5. **Honestidad metodológica como aportación.** Los hallazgos L, N, O, Q y R de §0.6.3 describen problemas que afectan a **todo el campo**, no solo a nosotros: etiquetas de alelo inferidas por predictores (circularidad), tres objetivos mezclados en una etiqueta, fuga por publicación. Un benchmark limpio y documentado es publicable por sí mismo.
 
 > **Resumen sin adornos:** competir con NetMHCpan en «predecir unión péptido-MHC a partir de secuencia» es competir en su terreno, con menos datos, menos tiempo de desarrollo y una representación que de momento rinde 0,68 frente a su estado del arte. **La diferenciación realista no es ser mejor en su tarea, sino resolver la tarea que ellos no abordan**: priorizar neoantígenos *reales* en un tumor *concreto*, integrando expresión, y de forma reproducible. E0 (§0.5.1) sigue siendo el primer paso obligatorio, porque sin saber reproducir 0,865 no se puede afirmar nada sobre mejoras.
+
+### 0.7.6. Cómo construyó Wert2021 los negativos (leído del código, 24 nov 2026)
+
+Fuente: `reference/neoantigenpred_zip/neoantigenpred-master/media/scripts/peptides_extraction.py`. **Esto es el código real, no el resumen del paper.** Es material imprescindible para E0.
+
+**El algoritmo, paso a paso:**
+
+1. Del CSV de IEDB se queda con `Assay.4 != "Negative"`, deduplica por péptido y separa las filas con accession de proteína madre de las que no la tienen.
+2. Para cada proteína madre única, **descarga el FASTA de UniProt** (`https://www.uniprot.org/uniprot/<acc>.fasta`).
+3. Mantiene una copia de trabajo `s2 = fasta` y, para cada epítopo de esa proteína:
+   - Lo **localiza por Smith-Waterman** sobre el FASTA completo (`match_score=3`, `gap_cost=2`, desemparejamiento −3) → `pos1, pos2`.
+   - Calcula el centro `ctr = round(mean(pos1, pos2))` y **el positivo es `fasta[ctr − w/2 : ctr + w/2]`**, una ventana de `w` aa **centrada en el epítopo**.
+   - Lo localiza también sobre `s2` y **lo extirpa**: `s2 = s2[:p1] + s2[p2+1:]`.
+4. Cuando ya ha quitado todos los epítopos conocidos, **parte el resto de la proteína en trozos consecutivos y NO solapantes de `w` aa** (`textwrap.wrap(s2, w)`) y **todos esos trozos son los negativos**. El último se descarta.
+5. Los epítopos sin accession y de longitud ≥ `w` entran como positivos con sus primeros `w` residuos.
+6. Al final, `drop_duplicates(subset='peptides')` global.
+
+**En una frase: los negativos son la proteína fuente con sus epítopos conocidos recortados, troceada en ventanas consecutivas sin solape.**
+
+> ⚠️ **Corrección a lo que este documento decía antes.** En el hallazgo I y en el docstring de `build_iedb_dataset_v2.py` escribí que «Wert2021 construía negativos **explícitos**». **Es engañoso y lo corrijo:** sus negativos **no son medidas experimentales negativas**, son **señuelos** —el resto de la proteína, asumido no epitópico—. Es decir, **Wert2021 es también positive-unlabeled**, exactamente igual que nosotros (§4.3). La diferencia no es que él tuviera negativos reales; es **cómo construyó los señuelos**.
+
+**Por qué sus señuelos son mejores que nuestras ventanas sin anotación:**
+
+| | Wert2021 | Pipeline actual |
+|---|---|---|
+| Origen del negativo | la **misma proteína** que el positivo | cualquier ventana sin anotación |
+| Solapamiento | **ninguno**: trozos consecutivos | ventanas deslizantes solapadas |
+| Composición de aminoácidos | emparejada por construcción | no controlada |
+| Prevalencia resultante | **2,67 %, emergente** de la longitud de la proteína | 25,45 %, consecuencia del criterio de contención |
+| Epítopos conocidos en el negativo | **extirpados** antes de trocear | pueden colarse |
+
+El punto clave es el primero: usar la misma proteína convierte el fondo en **difícil y emparejado**, de modo que el modelo no puede acertar por composición global ni por «esta proteína es de las que tienen epítopos». Y el segundo explica por qué su prevalencia es natural: no eligió el 2,67 %, le salió.
+
+**Defectos del código que hay que conocer antes de usarlo como referencia en E0:**
+
+- **No corre tal cual en un entorno moderno.** Usa `np.int` (eliminado en NumPy 1.24), `DataFrame.append` (eliminado en pandas 2.0) y `keras.preprocessing.text.Tokenizer`. **E0 exige portarlo**, no solo ejecutarlo.
+- **Los epítopos cerca del extremo N producen un positivo que es la cadena vacía.** Si `ctr < w/2`, el índice inicial se vuelve negativo y Python devuelve `''`. Verificado: con `w=12` y `ctr=4`, la ventana sale de longitud 0. Y el guardia `type(...) == str` **siempre es verdadero**, así que no lo filtra: **entran positivos vacíos al dataset.**
+- **Cerca del extremo C los positivos salen truncados** (longitud 9 o 7 en lugar de 12), por el mismo motivo y sin aviso.
+- **Off-by-one al extirpar:** `s2[:p1] + s2[p2+1:]` elimina un residuo de más.
+- **Se salta la primera proteína a propósito** (`if index == 0: continue`, comentado como «la primera línea es continuación de la cabecera»).
+- **La deduplicación final es dependiente del orden**: si una misma ventana aparece como positiva en una proteína y como negativa en otra, **gana la que se procesó primero**. Es el mismo problema de etiquetas contradictorias que §11.1 midió en nuestros datos (93,53 %), aquí resuelto en silencio por orden de ficheros.
+- Smith-Waterman **tolera desemparejamientos**, así que un epítopo que no esté literalmente en la proteína se coloca igualmente en algún sitio, y el positivo sale mal centrado.
+- Todos los negativos de una proteína heredan el `Reference.1` del **último** epítopo, por una variable de bucle que se escapa.
+
+**El balanceo no está aquí, está en el entrenamiento.** `LSTMcvonehot.py` usa un generador con parámetro `fracPos`: submuestrea negativos hasta la fracción de positivos deseada **y genera positivos sintéticos con `BLOSUMSIM`** sobre un positivo elegido al azar en cada lote. Eso es la «prevalencia virtual» que según el paper subió AUC y F1 un 20 %, más que la profundidad de la red. **Nunca escribió las variantes a disco**, lo que confirma §0.4.4.
+
+**Consecuencia para la prioridad §0.5.4** («pasar de ventana a péptido, negativos como señuelos del mismo proteoma»): esa prioridad es, en esencia, **adoptar el método de negativos de Wert**, corrigiendo sus defectos: controlar los extremos de la proteína, no permitir ventanas vacías ni truncadas, resolver las contradicciones de etiqueta de forma explícita en lugar de por orden, y emparejar por longitud además de por proteína.
 
 ---
 

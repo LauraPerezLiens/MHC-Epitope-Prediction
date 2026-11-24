@@ -14,9 +14,11 @@ justificadas por los hallazgos de la verificacion del 24 nov 2026
 2. LOS NEGATIVOS NO SE EXCLUYEN POR DEFECTO. El script antiguo imponia
    `assay__qualitative_measurement = ilike.*Positive*`, de modo que el
    pipeline NUNCA vio un ensayo negativo de IEDB y sus "negativos" eran
-   ventanas sin anotacion (tarea positive-unlabeled). Wert2021, en
-   cambio, construia negativos explicitos. Ahora se descarga el valor
-   cualitativo tal cual y el filtrado se decide en el procesado.
+   ventanas sin anotacion (tarea positive-unlabeled). Wert2021 TAMPOCO
+   tenia negativos experimentales, pero construia SENUELOS de la propia
+   proteina fuente, que son un fondo mucho mas exigente que una ventana
+   sin anotacion cualquiera; vease CLAUDE.md 0.7.6. Ahora se descarga el
+   valor cualitativo tal cual y el filtrado se decide en el procesado.
 
 3. EL FILTRO DE ORGANISMO FUENTE ES EXPLICITO. El script antiguo imponia
    `epitope__source_organism = ilike.*<especie>*`, que restringe a
