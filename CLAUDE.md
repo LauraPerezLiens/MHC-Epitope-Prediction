@@ -406,9 +406,9 @@ $P -u data_pipeline/scripts/data_processing/build_peptide_table.py \
 
 Lo que queda, por orden:
 
-1. **Decidir el universo de epitopos de la tarea.** Es la decision bloqueante y **es de Laura, no del codigo**: solo propio/murino (lo actual, defendible para neoantigenos) o todo IEDB por alelo (lo de Wert2021, dominado por patogeno). Condiciona que comparacion con el 0,865 es legitima y que perfil de descarga se usa a partir de ahora.
-2. **Lanzar la descarga del perfil `full`** una vez decidido el punto 1. Vigilar disco: HLA-A y HLA-B pasaran de ~600 k filas cada una a bastante mas, y H2-L ya mostro un factor 12x.
-3. **Decidir la politica de filtrado sobre la tabla de peptidos**, con las columnas que §0.6.7 ya deja anotadas. Cuatro decisiones, ninguna obvia:
+1. ~~**Decidir el universo de epítopos.**~~ **DECIDIDO el 24 nov: los dos, como dos brazos.** Se descarga el perfil `full` una sola vez y los dos subconjuntos se derivan con un filtro sobre la tabla de péptidos (`source_is_self`). Así E0 queda comparable con Wert2021 **y** se conserva el modelo de neoantígenos, y **la diferencia entre ambos universos pasa a ser un resultado medible en lugar de una limitación declarada**. Ver §0.6.9.
+2. ~~**Lanzar la descarga del perfil `full`.**~~ **EN CURSO** desde el 24 nov, 14:51 UTC → `data/data_raw_full_20261124`, log en `logs/download_full_20261124.log`. Disco comprobado: el perfil `legacy` ocupa 311 MB y hay 20 TB libres en `/data`, así que el factor 12× de H2-L no es un riesgo. **Para comprobar si terminó:** `tail -3 logs/download_full_20261124.log` (buscar `DONE`) y `pgrep -f "profile full"`. Es reanudable: relanzar el mismo comando omite las consultas ya presentes en el manifiesto.
+3. **Decidir la politica de filtrado sobre la tabla de peptidos**, con las columnas que §0.6.7 ya deja anotadas. Cuatro decisiones, ninguna obvia. **`assay_class` quedó pospuesta a propósito el 24 nov: se decide con los recuentos reales de las 11 familias delante, no antes** (ver §0.6.9).
    - **`allele_evidence_class`:** excluir `prediction` es obligatorio (circularidad, hallazgo R). Que hacer con `inferred_motif` (42,7 % de HLA-A) y `antibody` (95,9 % de H2-K) es un juicio de valor: excluirlos deja H2-K practicamente sin datos.
    - **`assay_class`:** elegir UN objetivo (presentacion, union o inmunogenicidad) o modelarlos por separado. Mezclarlos es lo que se ha hecho hasta ahora (hallazgo Q).
    - **`conflicting`:** excluir, o conservar como medida de ruido irreducible.
@@ -423,6 +423,15 @@ Lo que queda, por orden:
 - Mantener los filtros IEDB **idénticos** a `build_iedb_dataset.py` en la re-descarga, para aislar el efecto del paginado. Cambiar filtros y paginado a la vez haría la comparación ininterpretable.
 - Comparar por `assay_id`, no por conteo de filas: es la única forma de distinguir «IEDB cambió» de «el paginado falló».
 - No borrar `data/data_raw_20261124` ni el histórico: D1 debe seguir siendo reproducible mientras no se decida reconstruirlo.
+
+**Decisiones del 24 nov por la tarde, tras medir:**
+
+- **Dejar de excluir los negativos experimentales en la descarga.** El filtro `ilike.*Positive*` se baja al perfil `legacy` y deja de ser el comportamiento por omisión. Motivo: hallazgo J, en H2-L había 728 ensayos negativos que el pipeline nunca vio. El carácter positive-unlabeled de §4.3 era en parte **autoimpuesto**, no inherente al problema.
+- **El alelo se conserva literal y la familia pasa a ser solo un mecanismo de enumeración de consultas**, nunca una etiqueta de entrenamiento. Motivo: hallazgos F y G.
+- **El universo de epítopos se resuelve con dos brazos, no eligiendo uno.** Se descarga el superconjunto (`full`) una vez y los dos universos se derivan por filtro (`source_is_self`). Convierte la quinta diferencia de formulación del hallazgo D en una comparación medible.
+- **La elección de objetivo supervisado (presentación / unión / inmunogenicidad) se posterga deliberadamente** hasta tener los recuentos por `assay_class` de las 11 familias. Es una decisión que no se puede tomar bien a ciegas y que hasta ahora se había tomado por omisión, mezclando los tres.
+- **Añadir un paso intermedio explícito al pipeline**: IEDB → tabla por (alelo, péptido) → ventanas/péptidos. El salto directo de IEDB a ventanas de 25 aa es lo que hacía invisibles los hallazgos L, N, O, Q y R.
+- **No volver a usar `build_iedb_dataset.py` para datos nuevos.** Se conserva únicamente para reproducir la procedencia de D1.
 
 ---
 
