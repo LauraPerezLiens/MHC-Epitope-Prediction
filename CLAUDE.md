@@ -633,7 +633,26 @@ Salida en `results/mlp_shuffled_concatenated_14499chunks_10epochs_20261117_22253
 
 **Recomendación: detenerla.** Los números honestos que la sustituyen **ya existen** (§0.2: 0,654641 LR y 0,680107 MLP con partición primaria exacta, y 0,662294/0,674668 con partición por componentes de proteína, todos con AP y prevalencia declaradas). Antes de volver a entrenar hay que arreglar cuatro cosas en el script: partición por grupo o por componentes en lugar de por fila, un VALIDATION real para seleccionar (añadiendo el argumento que falta), evaluación a prevalencia natural, y `average_precision_score`.
 
-> **No se detiene sin decisión de Laura.** Los checkpoints (`best_`, `last_`, `recovery_`) están guardados y la ejecución es reanudable con `--resume`, así que pararla no destruye el trabajo hecho. Pendiente de su respuesta a 24 nov, 15:30 UTC.
+### 0.8.1. Decisión y parada programada
+
+**Decisión de Laura, 24 nov 15:33 UTC: dejar que termine la época 2 y parar entonces.** Criterio razonable: da un **segundo punto de la curva de aprendizaje con el mismo protocolo**, lo que permite documentar que el 0,7955 no mejora con más épocas —y por tanto que el techo no es de entrenamiento insuficiente— antes de cerrar la línea histórica. Cuesta ~11,7 h en lugar de 20,6 días.
+
+**Parada automatizada, independiente de la sesión de Claude.** Proceso vigilante lanzado con `setsid` (PID 2651898), log en `logs/mlp_stop_after_epoch2.log`. Lógica:
+
+1. Sondea cada 120 s el fichero `history_mlp_primary_secondary.jsonl` contando líneas `"type": "epoch_end"`. Al llegar a **2**, la época 2 está cerrada.
+2. **Espera 300 s de gracia** para que el script termine de escribir `best_`, `last_` e `history_` (en la época 1 se escribieron en el mismo minuto que el `epoch_end`).
+3. Registra el listado de los `.pt` y envía **`SIGTERM`**, no `SIGKILL`.
+4. Si tras 60 s sigue vivo, **lo deja estar y lo anota**: no escala a `KILL`, requiere revisión humana.
+5. Si el proceso hubiera terminado por su cuenta antes, no hace nada.
+
+Usa el **PID directo (3348177)**, no un patrón de `pgrep`, para evitar el fallo de auto-coincidencia que ya invalidó dos monitores en esta sesión (el patrón aparecía en la propia línea de comandos del vigilante).
+
+**Qué hacer después de la parada:**
+
+1. Comparar los `epoch_end` 1 y 2 y **anotar aquí si el 0,7955 se movió**. Es el único resultado que esta ejecución aporta.
+2. **No citar sus métricas como generalización** en ningún caso (§0.1).
+3. Antes de volver a entrenar, **arreglar las cuatro cosas del script** (§0.8): partición por grupo o componentes en lugar de por fila; VALIDATION real para seleccionar, añadiendo el argumento `--v2-checkpoint-contract` que falta en el parser y que deja inalcanzable la rama correcta; evaluación a prevalencia natural en lugar de 50/50 forzado; y `average_precision_score`.
+4. Liberada GPU 1, queda disponible para la primera prueba con `pseudosequence` (§0.5.3), que es la que sí puede dar un resultado nuevo.
 
 ---
 
