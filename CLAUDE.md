@@ -224,6 +224,25 @@ El pipeline colapsa **276 alelos en 11 etiquetas de familia**. Esto cuantifica �
 
 **H. La prioridad §0.5.3 (alelo en la entrada) es viable con pérdida mínima.** Cobertura de `reference/pseudosequences/pseudosequences.netmhcpan.34aa.csv` sobre la re-descarga: **190 de 276 alelos, que son el 95,70 % de las filas** (1.485.485 de 1.552.188). El 4,30 % sin cubrir son, casi todos, **serotipos de baja resolución, no alelos**: `HLA-A2`, `HLA-A24`, `HLA-B7`, `HLA-B27`… más los de clase II de ratón (`H2-IAb` con 23.624 filas, `H2-IAg7`) que esa tabla de clase I no incluye, y dos mutantes puntuales (`HLA-B*27:05 C67S mutant`). Son filas a descartar o a resolver aparte, no un obstáculo de diseño.
 
+**I. Los filtros IEDB, certificados desde el código** (`build_iedb_dataset.py:253-260`). Esto es lo que §3 y §21 declaraban ausente. Endpoints: `https://query-api.iedb.org/mhc_export` y `/tcell_export`, ambos consultados para cada familia.
+
+| Filtro | Valor | Qué implica |
+|---|---|---|
+| `epitope__object_type` | `eq.Linear peptide` | Excluye epítopos discontinuos y no péptidos. Correcto. |
+| `assay__qualitative_measurement` | `ilike.*Positive*` | **Solo ensayos positivos.** Admite `Positive`, `Positive-High`, `-Intermediate`, `-Low` sin distinguirlos. |
+| `mhc_restriction__class` | `eq.I` / `eq.II` | — |
+| `host__name` | `ilike.*{especie}*` | Especie del hospedador del ensayo. |
+| `mhc_restriction__name` | `ilike.*{familia}*` | **Coincidencia por subcadena**, no por alelo. Es el mecanismo del colapso 276→11 (hallazgo F). |
+| `epitope__source_organism` | `ilike.*{especie}*` | **Causa del hallazgo D:** restringe a epítopos de origen propio y excluye los de patógeno. |
+
+**Consecuencia que conviene tener presente: no se descarga ni un solo ensayo negativo de IEDB.** El filtro `ilike.*Positive*` lo impide. Por tanto los «negativos» del dataset **no son negativos experimentales**, sino ventanas sin anotación positiva. Confirma §4.3 desde el código, y refuerza que la tarea es positive-unlabeled. Wert2021, en cambio, construía negativos explícitos por Smith-Waterman contra la proteína fuente.
+
+**Lo que NO se filtra**, y debería documentarse como limitación: tipo de ensayo (unión frente a elución frente a célula T, todos mezclados), calidad o nivel de evidencia, y resolución del alelo (entran serotipos como `HLA-A2` junto a alelos de cuatro dígitos; véase hallazgo H).
+
+**Paginación histórica:** `limit` fijo con `offset = página × limit` y **sin `order`** (`build_iedb_dataset.py:149-175`). Frágil por diseño, aunque de hecho no dañó los datos (hallazgo A bis). La re-descarga lo sustituye por keyset sobre `assay_id`.
+
+**Pendiente de certificar todavía:** la *release* concreta de IEDB de cada descarga. El manifiesto nuevo registra la fecha UTC, pero no la versión de la base.
+
 ### 0.6.4. Estado de la re-descarga (proceso vivo)
 
 Lanzada el 24 nov a las 12:46 UTC (`download_v2.py`, log en `logs/download_v2_20261124.log`). Escribe `manifest.json` incrementalmente tras cada familia, así que **es reanudable por inspección**: las familias ya presentes en el manifiesto están completas.
