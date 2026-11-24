@@ -173,7 +173,7 @@ Las 28.872 accessions de UniProt colapsan en **16.349 componentes** tras 12.523 
 np.load(path, mmap_mode="r", allow_pickle=False)
 ```
 
-**Rendimiento medido** (`data_pipeline/block_reader.py`, NPY directo, caché caliente): secuencial sin caché de aperturas 503 MB/s, con caché de 4 → 1.914 MB/s; aleatorio 722 → 1.316 MB/s. Una apertura con validación cuesta 226 µs. **Para resolver por ID puntual, SQLite gana a Parquet por dos órdenes de magnitud** (7,88 µs frente a 2.312 µs); Parquet sigue siendo mejor para escanear columnas de lotes grandes.
+**Rendimiento medido** (lector de bloques NPY directo, retirado el 24 nov 2026; caché caliente): secuencial sin caché de aperturas 503 MB/s, con caché de 4 → 1.914 MB/s; aleatorio 722 → 1.316 MB/s. Una apertura con validación cuesta 226 µs. **Para resolver por ID puntual, SQLite gana a Parquet por dos órdenes de magnitud** (7,88 µs frente a 2.312 µs); Parquet sigue siendo mejor para escanear columnas de lotes grandes.
 
 > **Un offset del NPY descomprimido no sirve en Zstandard.** Para `.npy.zst` hay que agrupar por fichero y decodificar secuencialmente. No hay índices de frames seekables.
 
@@ -201,23 +201,16 @@ Estado: **E1 ✅ · E2 ✅ · E3 ❌ no ejecutado · E4 ❌ no ejecutado**.
 ## 7. Verificación
 
 ```bash
-python -B -m data_pipeline.nap_cnb_v2 status
-python -B -m data_pipeline.nap_cnb_v2 validate-selection
-python -B -m data_pipeline.nap_cnb_v2 validate-datasets
-python -B -m data_pipeline.nap_cnb_v2 validate-splits
-python -B -m data_pipeline.nap_cnb_v2 validate-d1 --json
-python -B -m data_pipeline.nap_cnb_v2 validate-prott5
-python -B -m data_pipeline.nap_cnb_v2 validate-secondarybert
-python -B -m data_pipeline.nap_cnb_v2 validate-structures
+python -m unittest discover -s tests -t . -v
 ```
 
-Estados: `CERTIFIED` · `PRESENT` · `MISSING` · `INCONSISTENT` · `UNKNOWN` · `NOT AVAILABLE`. Códigos de salida: `0` consulta completa, `1` componente requerido ausente o inconsistente, `2` argumentos o raíz inválidos.
+**135 pruebas, todas pasan** (24 nov 2026). Cubren reconstrucción, estructuras, splits, concatenación, ProtT5 v2, SecondaryBERT, archivado y los entrenadores.
 
-**Alcance acotado a propósito:** estas comprobaciones leen footers, cabeceras y catálogos. **No recorren las matrices de embeddings ni revalidan su contenido.** Los catálogos SQLite se abren en modo inmutable de solo lectura; uno con sidecars o que cambie se reporta `INCOMPLETE`.
-
-Suite de regresión: `python -m unittest discover -s tests -t . -v` (152 pruebas, 150 pasan y 2 se omiten sin CUDA).
-
----
+> **La CLI de consulta `data_pipeline.nap_cnb_v2` se retiró el 24 nov 2026**, junto con el resto del instrumental de auditoría. Daba estados `CERTIFIED`/`PRESENT`/`MISSING`/`INCONSISTENT` leyendo footers y catálogos, sin recorrer las matrices. Cumplió su función —certificar D1— y el proyecto ha pasado de auditar a corregir. Se recupera del historial de git si vuelve a hacer falta:
+>
+> ```sh
+> git show <commit-anterior>:data_pipeline/nap_cnb_v2.py
+> ```
 
 ## 8. Reglas que conviene no romper
 

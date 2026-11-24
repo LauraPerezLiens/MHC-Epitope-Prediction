@@ -130,7 +130,7 @@ Tres lecturas, desarrolladas en [`results/RESULTADOS.md`](../results/RESULTADOS.
 
 ## 7. Deuda técnica
 
-La revisión del pipeline recomendó **reorganización mínima**: mantener los scripts donde están y añadir una interfaz de consulta y validación de solo lectura, que es lo que hoy es `data_pipeline/nap_cnb_v2.py`.
+La revisión del pipeline recomendó **reorganización mínima**: mantener los scripts donde están y añadir una interfaz de consulta y validación de solo lectura. Esa interfaz se construyó (`data_pipeline/nap_cnb_v2.py`) y **se retiró el 24 nov 2026 junto con el resto del instrumental de auditoría**, una vez certificado D1: el proyecto pasó de auditar a corregir. Sigue en el historial de git.
 
 **La idea que sigue vigente:** separar tres cosas que aparecen mezcladas en la documentación y en los imports —**construir** artefactos de una fase, **consultar** una entrega certificada y **reproducir** un experimento histórico.
 
