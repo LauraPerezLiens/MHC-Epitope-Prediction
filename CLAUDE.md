@@ -126,6 +126,12 @@ Sí se versiona `reference/pseudosequences/pseudosequences.netmhcpan.34aa.csv` (
 
 Tampoco están en git, por reglas previas: `data/` (salvo READMEs), `logs/`, `model/`, `results/`, `*.npy`, `*.parquet`. Es decir, **`data/data_raw_20261124` y los logs de descarga también viven solo en este servidor.**
 
+### 0.6.2 ter. Estado de git en este servidor
+
+- **El `origin` real es `git@github.com:LauraPerezLiens/MHC-Epitope-Prediction.git`**, no `lperez_nn`. Corrige §9.1, que listaba ambos sin aclarar cuál estaba en uso.
+- Rama de trabajo: `ml_model_comparison`. Commit de esta tarea: `f7cd3d7`.
+- **El push no funciona desde este servidor:** la clave `~/.ssh/id_ed25519` no está registrada en la cuenta de GitHub (`Permission denied (publickey)`). Hay que añadir su clave pública en GitHub → Settings → SSH and GPG keys, o cambiar el remoto a HTTPS con un token. **Hasta entonces los commits se quedan en local.**
+
 ### 0.6.3. Hallazgos confirmados
 
 **A. El paginado histórico es sospechoso por diseño.** `build_iedb_dataset.py` usa `offset` sin `order`. La re-descarga usa paginación *keyset* sobre `assay_id` (`order=assay_id.asc`, `assay_id=gt.<último>`), que sí es estable. Los filtros se han mantenido **idénticos** para que la única variable sea el paginado.
