@@ -459,7 +459,14 @@ Cinco cuestiones que Laura planteó tras ver los hallazgos de §0.6. **No hay qu
 
 Hay un detalle biológico que importa para clase II: **en HLA-DR el polimorfismo está casi todo en la cadena β, mientras que en DP y DQ ambas cadenas son polimórficas.** Por eso la pseudosecuencia de clase II necesita las dos cadenas, y por eso DQ/DP son más difíciles: hay que emparejar α y β, y IEDB no siempre anota las dos.
 
-**Pendiente:** conseguir la tabla de pseudosecuencias de NetMHCIIpan (servidor de DTU, o derivarla de los alineamientos de IPD-IMGT/HLA aplicando el criterio de 4,0 Å sobre estructuras de clase II). Hasta entonces la prioridad §0.5.3 es ejecutable en clase I y está a la espera en clase II **por falta de un fichero, no por un obstáculo conceptual**.
+**Pendiente, y hay una acción concreta que solo puede hacer Laura.** Documentación completa en [`reference/pseudosequences/README.md`](reference/pseudosequences/README.md), escrito el 24 nov. Dos vías:
+
+1. **Pedir el paquete autónomo de NetMHCIIpan 4.3 a DTU.** La tabla va dentro de `data.Linux.tar.gz`. El acceso es por **solicitud de licencia académica** (formulario de descarga, o `health-software@dtu.dk`). **Requiere el correo institucional de Laura; no es automatizable.** Merece la pena porque el mismo paquete resuelve dos cosas a la vez: las pseudosecuencias de clase II **y** el predictor de referencia que §0.5.7 exige para publicar.
+2. **Derivarla de los alineamientos de IPD-IMGT/HLA** aplicando el criterio de 4,0 Å sobre estructuras de clase II. Sin licencia y reproducible, pero hay que elegir estructuras de referencia y validar que las posiciones coinciden con las de Karosiene et al.; cualquier desviación invalidaría la comparación directa con NetMHCIIpan.
+
+> ⚠️ **Y un problema con el fichero de clase I que ya tenemos:** apareció en el repositorio sin README ni manifiesto. Procede presumiblemente del paquete de NetMHCpan, pero **no consta versión ni cómo se obtuvo**, y no hay ningún paquete de NetMHC instalado en este servidor. Dado que §0.5.7 exige comparar contra NetMHCpan para publicar, **su origen y versión deben certificarse antes de apoyar resultados en él.**
+
+Hasta entonces la prioridad §0.5.3 es ejecutable en clase I y está a la espera en clase II **por falta de un fichero, no por un obstáculo conceptual**.
 
 **¿Probar otras representaciones y tamaños de pseudosecuencia?** Sí, y es una de las pocas vías de diferenciación con fundamento (ver §0.7.5). Pero con dos condiciones metodológicas: (a) **la de 34 aa es el brazo de control obligatorio** —sin él, «nuestra representación es mejor» no se sostiene—, y (b) la comparación debe hacerse con partición por alelo, no por fila, o se medirá memorización. Ideas ordenadas por coste: pseudosecuencia completa del dominio de unión (~180 aa) en lugar de los 34; embedding del MHC con ProtT5, que ya está en el pipeline; representación por bolsillo (agrupar los 34 residuos por bolsillo A–F en vez de como vector plano); y codificación explícita del par péptido-MHC por posición en lugar de concatenación.
 
