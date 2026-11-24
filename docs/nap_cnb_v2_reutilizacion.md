@@ -86,7 +86,7 @@ Para C, el orden es implementar la salida compacta, contrastarla con el piloto d
 
 - [Proveniencia, formatos y manifiestos](../data_pipeline/docs/data_and_models.md)
 - [Resumen histórico de ventanas](../data/global_epitope_labels/report.md)
-- [Auditoría de redundancia y muestra barajada](../results/exact_embeddings_sample_20261118/report.md)
-- [Los seis casos de contexto estructural distinto](../results/embedding_representation_cases_20261118/report.md)
-- [Presupuesto previo de lecturas de embeddings](../results/exact_embeddings_cost_20261118/report.md)
+- [Auditoría de redundancia y muestra barajada](../reports/audits/exact_embeddings_sample.md)
+- [Los seis casos de contexto estructural distinto](../reports/audits/embedding_representation_cases.md)
+- [Presupuesto previo de lecturas de embeddings](../reports/audits/exact_embeddings_cost.md)
 - [Constructor v2](../data_pipeline/scripts/rebuild_iedb/rebuild.py)

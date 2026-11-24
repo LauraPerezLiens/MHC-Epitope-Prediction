@@ -29,7 +29,7 @@ Como comprobación acotada durante la preparación, se recuperó un vector origi
 
 Los derivados históricos preservan grupo y origen. Sus secuencias primarias modificadas tienen sus propias entradas ProtT5 archivadas y reutilizan secundaria por grupo. La coincidencia con una secuencia original se determina por clave exacta. Los grupos históricos cruzaban splits y sus vectores ProtT5 no fueron certificados como intercambiables con los de v2. La vista aumentada histórica sirve para reproducir sus experimentos, mientras que la comparación con D1 requiere un dataset de aumento de evaluación compatible, actualmente ausente.
 
-[Recuentos históricos por chunk](../reports/reorder_chunk_label_counts_20261110.csv) · [Índice histórico](../data_pipeline/scripts/global_epitope_labels/README.md) · [Auditoría de embeddings](../results/nap_cnb_v2_embedding_audit/embedding_audit_report.md) · [Organización actual](nap_cnb_v2_dataset_organization.md)
+[Recuentos históricos por chunk](../reports/reorder_chunk_label_counts_20261110.csv) · [Índice histórico](../data_pipeline/scripts/global_epitope_labels/README.md) · [Auditoría de embeddings](../reports/audits/nap_cnb_v2_embedding_audit.md) · [Organización actual](nap_cnb_v2_dataset_organization.md)
 
 ## Entrenadores y procesos auditados
 

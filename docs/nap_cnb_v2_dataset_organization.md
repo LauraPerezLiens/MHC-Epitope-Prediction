@@ -34,7 +34,7 @@ La primaria puede repetirse en varias filas. El identificador de ventana mantien
 
 Fase 1 etiqueta positivamente una ventana cuando contiene al menos un intervalo completo con evidencia verificada en su contexto familiar. Un candidato pendiente queda señalado y no aporta positividad. Las ventanas sin evidencia verificada pueden ser negativas operacionales. Los casos retenidos quedan fuera del conjunto binario. El filtro estructural conserva las etiquetas de fase 1 y deja fuera 81.601 ventanas, incluidas 7.455 positivas. La agregación global aplica positividad si alguna observación de la secuencia es positiva. Hay 3.364.405 secuencias con observaciones positivas y negativas operacionales en ese índice anterior al filtro. Para experimentos por ventana se usa la etiqueta familiar y se mantienen las coordenadas y el contexto de origen.
 
-El código histórico asigna `protein_group_id` por URL dentro de cada archivo de clasificación y `group_id` por fila original. Los metadatos de proteínas de fase 1 contienen 32.131 SHA-256 distintos. 22.026 aparecen en más de una familia y 256 aparecen bajo más de una URL. Son recuentos de los catálogos de fase 1, previos al filtro de ventanas. Una misma proteína aporta ventanas solapadas y un identificador histórico local no garantiza independencia. El [chequeo histórico](../results/group_split_check/summary.json) encontró 55.595.967 de 55.763.575 grupos locales repartidos entre varios splits. Sus asignaciones son evidencia histórica y quedan fuera de las futuras particiones v2.
+El código histórico asigna `protein_group_id` por URL dentro de cada archivo de clasificación y `group_id` por fila original. Los metadatos de proteínas de fase 1 contienen 32.131 SHA-256 distintos. 22.026 aparecen en más de una familia y 256 aparecen bajo más de una URL. Son recuentos de los catálogos de fase 1, previos al filtro de ventanas. Una misma proteína aporta ventanas solapadas y un identificador histórico local no garantiza independencia. El [chequeo histórico](../reports/audits/group_split_check_summary.json) encontró 55.595.967 de 55.763.575 grupos locales repartidos entre varios splits. Sus asignaciones son evidencia histórica y quedan fuera de las futuras particiones v2.
 
 [Informe de fase 1](../results/nap_cnb_v2_phase1/phase1_report.md) · [Construcción de etiquetas](../data_pipeline/scripts/rebuild_iedb/rebuild.py) · [Identificadores históricos](../data_pipeline/scripts/data_classification/epitope_classification.py)
 
@@ -64,7 +64,7 @@ El techo solicitado de 1.228.087.575 registros adicionales representa capacidad 
 
 Quedan por cerrar el criterio global de grupos, el tratamiento de secuencias compartidas entre contextos, la tolerancia del reparto por familia y la política de manifiestos de subconjuntos. El alcance documentado de esta entrega es la vista original, su procedencia y el diseño de evaluación reproducible.
 
-[Inventario de scripts](nap_cnb_v2_organizacion.md) · [Auditoría de fuentes de embeddings](../results/nap_cnb_v2_embedding_audit/embedding_audit_report.md)
+[Inventario de scripts](nap_cnb_v2_organizacion.md) · [Auditoría de fuentes de embeddings](../reports/audits/nap_cnb_v2_embedding_audit.md)
 
 ## Fase 4B · Base deduplicada e índice global
 
@@ -260,7 +260,7 @@ La auditoría registró **1.449.852.950 filas** de entradas históricas ProtT5 e
 
 Los **12.083.630 originales de train**, multiplicados por el supuesto de 25 registros adicionales por representación, dan un techo de **302.090.750 registros**. A 4.096 bytes por vector ProtT5, el techo aritmético en el caso de un vector distinto por registro es **1.237.363.712.000 bytes**, sin contar metadatos. La cifra no mide unicidad, coincidencias, espacio temporal ni tiempo de ejecución. Como referencia medida, la fase 3B verificó 14.530.324 entradas originales en unas 7,12 horas con una RTX 3090.
 
-[Código histórico y campos de salida](../data_pipeline/scripts/data_augmentation/generate_blosum62_variants.py) · [Auditoría de procedencia](../results/nap_cnb_v2_embedding_audit/embedding_audit_report.md) · [Medición de ProtT5](../results/nap_cnb_v2_prott5/final_report.md)
+[Código histórico y campos de salida](../data_pipeline/scripts/data_augmentation/generate_blosum62_variants.py) · [Auditoría de procedencia](../reports/audits/nap_cnb_v2_embedding_audit.md) · [Medición de ProtT5](../results/nap_cnb_v2_prott5/final_report.md)
 
 ### Condiciones compartidas de evaluación
 

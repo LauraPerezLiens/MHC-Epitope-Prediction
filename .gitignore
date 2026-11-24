@@ -59,4 +59,11 @@ miniconda3/
 .codex/
 .DS_Store
 *~
+*.swp
+*.swo
 /.vscode/
+
+# Repositorio de terceros de Carlos Wert (neoantigenpred): NO se publica
+# en este GitHub. Vive solo en este servidor, extraido de
+# neoantigenpred-master.zip (ignorado por *.zip) en la raiz del repo.
+/reference/neoantigenpred_zip/

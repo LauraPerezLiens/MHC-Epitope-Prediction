@@ -51,7 +51,26 @@ def decompressed_digest(path, zstd):
     return h.hexdigest()
 
 
-def archive_file(path, zstd='zstd', threads=1):
+def readers(root):
+    """Processes holding an open file under root, which archiving would unlink."""
+    root = Path(root).resolve()
+    busy = {}
+    for entry in Path('/proc').iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            for fd in (entry / 'fd').iterdir():
+                target = Path(os.readlink(fd))
+                if target == root or root in target.parents:
+                    command = (entry / 'cmdline').read_bytes().replace(b'\0', b' ').decode(errors='replace')
+                    busy[int(entry.name)] = command.strip()[:120]
+                    break
+        except (OSError, PermissionError):
+            continue
+    return busy
+
+
+def archive_file(path, zstd='zstd', threads=1, level=1):
     """Idempotent across crashes; never unlink until verified and durably recorded."""
     path = Path(path)
     if path.is_symlink():
@@ -78,7 +97,7 @@ def archive_file(path, zstd='zstd', threads=1):
         os.close(fd)
         temporary = Path(name)
         try:
-            subprocess.run([zstd, '-q', '-f', '-1', f'-T{threads}', str(path), '-o', str(temporary)], check=True)
+            subprocess.run([zstd, '-q', '-f', f'-{level}', f'-T{threads}', str(path), '-o', str(temporary)], check=True)
             staged_archive = signature(temporary)
             if decompressed_digest(temporary, zstd) != original_hash:
                 raise ValueError(f'Archive verification failed: {path}')
@@ -112,7 +131,7 @@ def archive_file(path, zstd='zstd', threads=1):
     return record
 
 
-def archive_tree(root, zstd='zstd', threads=1):
+def archive_tree(root, zstd='zstd', threads=1, level=1):
     root = Path(root)
     # A tree-level completion marker is only published after every retained file
     # has a verified compressed counterpart. Existing archives are revalidated.
@@ -123,7 +142,7 @@ def archive_tree(root, zstd='zstd', threads=1):
             continue
         if '.partial' in p.name:
             raise ValueError(f'Unfinished source file requires inspection: {p}')
-        rec = archive_file(p, zstd, threads)
+        rec = archive_file(p, zstd, threads, level)
         count += 1
         original_bytes += rec['original_bytes']
         compressed_bytes += rec['compressed_bytes']
@@ -131,7 +150,7 @@ def archive_tree(root, zstd='zstd', threads=1):
     for p in root.rglob('*.archive.json'):
         original = p.with_name(p.name[:-len('.archive.json')])
         if not original.exists():
-            archive_file(original, zstd, threads)
+            archive_file(original, zstd, threads, level)
     atomic_json(root / 'ARCHIVED.json', {'format': 'verified_zstd_tree_v1', 'complete': True,
                                          'files_compressed_this_run': count,
                                          'original_bytes_this_run': original_bytes,
@@ -143,10 +162,24 @@ def main():
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--zstd', default=shutil.which('zstd') or 'zstd')
     parser.add_argument('--threads', type=int, default=1)
+    parser.add_argument('--level', type=int, default=1,
+                        help='zstd compression level; existing trees were written at 1')
+    parser.add_argument('--force', action='store_true',
+                        help='archive even while another process holds files open under --root')
     args = parser.parse_args()
     if args.threads < 1:
         parser.error('threads must be positive')
-    archive_tree(args.root, args.zstd, args.threads)
+    if not 1 <= args.level <= 19:
+        parser.error('level must be between 1 and 19')
+    # Archiving unlinks each original once verified, so an active reader would
+    # lose its inputs mid-run.
+    busy = readers(args.root)
+    if busy and not args.force:
+        for pid, command in sorted(busy.items()):
+            print(f'IN USE pid={pid} {command}')
+        parser.error(f'{len(busy)} process(es) hold files open under {args.root}; '
+                     'stop them or pass --force')
+    archive_tree(args.root, args.zstd, args.threads, args.level)
 
 
 if __name__ == '__main__':

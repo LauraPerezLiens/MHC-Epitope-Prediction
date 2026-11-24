@@ -6,7 +6,7 @@ The original family-specific label and the biological context of every source ro
 
 ## Sources
 
-The default root is `data/used_data/contradiction_sources/`, which contains the 11 pre-augmentation classification CSVs used in the [contradiction analysis](../../../results/data_contradictions/analysis.md). Each file is under `organism/mhc_class/family/classification_<organism>_<mhc_class>_<family>.csv`.
+The default root is `data/used_data/contradiction_sources/`, which contains the 11 pre-augmentation classification CSVs used in the [contradiction analysis](../../../reports/audits/data_contradictions.md). Each file is under `organism/mhc_class/family/classification_<organism>_<mhc_class>_<family>.csv`.
 
 | Organism | MHC class | Families |
 |---|---|---|

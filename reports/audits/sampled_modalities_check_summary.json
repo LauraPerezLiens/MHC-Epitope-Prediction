@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "sampled_groups": 33,
+  "sources": 11,
+  "groups_per_source": 3,
+  "sampled_chunks": 3,
+  "metadata_chunks_scanned": 3,
+  "seed": 42,
+  "failed_groups": 0,
+  "primary_reference": "archived shuffled Primary",
+  "secondary_reference": "original per-group Secondary",
+  "scope": "Sample only; does not check all rows or Primary pre-shuffle provenance."
+}

@@ -1,0 +1,589 @@
+# NAP-CNB — Documento maestro de contexto científico y técnico
+
+**Fecha de corte:** 24 de noviembre de 2026  
+**Ámbito:** investigación doctoral, construcción de datos, aprendizaje automático, inmunoinformática e integración en Scipion-Chem.  
+**Naturaleza:** documento vivo de transferencia de conocimiento, no artículo publicado ni auditoría certificada del código.
+
+> ⏳ **Hay una tarea abierta: § 0.6, verificación de datos IEDB.** Si se reanuda la sesión tras un corte, leer esa subsección primero: contiene el estado, lo hecho, lo pendiente y los comandos para continuar.
+
+> Este documento reconstruye el historial comunicado en conversaciones. Distingue resultados históricos, decisiones, propuestas y trabajo pendiente. Las rutas y cifras corresponden a distintas versiones del pipeline y no deben interpretarse como un único snapshot. Las secciones 1 a 21 conservan ese historial tal como se escribió; **la sección 0, añadida el 24 de noviembre de 2026, las corrige donde han quedado obsoletas y tiene prioridad sobre ellas.**
+
+---
+
+## 0. Estado verificado a 24 de noviembre de 2026
+
+Esta sección se apoya en artefactos del repositorio y en los artículos publicados del grupo, no en resúmenes de conversación. Fuente autoritativa del diagnóstico: [`reports/auditoria_consolidada.md`](reports/auditoria_consolidada.md); índice de evidencia en [`docs/INDICE_EVIDENCIA.md`](docs/INDICE_EVIDENCIA.md).
+
+### 0.1. Correcciones a secciones posteriores
+
+| Afirmación en §10–§18 | Estado real |
+|---|---|
+| ROC-AUC ≈ 0,99999 | Artefacto de partición por fila. **No volver a citarse.** |
+| ROC-AUC histórico 0,7955 | Fuga: 99,70 % de los grupos en varias particiones, 87,38 % en las tres. |
+| Bloqueo de compatibilidad de embeddings | **Resuelto.** Las auditorías de embeddings salieron limpias (muestras bit-exactas, finitud, cobertura, digests). No procede seguir auditándolos. |
+| «Prioridad inmediata: resolver el bloqueo antes de escalar D2» | **Obsoleto.** La recomendación vigente es **no ejecutar D2**. |
+| E3/E4 pendientes de ejecución | Sustituidos por E1/E2, ablación por modalidad y partición por componentes, ya ejecutados. |
+
+### 0.2. Resultados honestos actuales (D1, TEST puntuado una vez)
+
+| Modelo | Partición | ROC-AUC | AP | Prevalencia | AP/prev |
+|---|---|---:|---:|---:|---:|
+| LR | primaria exacta | 0,654641 | 0,375738 | 0,25451 | 1,476 |
+| MLP 1.792 (E2) | primaria exacta | 0,680107 | 0,412129 | 0,25451 | 1,619 |
+| LR | componentes de proteína | 0,662294 | 0,379399 | 0,24385 | 1,556 |
+| MLP | componentes de proteína | 0,674668 | 0,395093 | 0,24385 | 1,620 |
+
+Eliminar **toda** la fuga por proteína cuesta 0,0054 de ROC-AUC. **El nivel 0,66–0,68 es generalización real**, no artefacto. El techo no se explica por fuga, ni por ruido de etiqueta, ni por corrupción: es la formulación de la tarea y la representación.
+
+Ablación por modalidad (mismas particiones): solo ProtT5 **0,682302**; ProtT5+SecondaryBERT 0,680107; solo SecondaryBERT 0,601431. Contar C/H/E en la ventana con regresión logística da 0,592364. **SecondaryBERT aporta +0,0088 sobre tres enteros y aporte negativo sobre ProtT5.**
+
+### 0.3. Línea base publicada del grupo
+
+Estas cifras provienen de los artículos y son el único punto de comparación legítimo.
+
+**Wert-Carvajal et al., Sci Rep 2021;11:10780 — lo que sí se publicó.**
+Unidad: péptido de **12 aa** centrado en la SNV (probaron 8/10/12). Codificación **one-hot**; probaron tres embeddings de baja dimensión y no mejoraron sobre one-hot. Modelo: 3 × biLSTM + 3 densas + 2 dropouts. Negativos: Smith-Waterman del epítopo contra su proteína fuente, el resto de la proteína como negativo. **Un modelo por haplotipo**; reportan que la predicción cruzada H-2Kb↔H-2Kd es subóptima y concluyen que hacen falta redes individuales por haplotipo. Datos H-2Kb: 4.828 entradas IEDB → **251.049 secuencias, 6.714 positivas, 244.225 negativas, prevalencia 2,67 %**. BLOSUM62 **on-batch** durante el entrenamiento con tolerancia ajustada por grid search, nunca materializado a disco; y **post-proceso en inferencia** por voto de mayoría sobre sustituciones de un residuo, **+7,6 % de precisión**. Balanceo on-batch: la prevalencia virtual subió AUC y F1 un 20 %, más que la profundidad de la red. 5-fold CV, 80 modelos.
+
+Métricas: **AUC 0,95 ± 0,04 en CV**; en el **10 % held-out, AUC 0,865, accuracy 0,972, PR-AUC 0,4197 con prevalencia 2,64 %** (lift **15,9×**). Por haplotipo, de 0,7 ± 0,1 (H-2Db) a 0,96 ± 0,06 (H-2Kk).
+
+> **Comparación justa.** No citar 0,95 frente al 0,68 actual: 0,95 es CV, el número comparable es 0,865, y la tarea es otra. En lift de AP: **15,9× (2021) frente a 1,62× (E2)**.
+
+**Méndez-Pérez et al., eLife 2024;13:RP95010 — no mejora ninguna métrica.** Es validación in vivo: 5 péptidos sintéticos, ELISpot, ICS y reto con B16-F10 en C57BL/6J. \*Herc6 (predicho no inmunogénico) no indujo respuesta, confirmando el control negativo. Hallazgo central: **la expresión pesa más que la inmunogenicidad predicha** — \*Adar, top-scored pero el menos expresado, falló por completo; la protección máxima (100 % de ratones con tumor <100 mm³ a día 15) fue con \*Wiz, que **solo apareció tras el post-proceso BLOSUM62**, y con la mezcla \*Pnp+\*Adar+\*Lrrc28. Conclusión de los autores: priorizar TNA con mayor expresión tumoral aunque sean menos inmunogénicos, y usar terapia multiantígeno.
+
+**Linaje TFG/TFM del que desciende el pipeline actual — nunca dio un número bueno y honesto.**
+
+| Trabajo | Aportación | Métrica real |
+|---|---|---|
+| Guillén 2021 (TFG) | Origen de ventana 30 aa + ProteinUnet + BERT primaria/secundaria | val accuracy **0,70–0,73** |
+| Ballesteros 2022 (TFG) | Pipeline humano/ratón, detección flexible de mutaciones | **ninguna métrica de modelo**; valida ejecución, no predicción |
+| Sánchez 2024 (TFM) | MLP 1.536-dim, 5 capas, fine-tuning por haplotipo | test acc 0,838/0,831/0,861, pero con **undersampling aleatorio**, **split aleatorio por fila** y train 0,991 vs test 0,838 |
+
+### 0.4. Diagnóstico: cuatro decisiones, por orden de impacto
+
+1. **Familia en vez de alelo, más etiqueta global sobre las 11 familias.** `HLA-A` no es un haplotipo: son cientos de alelos con motivos de unión incompatibles. Wert2021 demuestra experimentalmente que hacen falta redes por haplotipo; el diseño actual hace lo contrario y lo agrava. Es la causa del 93,53 % de positivos que aparecen también como negativos. **Que «el ratón funcione y el humano no» no es dificultad biológica del humano: H-2Kb es un alelo de una cepa consanguínea y aun así se modeló por separado.**
+2. **Mean pooling sobre 25 posiciones.** El epítopo ocupa 8–11 de 25 residuos y la media lo diluye. Parejas adyacentes con etiqueta opuesta quedan a distancia mediana 12,71 frente a 58,13 entre proteínas distintas (coseno 0,9455). Wert2021 conservaba la posición con one-hot + LSTM.
+3. **Prevalencia 25,45 % frente a 2,67 %.** El criterio de contención en 25 aa más la etiqueta global multiplica los positivos por diez. No es el mismo objetivo.
+4. **BLOSUM62 materializado a disco en lugar de on-batch.** El paper nunca escribió variantes aumentadas. Las variantes están a coseno 0,9883 y distancia 6,60 tras el scaler, **más cerca entre sí que la distancia que separa etiquetas opuestas reales (12,71)**: no añaden información sobre el objetivo.
+
+### 0.5. Prioridades vigentes
+
+1. **E0 — reproducir Wert2021 como brazo de control**, antes que cualquier otra cosa: one-hot, 12-mer, biLSTM, solo H-2Kb, negativos de la misma proteína, prevalencia natural, 251 k secuencias. Si se alcanza ~0,86, la diferencia está en la construcción de datos; si no, está en IEDB. Sin este anclaje no puede defenderse ninguna afirmación de mejora.
+2. **Post-proceso BLOSUM62 en inferencia** sobre los Parquet de predicciones ya existentes. Es el único uso de BLOSUM62 con evidencia publicada de que funciona.
+3. **Alelo en la entrada**, como pseudosecuencia al estilo NetMHCpan.
+4. **Pasar de ventana a péptido**: 8–11 aa para MHC-I, representación por residuo, negativos como señuelos del mismo proteoma emparejados por longitud y deduplicados por péptido exacto.
+5. **No ejecutar D2.** Cerrar la línea histórica aumentada.
+6. **Cerrar la línea de estructura secundaria y publicarla como resultado negativo.** Cuatro evidencias independientes convergen (Guillén 0,70; Sánchez sin aislar el aporte; ablación +0,0088 sobre contar C/H/E y negativo sobre ProtT5). Cierra una línea que el laboratorio ha perseguido durante tres TFG/TFM.
+7. **Benchmark contra NetMHCpan y MHCflurry** sobre un test común: es requisito para publicar.
+8. **Tratar la línea RNA-seq/Scipion como camino crítico, no accesorio.** Lo que publicó eLife fue validación in vivo, y su hallazgo fue que la expresión manda. Sugiere ranking por expresión × afinidad.
+
+---
+
+## 0.6. TAREA EN CURSO — Verificación de datos IEDB (abierta el 24 nov 2026)
+
+> **Si la sesión se ha cortado (VPN), empieza por aquí.** Esta subsección es el diario de trabajo de la tarea abierta: se actualiza a cada paso. Es autocontenida: no depende de ningún resumen de conversación.
+>
+> **Última actualización:** 24 nov 2026, 13:05 UTC. Hallazgos A–E cerrados; re-descarga de familias humanas en curso.
+>
+> Scripts de esta tarea, todos en `data_pipeline/scripts/iedb_verification_20261124/`: `download_v2.py` (re-descarga), `compare_downloads.py` (viejo vs nuevo por `assay_id`), `wert_chain.py` (cadena de filtrado de Wert), `wert_vs_h2k.py` (Wert vs nuestro H2-K), `wert_missing_source.py` (organismo fuente de los ausentes), `missing_mus.py` (ausentes murinos vs histórico), más `alleles.py`, `fill_rates.py`, `pseudo_coverage.py`, `pseudo_by_class.py`, `diagnose_paging.py`, `inspect_raw.py`.
+
+### 0.6.1. Objetivo de la tarea
+
+Certificar la procedencia de los datos IEDB del pipeline, que §3 y §21 dejan sin documentar (release, filtros de ensayo, criterios de evidencia). Tres comparaciones:
+
+1. **`data_raw` histórico** (snapshot del 10 nov 2026, archivado en `data/used_data/data_raw.tar.zst`) — lo que realmente alimentó D1.
+2. **`data/data_raw_20261124`** — re-descarga con los *mismos filtros* pero paginación corregida, para separar «IEDB ha cambiado» de «el paginado antiguo perdía o duplicaba filas».
+3. **`reference/neoantigenpred_zip/`** — GitLab de Carlos Wert (`neoantigenpred-master.zip`, ya descomprimido), que contiene el dataset y el código reales de Wert2021.
+
+### 0.6.2. Artefactos localizados
+
+| Artefacto | Ruta | Nota |
+|---|---|---|
+| Script de descarga del pipeline | `data_pipeline/scripts/data_download/build_iedb_dataset.py` | **Ya revisado.** Paginaba por `offset` **sin `order`**, lo que en PostgREST no garantiza orden estable entre páginas → riesgo de filas perdidas y duplicadas. Causa de la re-descarga. |
+| Scripts de esta verificación | `data_pipeline/scripts/iedb_verification_20261124/` | Copiados del scratchpad al repo el 24 nov para que no se pierdan. |
+| Snapshot histórico extraído | `data/used_data/data_raw.tar.zst` (3,2 GB al extraer) | Se extrajo al scratchpad; **re-extraíble**, no hace falta conservarlo. |
+| Re-descarga nueva | `data/data_raw_20261124/` + `manifest.json` | En curso (ver 0.6.4). |
+| Dataset real de Wert2021 | `reference/neoantigenpred_zip/neoantigenpred-master/media/downloadable_content/H2Kb_data.csv` (34 MB) | Export crudo de IEDB en formato de dos filas de cabecera. |
+| Código de entrenamiento de Wert2021 | `.../media/scripts/LSTMcvonehot.py` | **Es la implementación de referencia para E0.** Junto a `peptides_extraction.py`, `join_peptide_file.py`, `VEPtoAminoacids.py`, `ModelLoadNap.py`, `tokenizer_Kd.pickle`, `job_cv_h2d_final.hdf5` (checkpoint H-2D entrenado). |
+| Pseudosecuencias NetMHCpan | `reference/pseudosequences/pseudosequences.netmhcpan.34aa.csv` | Para la prioridad §0.5.3 (alelo en la entrada). |
+
+### 0.6.2 bis. Qué de esto NO está en GitHub
+
+**Decisión del 24 nov 2026: el repositorio de Carlos Wert no se publica en este GitHub.** `/reference/neoantigenpred_zip/` está ignorado **por completo**: es código y datos de terceros, y no nos corresponde republicarlos. Vive **solo en este servidor**, extraído de `neoantigenpred-master.zip` (en la raíz del repo, ignorado por `*.zip`).
+
+Para reconstruirlo en otra máquina hay que conseguir el ZIP por el canal original y extraerlo:
+
+```bash
+unzip -o neoantigenpred-master.zip -d reference/neoantigenpred_zip
+```
+
+Dos razones adicionales, encontradas al revisarlo, para no subirlo:
+
+- Traía un fichero `q`: un volcado accidental de `git log` con 159 commits y los **correos personales de cuatro personas**.
+- `NeoantigensApp/views.py` contiene un correo personal en una línea comentada de un `send_mail` de ejemplo.
+- Sus claves (`SECRET_KEY`, reCAPTCHA) salen de `os.getenv` con defaults vacíos: **no hay credenciales**, eso sí estaba limpio.
+
+Sí se versiona `reference/pseudosequences/pseudosequences.netmhcpan.34aa.csv` (590 KB), que no es material de Wert.
+
+Tampoco están en git, por reglas previas: `data/` (salvo READMEs), `logs/`, `model/`, `results/`, `*.npy`, `*.parquet`. Es decir, **`data/data_raw_20261124` y los logs de descarga también viven solo en este servidor.**
+
+### 0.6.3. Hallazgos confirmados
+
+**A. El paginado histórico es sospechoso por diseño.** `build_iedb_dataset.py` usa `offset` sin `order`. La re-descarga usa paginación *keyset* sobre `assay_id` (`order=assay_id.asc`, `assay_id=gt.<último>`), que sí es estable. Los filtros se han mantenido **idénticos** para que la única variable sea el paginado.
+
+**B. El `H2Kb_data.csv` que distribuye Wert no es el snapshot del paper.** Cadena de filtrado reproducida (`wert_chain.py`), replicando `peptides_extraction.py`:
+
+| Paso | Filas |
+|---|---:|
+| 0. Filas de datos en el CSV | 31.788 |
+| 1. Tras descartar `Assay.4 == "Negative"` | 28.150 (quita 3.638) |
+| 2. Tras `drop_duplicates` por péptido | 9.827 |
+| 3. Con accession de proteína madre → van a UniProt | **8.901** |
+| Sin accession (`IEDB_rest`, positivos truncados) | 926, de los cuales 171 con longitud ≥ 12 |
+| Proteínas únicas a descargar | 4.473 |
+
+El paper declara **4.828 entradas IEDB**; el CSV distribuido da **8.901**. Es decir, el ZIP contiene un snapshot de IEDB **posterior** al que se publicó, aproximadamente del doble de tamaño. **Consecuencia para E0: reproducir Wert2021 con este CSV no da el mismo conjunto que el paper.** Hay que decidir y documentar cuál de los dos se usa como brazo de control, y no afirmar «mismos datos».
+
+Longitudes de los 8.901 epítopos con accession: 8 aa → 3.789; 9 aa → 3.018; 10 aa → 728; 11 aa → 418; 12–15 aa → 507; 6–7 aa → 24. Confirma que la unidad real es el péptido MHC-I corto (8–11 aa domina), no la ventana de 25 aa — coherente con §0.4.2 y §0.5.4.
+
+**C. Nuestro H2-K y el H-2Kb de Wert solo comparten el 56 % de los positivos** (`wert_vs_h2k.py`, por secuencia de péptido, única clave común):
+
+| Magnitud | Valor |
+|---|---:|
+| Péptidos únicos en el CSV de Wert | 12.394 |
+| De ellos, no-`Negative` | 9.827 |
+| `Negative` explícitos | 2.567 |
+| Péptidos únicos en nuestro H2-K (`mhc_export`) | 38.888 |
+| Idem `tcell_export` | 413 |
+| **Positivos de Wert que sí tenemos** | **5.499 (56,0 %)** |
+| Positivos de Wert ausentes en nuestro H2-K | 4.328 |
+| Nuestros péptidos que Wert no tiene | 33.510 |
+| `Negative` de Wert presentes en nuestro conjunto | **0** (coherente: filtramos solo `Positive`) |
+
+**D. La causa del 44 % ausente es el filtro de organismo fuente** (`wert_missing_source.py`). `build_iedb_dataset.py` impone `epitope__source_organism = ilike *Mus musculus*`. De las 8.361 filas de ensayo de Wert que nos faltan, **7.695 (92,0 %) tienen un organismo fuente que no es *Mus musculus***: virus de la coriomeningitis linfocítica (1.658), vaccinia (851), *Gallus gallus* (394), *Trypanosoma cruzi* (345), herpesvirus humano 1 (231), influenza A (229), *Coxiella burnetii* (193), *Yersinia pestis* (176), VPH-16 (149), *Bordetella pertussis* (147)…
+
+Esto significa que **nuestro dataset contiene solo epítopos de origen propio (murino), mientras que el modelo H-2Kb de Wert2021 se entrenó sobre todos los epítopos H-2Kb de IEDB, dominados por los derivados de patógeno.** Es una **quinta diferencia de formulación**, al nivel de las cuatro de §0.4, y no estaba documentada: para neoantígenos tumorales el filtro propio es defendible, pero entonces **la comparación con el 0,865 de Wert2021 no es homogénea**, porque su señal mayoritaria es de patógeno. Hay que decidir explícitamente cuál de los dos universos de epítopos define la tarea, y justificarlo.
+
+**E. Las 666 filas murinas restantes no son una pérdida nuestra: son un defecto del preprocesado de Wert.** Están ausentes **de los dos** snapshots —histórico y nuevo— por igual (`missing_mus.py`: 0 % presentes en el histórico), así que no es el paginado. Desglosadas (`why653.py`):
+
+- **659 filas tienen `Assay.4` vacío y `Allele Name` vacío**: no son filas de ensayo de unión a MHC, no tienen resultado cualitativo ni alelo anotado. `peptides_extraction.py` las admite como positivas porque su filtro es `!= "Negative"`, no `== "Positive"`. Nuestro `ilike *Positive*` las excluye, y hace bien. **El conjunto positivo de Wert2021 contiene ~659 péptidos sin medida de ensayo.**
+- **Solo 7 filas** son `Positive` + `H2-Kb` legítimas y ausentes de los nuestros: ruido irrelevante (rotación de IEDB).
+- Las 372 «sin organismo» son en buena parte **no péptidos** (`2,4,6-trinitrophenyl group`, ácidos sulfónicos…), excluidas correctamente por `epitope__object_type = Linear peptide`.
+
+A nivel de péptido único en H2-K, el snapshot histórico tiene 38.944 y el nuevo 39.009: **solo 65 de diferencia**. El efecto del paginado, si existe, es pequeño en péptidos únicos; queda por medirlo a nivel de `assay_id`, que es donde se vería la duplicación (pendiente nº 2–3).
+
+### 0.6.4. Estado de la re-descarga (proceso vivo)
+
+Lanzada el 24 nov a las 12:46 UTC (`download_v2.py`, log en `logs/download_v2_20261124.log`). Escribe `manifest.json` incrementalmente tras cada familia, así que **es reanudable por inspección**: las familias ya presentes en el manifiesto están completas.
+
+Completado (ratón, 5 familias):
+
+| Familia | `mhc` | `tcell` |
+|---|---:|---:|
+| mouse/mhc-I/H2-K | 87.593 | 1.076 |
+| mouse/mhc-I/H2-D | 45.583 | 528 |
+| mouse/mhc-I/H2-L | 44 | 114 |
+| mouse/mhc-II/H2-IA | 29.895 | 2.113 |
+| mouse/mhc-II/H2-IE | 233 | 173 |
+
+Pendiente: `human/mhc-I/{HLA-A,HLA-B,HLA-C}` y `human/mhc-II/{HLA-DR,HLA-DQ,HLA-DP}`. En el momento de escribir esto iba por HLA-A, página 7 (~80.000 filas y subiendo).
+
+> **Nota sobre H2-L: 44 filas en `mhc_export`.** §3.1 atribuye 69 M de filas BLOSUM históricas a H2-L. Con 44 ensayos MHC, esa cifra solo puede venir de expansión masiva por ventanas + aumento. Merece comprobación explícita al comparar con el snapshot viejo.
+
+**Para comprobar si terminó:** `tail -5 logs/download_v2_20261124.log` (busca `DONE`) y `ps aux | grep download_v2`.
+
+### 0.6.5. Pendiente, en orden
+
+1. **Esperar a que termine la re-descarga** de las seis familias humanas.
+2. **Ejecutar la comparación** `data_pipeline/scripts/iedb_verification_20261124/compare_downloads.py` (requiere el snapshot viejo extraído; si el scratchpad se ha limpiado, re-extraer con `zstd -d` desde `data/used_data/data_raw.tar.zst`). Ojo: la ruta `OLD` del script apunta al scratchpad de la sesión anterior — **hay que actualizarla**. Da, por familia y export: filas viejas, nuevas, duplicadas en el viejo, solo-viejo, solo-nuevo y comunes, todo sobre `assay_id`.
+3. **Cuantificar el daño del paginado antiguo**: cuántas filas que D1 debería tener nunca se descargaron, y cuántas se contaron dos veces. Esto decide si D1 hay que reconstruirlo o basta documentar el sesgo.
+4. ~~Comparar el H-2K nuevo contra el `H2Kb_data.csv` de Wert.~~ **Hecho** → hallazgos C y D.
+5. ~~Explicar las 666 filas *Mus musculus* que el filtro de organismo no justifica.~~ **Hecho** → hallazgo E: defecto del preprocesado de Wert, no pérdida nuestra.
+6. **Decidir y documentar el universo de epítopos** de la tarea: solo propio/murino (actual, defendible para neoantígenos) o todo IEDB por alelo (lo de Wert2021). Condiciona qué comparación con el 0,865 es legítima.
+7. **Escribir el informe** en `reports/audits/iedb_provenance_20261124.md` y actualizar §3 de este documento con release, filtros y criterios reales, que es lo que §21 declara ausente. Añadir el hallazgo D a §0.4 como quinta decisión de diseño.
+8. **Luego, no antes:** E0 (§0.5.1), usando `LSTMcvonehot.py` como referencia de arquitectura y decidiendo primero si el brazo de control usa los 4.828 del paper o los 8.901 del CSV distribuido.
+
+### 0.6.6. Decisiones tomadas en esta tarea
+
+- Mantener los filtros IEDB **idénticos** a `build_iedb_dataset.py` en la re-descarga, para aislar el efecto del paginado. Cambiar filtros y paginado a la vez haría la comparación ininterpretable.
+- Comparar por `assay_id`, no por conteo de filas: es la única forma de distinguir «IEDB cambió» de «el paginado falló».
+- No borrar `data/data_raw_20261124` ni el histórico: D1 debe seguir siendo reproducible mientras no se decida reconstruirlo.
+
+---
+
+## 1. Contexto doctoral y finalidad científica
+
+El trabajo se desarrolla en el Centro Nacional de Biotecnología (CNB-CSIC), dentro del proyecto RISE (PREX2023-000056), mediante contrato predoctoral FPI iniciado el 1 de enero de 2026. El doctorado pertenece al programa de Biociencias Moleculares de la Universidad Autónoma de Madrid, con matrícula del 17 de febrero de 2026. Título de tesis: «Desarrollo de algoritmos para el diseño de inmunoterapias en oncología (RISE)». Dirección: Esteban Veiga; Carlos Óscar S. Sorzano participa en la supervisión computacional. Tutora UAM: Blanca Lizarbe. Horizonte previsto: marzo de 2029.
+
+NAP-CNB es el modelo de predicción de epítopos; la adquisición, transformación y representación de los datos son componentes que alimentan ese modelo, no sinónimos del mismo. El objetivo amplio es contribuir a la identificación y priorización de candidatos inmunogénicos, especialmente en oncología, mediante métodos reproducibles y eventualmente integrados en workflows de Scipion.
+
+### Líneas de tesis
+
+- A. Integración en Scipion y reproducibilidad de workflows bioinformáticos.
+- B. Desarrollo y evaluación de una versión mejorada de NAP-CNB basada en deep learning.
+- C. Comparación e integración de predictores externos de epítopos.
+- D. Validación experimental de candidatos y predicciones.
+- E. Estudio de mutaciones somáticas, escape de presentación por MHC-I y estrategias alternativas, incluyendo CAR-T.
+
+Estas líneas están relacionadas, pero no todas se encuentran en el mismo grado de madurez. La validación experimental y las aplicaciones de escape inmunitario no deben presentarse como resultados ya obtenidos.
+
+## 2. Fundamento inmunológico y definición del problema
+
+Los linfocitos T reconocen complejos péptido-MHC mediante el TCR. MHC-I presenta principalmente péptidos intracelulares a linfocitos CD8+, mientras que MHC-II se asocia principalmente a presentación a CD4+. En humanos las moléculas se denominan HLA; en ratón, H-2. Los péptidos de clase I suelen tener 8–11 residuos y los de clase II suelen ser más largos, con un núcleo de unión de aproximadamente nueve residuos. Estas longitudes son contexto biológico, no filtros confirmados del dataset.
+
+Las mutaciones somáticas pueden originar secuencias peptídicas ausentes del proteoma normal y potenciales neoantígenos. Sin embargo, la presencia de una mutación no garantiza procesamiento, presentación, unión al MHC ni reconocimiento inmunitario. El objetivo supervisado actual es la presencia de un epítopo anotado dentro de una ventana proteica, no una medición directa de afinidad, presentación o inmunogenicidad clínica. Esta distinción es fundamental para interpretar las métricas y comparar predictores.
+
+## 3. Fuentes y organización de datos
+
+Se ha desarrollado la recuperación automatizada de epítopos de IEDB y su organización por especie, clase y familia de MHC, junto con el procesamiento de secuencias proteicas de origen. UniRef50 se utiliza en el trabajo de preentrenamiento de representaciones de estructura secundaria. COSMIC constituye una línea complementaria para mutaciones recurrentes asociadas a cáncer.
+
+No consta en el contexto recuperado la release exacta de IEDB, los filtros de ensayo, los criterios de evidencia, el método completo de recuperación de proteínas, ni la versión de COSMIC. Deben recuperarse de scripts y manifiestos antes de publicar el método.
+
+### 3.1. Once conjuntos MHC
+
+| Especie | Clase | Familia | Filas BLOSUM históricas aproximadas |
+|---|---|---|---:|
+| Humano | I | HLA-A | 266 M |
+| Humano | I | HLA-B | 277 M |
+| Humano | I | HLA-C | 203 M |
+| Humano | II | HLA-DR | 62 M |
+| Humano | II | HLA-DQ | 64 M |
+| Humano | II | HLA-DP | 55 M |
+| Ratón | I | H2-K | 77 M |
+| Ratón | I | H2-D | 67 M |
+| Ratón | I | H2-L | 69 M |
+| Ratón | II | H2-IA | 77 M |
+| Ratón | II | H2-IE | 63 M |
+
+Total aproximado: 1.280 millones de filas aumentadas, según cifras redondeadas de una versión histórica. Las familias no equivalen a alelos individuales; no está confirmado que el modelo reciba el alelo como feature.
+
+## 4. Construcción de ejemplos supervisados
+
+### 4.1. Ventanas deslizantes
+
+La unidad de entrada actual es una ventana de longitud fija de 25 aminoácidos, con posición central 13 en numeración de base uno. Se recorre la secuencia proteica y se generan ventanas asociadas a anotaciones de epítopos. Una ventana se etiqueta como positiva cuando contiene íntegramente un epítopo seleccionado; una intersección parcial no basta bajo esta definición.
+
+Formalmente, para una ventana W=[s,s+24] y un epítopo E=[a,b], usando coordenadas inclusivas, la condición de contención es s ≤ a y b ≤ s+24. Esta formulación explica la regla, pero no certifica el convenio de coordenadas usado por el código.
+
+La posición relativa del epítopo se refiere a su ubicación dentro de la ventana de 25 aa, no a su coordenada absoluta en la proteína. El campo `epitope_pos_score` recoge información posicional; su fórmula exacta, rango y tratamiento de múltiples epítopos deben verificarse. También queda por documentar el tratamiento de extremos de proteínas, padding, stride, secuencias ambiguas y epítopos de más de 25 aa.
+
+### 4.2. Esquema de datos conocido
+
+| Campo | Función |
+|---|---|
+| `blosum_seq` | Secuencia de entrada tras aumento, o secuencia original según fila |
+| `contains_epitope` | Etiqueta binaria histórica |
+| `selected_epitope` | Epítopo seleccionado asociado a la observación |
+| `epitope_pos_score` | Información posicional relativa dentro de la ventana |
+| `group_id` | Identificador de grupo para vincular observaciones y representaciones |
+| `protein_group_id` | Identificador relacionado con la proteína de origen |
+
+El significado exacto y ámbito de unicidad de cada identificador deben comprobarse antes de concatenar datasets. `group_id` y `protein_group_id` no son intercambiables. Una misma secuencia puede aparecer en varias proteínas, posiciones o familias MHC y recibir anotaciones diferentes.
+
+### 4.3. Positivos y negativos
+
+La ausencia de anotación positiva no demuestra ausencia de capacidad inmunogénica. Es preferible distinguir positivos conocidos de ejemplos no etiquetados (`unlabeled`), aunque operativamente se utilicen estos últimos como clase negativa para el entrenamiento binario. Se trata de una aproximación positive-unlabeled con potencial ruido de etiqueta, no de negativos experimentalmente confirmados.
+
+## 5. Aumento de datos con BLOSUM62
+
+La estrategia histórica genera el original y 25 variantes por observación, utilizando sustituciones basadas en BLOSUM62. BLOSUM62 expresa preferencias evolutivas de sustitución; no garantiza que una variante conserve unión a MHC o reconocimiento por TCR. La etiqueta heredada de una variante es una hipótesis de aumento, no una nueva anotación experimental.
+
+La política de selección de posiciones, distribución de sustituciones, protección del núcleo epitópico, semilla y tratamiento de variantes idénticas debe recuperarse del código. No se debe asumir que todas las sustituciones son conservadoras ni que las 25 variantes son únicas.
+
+### Riesgos metodológicos
+
+- Fuga entre TRAIN y VALIDATION/TEST si se separan variantes de un mismo original después del aumento.
+- Fuga por ventanas solapadas, secuencias idénticas o proteínas homólogas.
+- Ruido por alteración de residuos esenciales del epítopo.
+- Inflación de tamaño efectivo: 26 filas relacionadas no equivalen a 26 observaciones independientes.
+- Duplicados dentro de un grupo o entre grupos y familias.
+
+La estrategia reciente es restringir el aumento a TRAIN y mantener VALIDATION/TEST con secuencias originales intactas. Esta decisión permite medir mejor la generalización sobre observaciones naturales.
+
+> **Superado por §0.4 y §0.5.** La recomendación vigente es no materializar aumento BLOSUM62 en absoluto. El método publicado lo aplicaba **on-batch** durante el entrenamiento y, sobre todo, como **post-proceso en inferencia** (+7,6 % de precisión), no como filas escritas a disco.
+
+## 6. Representación de secuencia primaria: ProtT5
+
+Modelo empleado: `Rostlab/prot_t5_xl_half_uniref50-enc`. Se utiliza el encoder para generar representaciones contextualizadas de aminoácidos, agregadas mediante mean pooling a un vector de 1024 dimensiones por ventana. Deben excluirse del pooling los tokens especiales y padding según la implementación efectiva.
+
+La entrada histórica es `blosum_seq`; se conservan etiqueta, posición e identificadores. Los archivos NumPy por chunk permiten trabajar sin cargar el dataset completo en memoria.
+
+Ejemplo histórico HLA-A: 2.661 chunks y aproximadamente 266,1 millones de filas, con arrays X de dimensión `(N,1024)`. Se comunicó una comprobación de diez chunks con 1.000.000 de filas y 73.944 positivas (7,3944 % en esa muestra, no prevalencia global).
+
+El modelo descargado ocupaba aproximadamente 2,42 GB. En abril se observó un problema de compatibilidad CUDA/driver que provocó ejecución en CPU. Se evolucionó hacia ejecución paralela por GPU mediante procesos independientes, patrones de entrada no solapados y `CUDA_VISIBLE_DEVICES`.
+
+## 7. Representación de estructura secundaria
+
+### 7.1. Antecedentes
+
+El sistema de referencia utilizaba ProteinUnet para predicción de estructura secundaria sobre ventanas de 30 aa. Se manejaban salidas Q8, Q3 y regresión; la representación conservada era Q3: H (hélice), E (lámina beta), C (coil). Se excluían secuencias con letras desconocidas. Los BERT históricos de primaria y secundaria tenían hidden size 768, 12 capas, 12 cabezas y vocabularios de 30 y 8 tokens, respectivamente. Se describieron `max_position_embeddings=30`, probabilidad de máscara 0,15, máximo cinco máscaras, batch 32 y entrenamientos de 14 M/500 k pasos; estas cifras corresponden al antecedente, no necesariamente al nuevo modelo. La extracción histórica usaba [CLS] de la última capa.
+
+La transición a ventanas de 25 aa requirió revisar compatibilidad de tokenización, longitud y posiciones. No debe suponerse que el padding a 30 o el reentrenamiento se aplicaron exactamente como se propusieron sin comprobar configuración.
+
+### 7.2. Nuevo SecondaryBERT
+
+Se trabajó en predicción de estructura secundaria de UniRef50 y entrenamiento MLM de un BERT especializado. El corpus se divide en chunks FASTA independientes. Se realizaron ejecuciones paralelas en CPU y pruebas de preentrenamiento; una ejecución inicial alcanzó aproximadamente 500.000 pasos sin finalizar. Se revisaron workers y paralelismo.
+
+En septiembre se comunicó la finalización de la generación multi-GPU de embeddings secundarios para los once datasets, con 55.763.575 filas y vectores `(N,768)`. En mayo se manejaban representaciones por grupo `(N,25,768)` susceptibles de mean pooling; la salida posterior ya era de 768 dimensiones. El checkpoint nuevo se situaba en `/home/nap/lperez_nn/model/secondary_bert`.
+
+La unión primaria-secundaria histórica se hacía por `group_id`, no por orden implícito de filas. En HLA-A se comunicaron 10.214.658 grupos en una versión de mayo. Si una variante BLOSUM reutiliza el embedding secundario de su padre, la representación secundaria no refleja necesariamente el efecto estructural de la sustitución; esta política debe verificarse por versión y documentarse como limitación.
+
+### 7.3. Incidencia del checker
+
+Un patrón `*_group_id.npy` capturaba también `*_protein_group_id.npy`, duplicando el recuento. Se identificó como falso fallo del checker y se corrigió el patrón. Se comunicaron comprobaciones de shapes, IDs y variabilidad; el resultado esperado era 11/11 PASS, 0/11 FAIL y 55.763.575 filas. Los embeddings antiguos no se conservaron según el historial comunicado.
+
+## 8. Fusión de features y escalado
+
+La configuración principal combina 1024 dimensiones de ProtT5 y 768 de SecondaryBERT: 1792 features por observación. La posición relativa se ha considerado como feature adicional en experimentos de ablación, dando 1793 dimensiones cuando se incluye. No debe confundirse con la configuración principal de 1792.
+
+Combinaciones propuestas: primaria, secundaria, posición, primaria+secundaria, primaria+posición, secundaria+posición y las tres juntas. Las siete combinaciones permiten estimar el valor incremental de cada modalidad con splits idénticos.
+
+Se utiliza StandardScaler ajustado exclusivamente sobre TRAIN. Para datasets masivos puede calcularse incrementalmente mediante `partial_fit`, conservando medias, varianzas y número de observaciones. VALIDATION y TEST deben transformarse con el scaler congelado. Se comunicó un cálculo histórico sobre 14.503 chunks y aproximadamente 1,16×10^9 filas TRAIN. Esta cifra y el total BLOSUM redondeado no deben reconciliarse sin los manifiestos de sus respectivas versiones.
+
+En noviembre se realizó shuffling, recálculo del scaler y concatenación de representaciones primaria y secundaria para mejorar la eficiencia del entrenamiento. Cualquier reconstrucción del split o de las etiquetas requiere revisar la validez del scaler anterior y recalcularlo si cambia TRAIN.
+
+## 9. Infraestructura y organización del código
+
+### 9.1. Repositorios
+
+- `https://github.com/LauraPerezLiens/lperez_nn/tree/main`: repositorio principal comunicado en noviembre.
+- `NAP-CNB`: nombre del modelo y también de componentes/repositorios históricos.
+- `NAP-CNB-ML`: repositorio/documentación histórica de entrenamiento.
+- `MHC-Epitope-Prediction`: repositorio comunicado el 17 de noviembre.
+- `https://github.com/scipion-chem/scipion-chem/pull/237/changes`: PR relacionado con trabajo de Scipion-Chem.
+
+No se ha comprobado la relación exacta entre ramas, repositorios, visibilidad y commits actuales.
+
+### 9.2. Rutas históricas
+
+```text
+/home/nap/lperez_nn/
+├── NAP-CNB/scripts/
+│   ├── data_download/
+│   ├── data_classification/
+│   ├── data_augmentation/
+│   ├── embeddings/
+│   ├── NN/
+│   ├── secondaryBERT/
+│   ├── secondary_structure_prediction/
+│   └── BERT/                     # organización histórica
+├── data/data_intermediate/
+├── data/data_uniref50/secondary_structure_prediction/
+└── model/secondary_bert/
+
+/data/nap/lperez_nn/data/data_input_nn/
+└── {human,mouse}/{mhc-I,mhc-II}/{familia}/
+```
+
+Ejemplo de directorios: `classification_human_mhc-I_HLA-A_blosum_ProtT5_chunks` y `classification_human_mhc-I_HLA-A_SecondaryBERT_by_group`.
+
+Scripts históricos: `prott5_embeddings.py`, `NAP-CNB/scripts/NN/validate_primary_secondary_alignment.py`, `NAP-CNB/scripts/BERT/train_secondary_mlm.py`, `NAP-CNB/scripts/BERT/secondary_structure_uniref.py`, `NAP-CNB/scripts/embeddings/secondary_structure/check_secondary_embeddings.py`, `run_missing_cpu.sh`.
+
+Archivos por chunk: `*_ProtT5_X.npy`, `*_y.npy`, `*_pos.npy`, `*_group_id.npy`, `*_protein_group_id.npy` cuando disponible. Verificar prefijos y formato exacto por versión.
+
+### 9.3. Recursos computacionales
+
+Servidor Pascal: cuatro RTX 3090 de 24 GB, aproximadamente 376 GiB de RAM y 26 TB en `/data`. También se trabajó en Cori. En abril se comunicó una máquina de 80 CPU y ~385 GB RAM. Entorno histórico `protein_pipeline`; en etapas iniciales se manejaban entornos BERT y ProteinUnet separados, con propuesta de integración en Python 3.10 y TensorFlow 2.12.
+
+La generación de embeddings y el entrenamiento requieren procesamiento por chunks, control de memoria, logs separados, reanudación y asignación explícita de GPU. El almacenamiento es una restricción importante: 1.280 millones de vectores de 1792 dimensiones ocuparían aproximadamente 9,18 TB decimales solo en float32, o 4,59 TB en float16, sin contar metadatos ni copias. Es una estimación teórica, no ocupación medida.
+
+Incidencias históricas: argumentos CLI ausentes en una versión de ProtT5, CSV HLA-A hardcodeado, batch 32, rutas incorrectas, typo HLAR/HLA-DR, eliminación incompleta de chunks por comandos partidos y mensajes `Skipping chunk ... output already exists`. La existencia de un archivo no garantiza que sea íntegro ni compatible con la versión actual.
+
+## 10. Entrenamiento y evaluación histórica
+
+### 10.1. Split inicial
+
+Se utilizó 80/10/10 por filas y chunks para TRAIN/VALIDATION/TEST. Se permitía que grupos o proteínas aparecieran en distintas particiones. Esta política histórica es vulnerable a leakage por ventanas solapadas, variantes y secuencias repetidas; no constituye una evaluación independiente por proteína.
+
+Se reconstruyó un `master_index` para H2-D (94/95 según el registro histórico, significado exacto del denominador por confirmar), se utilizó `check_master_split` y se comunicó una evaluación global de 58.012 filas. No se dispone aquí del manifiesto completo de esas pruebas.
+
+### 10.2. Modelos
+
+Baseline de regresión logística (LR) y MLP. Arquitectura MLP principal: `1792 → 512 → 128 → 1`, dropout 0,30, AdamW con learning rate 0,001 y batch size 8192. En documentación histórica aparece LayerNorm y entrenamiento acumulativo por chunks. Se propone salida logit y BCEWithLogitsLoss; confirmar activaciones, normalización y scheduler del commit concreto.
+
+Se comunicó ROC-AUC de test aproximadamente 0,99999 en una prueba de diez chunks. **Queda descartado: es un artefacto de partición por fila (véase §0.1) y no debe volver a citarse.** En noviembre se observaron pruebas de 10, 50 y 100 chunks con sobreajuste; con 10 chunks se detectaba alrededor de epoch 5 y con 50 alrededor de epoch 15. No consta un resultado final concluyente para 100 chunks.
+
+### 10.3. Desbalanceo y experimentos
+
+Estrategias planteadas: `none`, `balanced`, `focal`, `undersampling`. La focal loss incorpora parámetros alpha y gamma configurables. La ponderación de clases y el undersampling deben derivarse únicamente de TRAIN. La evaluación debe conservar la prevalencia natural del conjunto de referencia. Históricamente se planteó seleccionar por validation log-loss y usar threshold 0,5; si se optimiza un umbral, debe hacerse en VALIDATION y congelarse antes de TEST.
+
+Métricas recomendadas para el protocolo definitivo: ROC-AUC, PR-AUC/AP, log-loss, sensibilidad, especificidad, precisión, F1, MCC, matriz de confusión, calibración y prevalencia. Reportar por familia, especie y clase, además de agregados micro/macro. La PR-AUC es especialmente informativa cuando la clase positiva es minoritaria. Estas son recomendaciones metodológicas, no resultados ya calculados.
+
+## 11. Auditoría de etiquetas y cambio de diseño (noviembre)
+
+### 11.1. Hallazgos comunicados el 18 de noviembre
+
+| Magnitud | Valor |
+|---|---:|
+| Filas originales auditadas | 55.763.575 |
+| Secuencias únicas | 15.135.904 |
+| Secuencias con ambas etiquetas históricas | 3.494.284 |
+| Filas asociadas a secuencias con ambas etiquetas | 21.877.306 |
+| Secuencias globalmente positivas | 3.717.641 |
+| Secuencias unlabeled | 11.418.263 |
+| Filas globalmente positivas | 22.514.914 |
+| Filas unlabeled | 33.248.661 |
+| Filas cuyo label cambia | 12.659.367 (22,70 %) |
+| Candidatas de coincidencia exacta en misma proteína | 596.063 filas / 167.502 secuencias |
+
+Las sumas de positivos y unlabeled coinciden con los totales de filas y secuencias comunicados. Aproximadamente 23,09 % de las secuencias únicas presentaban etiquetas contradictorias y 39,23 % de las filas pertenecían a ese conjunto. La etiqueta global positiva alcanza aproximadamente 24,56 % de secuencias únicas y 40,38 % de filas. Estas proporciones se calculan a partir de los recuentos anteriores.
+
+### 11.2. Interpretación
+
+Una misma ventana puede aparecer como positiva en un contexto y como no positiva en otro. Si el modelo recibe únicamente la secuencia y su representación estructural, ejemplos con features idénticas y etiquetas opuestas introducen contradicciones que no puede resolver determinísticamente. Parte de esa heterogeneidad puede ser biológicamente legítima: especificidad de MHC, proteína de origen o evidencia experimental diferente. Por ello, una etiqueta global positiva por secuencia modifica la pregunta científica hacia «existe evidencia positiva en algún contexto», y no demuestra positividad en todas las familias MHC.
+
+La auditoría de coincidencias en la misma proteína permite investigar errores de anotación o propagación, pero el recuento de candidatas no equivale a correcciones verificadas. Es necesario conservar procedencia, etiqueta original y etiqueta global para permitir trazabilidad y análisis de sensibilidad.
+
+### 11.3. Decisiones comunicadas
+
+- Eliminar duplicados con misma secuencia, embeddings y etiqueta global.
+- Reconstruir splits por `group_id`.
+- Tratar operativamente unlabeled como negativos.
+- Entrenar un modelo conjunto y realizar reentrenamientos por especie, clase y familia.
+- Evitar que el aumento BLOSUM afecte a VALIDATION/TEST.
+
+El split por `group_id` es una mejora, pero por sí solo no garantiza independencia por proteína, secuencia o homología. Deben comprobarse explícitamente intersecciones de secuencias entre particiones y, para evaluar generalización a proteínas nuevas, considerar particiones por proteína o clúster de homología. La elección de agrupación debe responder a la pregunta científica, no únicamente maximizar métricas.
+
+## 12. Estado reciente: D1, D2 y E3/E4
+
+Último estado disponible en la conversación del 23 de noviembre, referido al commit `1c1a419` (sin verificación directa en GitHub). D1 corresponde al catálogo de originales utilizado como base certificada; D2 se refiere al diseño con aumento BLOSUM62 exclusivamente en TRAIN. La nomenclatura exacta de E1/E2 y la diferencia experimental específica entre E3 y E4 no se han recuperado con suficiente evidencia y no se inventan aquí.
+
+### Evidencia comunicada
+
+- Matriz BLOSUM62 de 24×24 verificada, con SHA-256 registrado.
+- Censo del alfabeto D1: 377.514.800 posiciones, todas canónicas; coincide con 15.100.592 ventanas × 25 residuos.
+- Catálogo SQLite persistente de 15.100.592 originales con split certificado, aproximadamente 2,1 GB; doce pruebas e `integrity_check ok`.
+- Piloto de recuperación histórica en H2-L: 89.179 variantes de 3.569 observaciones TRAIN; 46 filas retiradas por fuga a VALIDATION/TEST y 550 duplicadas. El orden de estos recuentos respecto a filtros debe verificarse en el log.
+- E3/E4 figuran como `not_executed` en `experiment_status.json`.
+- Bloqueo: ninguno de los 3.569 padres comparados coincidía bit a bit entre las representaciones comparadas en el piloto. El fragmento recuperado no identifica íntegramente los dos artefactos ni la magnitud de la diferencia.
+
+La diferencia entre 15.135.904 secuencias únicas de la auditoría y 15.100.592 originales D1 es de 35.312. No se atribuye a un filtro concreto sin el manifiesto correspondiente.
+
+> **Superado por §0.1.** El bloqueo se resolvió: las auditorías de embeddings salieron limpias y la hipótesis de corrupción quedó descartada. El apartado siguiente se conserva como registro del razonamiento del 23 de noviembre de 2026.
+
+### Diagnóstico recomendado del bloqueo
+
+Comprobar primero identidad de secuencia, grupo, orden de features, checkpoint, tokenización, pooling, dtype, scaler, versión de librerías y procedencia de archivos. Comparar arrays antes de normalización con métricas de diferencia absoluta, relativa y similitud coseno, además de igualdad exacta. Una discrepancia bit a bit puede deberse a precisión numérica o a un cambio sustantivo de pipeline; no permite concluir por sí sola cuál es la causa. No reutilizar embeddings históricos de variantes como si fueran compatibles hasta resolver esta cuestión.
+
+Si no puede garantizarse compatibilidad, regenerar originales y variantes de TRAIN bajo una única configuración reproducible es una opción metodológica, con coste computacional considerable. Mantener D1 como referencia inmutable y registrar hashes, manifiestos, seeds, versiones y conteos de D2. No declarar E3/E4 ejecutados hasta disponer de logs y resultados completos.
+
+## 13. Protocolo experimental propuesto para consolidación
+
+1. Congelar originales, esquema, procedencia y política de etiquetas.
+2. Definir la unidad de independencia del split y certificar ausencia de intersecciones prohibidas.
+3. Crear catálogo de TRAIN, VALIDATION y TEST con hashes y conteos por familia.
+4. Resolver compatibilidad de embeddings y generar variantes únicamente de TRAIN.
+5. Filtrar variantes duplicadas y coincidencias exactas con VALIDATION/TEST.
+6. Construir representaciones con checkpoint y pooling consistentes; verificar alineamiento por IDs.
+7. Ajustar scaler exclusivamente en TRAIN de cada configuración pertinente.
+8. Entrenar LR y MLP con controles de desbalanceo y ablaciones; registrar seeds y presupuesto computacional.
+9. Seleccionar modelos mediante VALIDATION, sin consultar TEST para ajustar hiperparámetros.
+10. Evaluar TEST original congelado, incluyendo análisis estratificado y calibración.
+11. Comparar con predictores externos bajo una tarea y unidades de evaluación compatibles.
+12. Documentar limitaciones y seleccionar candidatos para validación experimental.
+
+Este protocolo es una propuesta de consolidación, no una afirmación de que todos los pasos se hayan ejecutado.
+
+## 14. Comparación con predictores externos
+
+Herramientas consideradas: NetMHCpan, MHCflurry, NetMHCIIpan y pVACtools. NetMHCpan y MHCflurry se relacionan principalmente con MHC-I; NetMHCIIpan con MHC-II; pVACtools es un conjunto de workflows para priorización de neoantígenos, no un único modelo equivalente a NAP-CNB.
+
+Para una comparación justa, definir cómo se transforma una ventana de 25 aa en péptidos candidatos, qué longitudes se evalúan, qué alelos se consideran y cómo se agregan los scores a nivel de ventana. Un predictor de afinidad o presentación no responde exactamente a la tarea binaria de presencia de epítopo anotado. Evitar comparar directamente AUC de tareas incompatibles. Revisar además solapamiento de datos de entrenamiento externos con IEDB y posible contaminación de benchmark.
+
+## 15. COSMIC, neoantígenos y escape inmunitario
+
+Se ha trabajado en recopilación de mutaciones recurrentes de cáncer desde COSMIC y generación de candidatos. La conexión conceptual con NAP-CNB consiste en construir secuencias mutadas y de referencia, extraer ventanas alrededor de variantes y priorizar candidatos para análisis de presentación y reconocimiento. No consta una evaluación final integrada de esta línea.
+
+Un workflow completo necesitaría identificar variante, ensamblaje, transcrito, consecuencia codificante, proteína, posición aminoacídica, secuencias wild-type/mutant y evidencia de expresión. Las variantes no sinónimas, indels y frameshifts requieren tratamientos distintos. Debe mantenerse la correspondencia entre coordenadas genómicas, transcriptómicas y proteicas.
+
+El escape por pérdida o alteración de MHC-I puede limitar inmunoterapias dependientes de presentación antigénica. CAR-T reconoce antígenos de superficie de forma generalmente independiente de MHC; es una línea complementaria, no una aplicación automática del predictor de epítopos T. La selección de dianas CAR-T requiere criterios de expresión superficial, especificidad tumoral y seguridad diferentes.
+
+## 16. Integración en Scipion-Chem y RNA-seq
+
+Scipion permite organizar protocolos, objetos, dependencias, procedencia y ejecución reproducible. La línea de RNA-seq busca preparar datos que puedan alimentar análisis de expresión y detección de mutaciones relacionados con NAP-CNB.
+
+### 16.1. Protocolos y entorno
+
+- `import_fastq`: importación de lecturas single-end o paired-end.
+- `fastp`: preprocesamiento, filtrado y control de calidad.
+- `alignment`: alineamiento mediante STAR o HISAT2.
+- `download_genome`: descarga de referencias desde Ensembl o NCBI.
+- Entorno `rnaseq-1.0`: FastQC 0.12.0, fastp 0.23.4, STAR 2.7.11b, HISAT2 2.2.1, samtools 1.19.
+- Referencias probadas: GRCh38.116 y GRCm39.116 (la numeración 116 se asocia a la release de anotación comunicada).
+- Muestras de prueba: SRR390728 paired-end y SRR1552445 single-end.
+
+Se continúa testeando el pipeline con diferentes muestras utilizadas en NAP-CNB. La detección de variantes a partir de RNA-seq requiere precauciones adicionales por splicing, cobertura desigual, expresión alélica y RNA editing; no equivale a un pipeline validado de llamada somática a partir de DNA tumor-normal.
+
+### 16.2. Modelo de objetos
+
+La regla de diseño comunicada es que los protocolos de importación pueden admitir rutas externas, pero deben producir objetos Scipion; los protocolos posteriores deben consumir objetos mediante punteros, no rutas arbitrarias como sustituto del modelo de datos.
+
+En la revisión de la PR 237 se discutieron `SequenceVariants`, `MutationReport`, un posible objeto `VCFFile` y visualización IGV. Debe distinguirse el nivel genómico (VCF, coordenadas, alelos, genotipo y metadatos) del nivel proteico (sustituciones o variantes de secuencia y reportes). No se ha verificado aquí qué clases existen exactamente en la PR ni qué campos almacena cada una. No atribuir `SequenceVariants` a una implementación propia sin revisar el código.
+
+### 16.3. Infraestructura y restricciones
+
+`/home/nap/ScipionUserData`, `/home/nap/ScipionUserData-tfgnoelia` y `/data/nap/ScipionUserData/projects` son rutas comunicadas. Conda ha estado restringido por TI; se ha trabajado con migración mediante conda-pack. VS Code remoto/ACP ha presentado bloqueos, aunque el trabajo local funciona. Estas restricciones afectan instalación y reproducibilidad operativa.
+
+El TFG de Noelia (`Antimicrobial_Target_Workflow`) es un proyecto paralelo relacionado con buenas prácticas de Scipion, no parte del entrenamiento de NAP-CNB. Se revisó `protocol_download_proteome`, proponiendo GFF3 como opción de descarga y objetos Scipion como entradas de protocolos posteriores.
+
+## 17. Cronología resumida
+
+| Periodo de 2026 | Trabajo comunicado |
+|---|---|
+| Enero–febrero | Inicio doctoral, revisión del sistema de referencia ProteinUnet/BERT, adaptación a ventanas de 25 aa y entornos |
+| Marzo | Automatización IEDB, clasificación de ventanas, posición relativa, representaciones y COSMIC |
+| Abril | ProtT5 a gran escala, predicción secundaria UniRef50, paralelización y resolución de incidencias CUDA/rutas |
+| Mayo–junio | MLM SecondaryBERT, alineamiento primaria/secundaria por grupo, procesamiento BLOSUM y migración a `/data` |
+| Agosto | Diseño de baselines LR/MLP, ablaciones de features, scaler TRAIN y estrategias de desbalanceo |
+| Septiembre | Generación secundaria multi-GPU completada; revisión de checker; presentación y seguimiento TAC |
+| Octubre | Separación conceptual modelo/pipeline; documentación NAP-CNB-ML, entrenamiento por chunks |
+| 10–12 noviembre | Curso Scipion-Chem |
+| Primera mitad de noviembre | Shuffling, recálculo scaler, concatenación primaria/secundaria y entrenamiento |
+| 17–18 noviembre | Sobreajuste, auditoría de etiquetas globales, duplicados y revisión de splits |
+| 23 noviembre | D1 certificado según resumen, piloto H2-L, preparación D2/E3/E4 y bloqueo de compatibilidad |
+
+## 18. Estado y pendientes prioritarios
+
+| Componente | Estado según contexto |
+|---|---|
+| Recuperación IEDB y ventanas | Desarrollado históricamente; falta certificar versión y filtros |
+| ProtT5 | Generación histórica a gran escala; compatibilidad reciente pendiente |
+| SecondaryBERT | Generación para 11 datasets comunicada como completada |
+| Etiquetas | Auditoría cuantitativa realizada; política global decidida |
+| D1 | Catálogo y split certificados según resumen del 23/11 |
+| D2 | En preparación; piloto histórico H2-L |
+| E3/E4 | No ejecutados según último estado disponible |
+| LR/MLP | Pruebas históricas realizadas; evaluación definitiva pendiente |
+| Comparación externa | Planificada |
+| Scipion RNA-seq | Desarrollo y testing en curso |
+| Validación experimental | Pendiente de resultados documentados |
+
+**Prioridad obsoleta, sustituida por §0.5.** El bloqueo de embeddings quedó resuelto y D2 no debe ejecutarse. Se conserva el texto siguiente como registro de lo que se pensaba el 23 de noviembre de 2026: resolver el bloqueo de embeddings del piloto antes de escalar D2. Después, completar evaluación reproducible de originales frente a aumento TRAIN-only y comparar estrategias de entrenamiento. No utilizar resultados históricos con split por filas como estimación definitiva de generalización.
+
+## 19. Información que debe acompañar cada ejecución
+
+Registrar commit y estado del repositorio, versión de fuentes, hashes de datasets y matriz BLOSUM, política de etiquetas, definición de grupo, manifiesto de split, conteos de originales y variantes, duplicados retirados, checkpoints, tokenización, pooling, dtype, scaler, arquitectura, optimizer, learning rate, batch, epochs, scheduler, loss, class weights, seeds, hardware, tiempo, logs, checkpoints y métricas. Conservar el TEST congelado y registrar cualquier acceso que pueda influir en decisiones posteriores.
+
+Pruebas mínimas: integridad de archivos, shapes, ausencia de NaN/Inf, consistencia de IDs, secuencias de 25 aa, alfabeto canónico, ausencia de fugas según unidad elegida, coherencia de labels, consistencia de embeddings entre ejecuciones, reproducibilidad de split y comprobación de que scaler y sampling no usan VALIDATION/TEST.
+
+## 20. Glosario
+
+- **IEDB:** Immune Epitope Database.
+- **MHC/HLA/H-2:** complejo mayor de histocompatibilidad y nomenclaturas humana/murina.
+- **ProtT5:** modelo de lenguaje proteico basado en T5.
+- **SecondaryBERT:** modelo BERT especializado en secuencias de estructura secundaria.
+- **MLM:** masked language modeling.
+- **BLOSUM62:** matriz de puntuación de sustituciones de aminoácidos.
+- **LR/MLP:** regresión logística y perceptrón multicapa.
+- **Chunk:** fragmento de datos para procesamiento y entrenamiento escalable.
+- **Leakage:** transferencia indebida de información entre particiones.
+- **Unlabeled:** observación sin etiqueta positiva conocida, no necesariamente negativa biológica.
+- **COSMIC:** Catalogue of Somatic Mutations in Cancer.
+- **VCF:** Variant Call Format.
+- **IGV:** Integrative Genomics Viewer.
+- **D1/D2:** identificadores de versiones experimentales de datos; verificar definición formal en repositorio.
+
+## 21. Límites de esta reconstrucción y documentación pendiente
+
+Las secciones 1 a 21 se basan en conversaciones históricas y resúmenes recuperados, no en una lectura exhaustiva de los repositorios, Notion, artículos de referencia o archivos de ejecución. **La sección 0 sí procede de artefactos del repositorio y de la lectura directa de Wert-Carvajal 2021, Méndez-Pérez 2024, Guillén 2021, Ballesteros 2022 y Sánchez 2024.** Faltan fórmulas exactas de posición, filtros IEDB, releases, esquema de alelos, política detallada de BLOSUM, arquitectura final de SecondaryBERT, definición de E1/E2/E3/E4, manifiestos y métricas recientes. No se han inventado esos detalles. Las propuestas metodológicas se han separado de los resultados comunicados. Las cifras de distintas etapas pueden corresponder a snapshots incompatibles; deben conservarse como historial hasta reconciliarlas con los artefactos originales.
+
+Para mantener este documento como memoria de proyecto, añadir futuras actualizaciones con fecha, commit, cambios de diseño, evidencia, resultados, incidencias y decisiones; conservar las versiones anteriores en lugar de sustituir retrospectivamente la historia experimental.

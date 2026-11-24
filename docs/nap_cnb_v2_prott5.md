@@ -4,14 +4,14 @@ El módulo [prott5_v2.py](../data_pipeline/scripts/embeddings/primary_structure/
 
 ## Inventario y claves
 
-- El [inventario previo](../results/nap_cnb_v2_embedding_audit/missing_prott5_sequences.parquet) abarca las 14.530.324 secuencias de v2. El nombre del fichero refleja que en la auditoría todas quedaron pendientes de reutilización certificada. El generador usa sus columnas de secuencia y frecuencia.
+- El inventario previo (`../results/nap_cnb_v2_embedding_audit/missing_prott5_sequences.parquet`, artefacto retirado) abarca las 14.530.324 secuencias de v2. El nombre del fichero refleja que en la auditoría todas quedaron pendientes de reutilización certificada. El generador usa sus columnas de secuencia y frecuencia.
 - El identificador es la primaria cruda exacta. La longitud y el SHA-256 se calculan directamente cuando se consulta la clave. El ordinal físico del Parquet se vincula a su SHA-256 y solo sirve para localizar el vector en esta versión de almacenamiento.
 - Una hipotética colisión SHA-256 se resuelve comparando las claves crudas y deteniendo la publicación hasta verificar el inventario. La escritura y las uniones se definen por las secuencias exactas.
 - Join posterior con ventanas por primaria exacta. Con SecondaryBERT se une la cadena C/H/E exacta de cada ventana y su configuración validada. La misma primaria puede compartir ProtT5 y tener distintos SecondaryBERT. Las etiquetas siguen viniendo de los Parquet de v2.
 
 ## Configuración
 
-Modelo `Rostlab/prot_t5_xl_half_uniref50-enc`, revisión `94a6abc029ae13029317b140b7424e012bf8dfbf`. La copia local persistente está en `model/prott5/94a6abc029ae13029317b140b7424e012bf8dfbf/`. Los pesos y archivos de tokenización se cotejan contra la auditoría 3A al cargar. [Huellas verificadas](../results/nap_cnb_v2_prott5_audit_3a/checkpoint_hashes.json)
+Modelo `Rostlab/prot_t5_xl_half_uniref50-enc`, revisión `94a6abc029ae13029317b140b7424e012bf8dfbf`. La copia local persistente está en `model/prott5/94a6abc029ae13029317b140b7424e012bf8dfbf/`. Los pesos y archivos de tokenización se cotejan contra la auditoría 3A al cargar. Huellas verificadas (`../results/nap_cnb_v2_prott5_audit_3a/checkpoint_hashes.json`, artefacto retirado)
 
 Las primarias mantienen sus 25 caracteres originales. En la entrada del modelo, U, B y Z se convierten explícitamente a X, y X permanece X. Los demás caracteres fuera del alfabeto admitido se rechazan. Se separan residuos por espacios. SentencePiece legado genera 25 tokens de residuo y EOS, todos activos. En este conjunto de longitud fija se usan 26 posiciones activas por fila y no hace falta padding. El último estado oculto del encoder se promedia en float32 con EOS incluido. Se usa FP16 para el cálculo del encoder y float32 para los vectores. El modelo está en modo evaluación.
 
@@ -77,7 +77,7 @@ Una futura ejecución paralela puede repartir intervalos disjuntos de shards y r
 
 ## SecondaryBERT
 
-La auditoría inicial verificó 1.819.032 estructuras únicas y 49.083.724 ventanas. Quedaron entonces 28.404 claves pendientes. La [fase 3C cerrada](nap_cnb_v2_secondarybert.md) documenta su cobertura posterior. La relación con ProtT5 y las etiquetas se resuelve por cada modalidad antes de considerar concatenación. [Auditoría de embeddings](../results/nap_cnb_v2_embedding_audit/embedding_audit_report.md)
+La auditoría inicial verificó 1.819.032 estructuras únicas y 49.083.724 ventanas. Quedaron entonces 28.404 claves pendientes. La [fase 3C cerrada](nap_cnb_v2_secondarybert.md) documenta su cobertura posterior. La relación con ProtT5 y las etiquetas se resuelve por cada modalidad antes de considerar concatenación. [Auditoría de embeddings](../reports/audits/nap_cnb_v2_embedding_audit.md)
 
 [Informe del piloto](../results/nap_cnb_v2_prott5/pilot_report.md) · [Inventario y propuesta de organización](nap_cnb_v2_organizacion.md)
 

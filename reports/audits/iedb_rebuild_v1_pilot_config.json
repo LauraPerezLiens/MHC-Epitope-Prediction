@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "scope": {
+    "HLA-A": [
+      "www.uniprot.org/uniprot/A0A075B734",
+      "www.uniprot.org/uniprot/A0A087WTF2",
+      "www.uniprot.org/uniprot/P00519",
+      "www.uniprot.org/uniprot/P01008",
+      "www.uniprot.org/uniprot/P01591",
+      "www.uniprot.org/uniprot/P01860-1",
+      "www.uniprot.org/uniprot/P13284",
+      "www.uniprot.org/uniprot/P49327",
+      "www.uniprot.org/uniprot/Q4VC44",
+      "www.uniprot.org/uniprot/Q92538",
+      "www.uniprot.org/uniprot/Q92841"
+    ],
+    "HLA-B": [
+      "www.uniprot.org/uniprot/A0A075B734",
+      "www.uniprot.org/uniprot/A0A087WTJ2",
+      "www.uniprot.org/uniprot/O43432"
+    ],
+    "HLA-DP": [
+      "www.uniprot.org/uniprot/A0A096LP25",
+      "www.uniprot.org/uniprot/O00255",
+      "www.uniprot.org/uniprot/O15131"
+    ],
+    "HLA-DQ": [
+      "www.uniprot.org/uniprot/A0A075B6P5",
+      "www.uniprot.org/uniprot/A0A087WZ13",
+      "www.uniprot.org/uniprot/A0A0B4J1Y9"
+    ],
+    "H2-K": [
+      "www.uniprot.org/uniprot/A0A075B5K0",
+      "www.uniprot.org/uniprot/A0A075B5R1",
+      "www.uniprot.org/uniprot/A0A0G2JG52"
+    ],
+    "H2-IA": [
+      "www.uniprot.org/uniprot/A0A075B5L2",
+      "www.uniprot.org/uniprot/A0A075B5R4",
+      "www.uniprot.org/uniprot/A0A075B5T2",
+      "www.uniprot.org/uniprot/A0A075B5T3"
+    ]
+  },
+  "archive": [
+    "/data/nap/lperez_nn/data/used_data/data_raw.tar.zst",
+    110874377,
+    1794308933056539395
+  ],
+  "fasta": [
+    [
+      "/data/nap/lperez_nn/results/source_audits_inputs_20261118/data_intermediate/human_parent_protein_fasta.csv",
+      15795312,
+      1779963914000000000
+    ],
+    [
+      "/data/nap/lperez_nn/results/source_audits_inputs_20261118/data_intermediate/mouse_parent_protein_fasta.csv",
+      10179111,
+      1779967529000000000
+    ]
+  ],
+  "prior": "/data/nap/lperez_nn/results/epitope_counterfactual_20261118",
+  "previous_dataset": "/data/nap/lperez_nn/data/global_epitope_labels"
+}

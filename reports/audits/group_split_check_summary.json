@@ -1,0 +1,138 @@
+{
+  "status": "completed",
+  "rows": 1449852950,
+  "groups": 55763575,
+  "rows_by_split": {
+    "train": 1159882360,
+    "validation": 144985295,
+    "test": 144985295
+  },
+  "groups_by_split": {
+    "train": 55763575,
+    "validation": 52159954,
+    "test": 52162767
+  },
+  "groups_in_multiple_splits": 55595967,
+  "groups_in_all_three": 48726754,
+  "pairwise_overlap": {
+    "train_validation": 52159954,
+    "train_test": 52162767,
+    "validation_test": 48726754
+  },
+  "exclusive_split_combinations": {
+    "1": 167608,
+    "2": 0,
+    "3": 3433200,
+    "4": 0,
+    "5": 3436013,
+    "6": 0,
+    "7": 48726754
+  },
+  "mask_definition": {
+    "train": 1,
+    "validation": 2,
+    "test": 4
+  },
+  "by_source": {
+    "0": {
+      "groups": 10214658,
+      "groups_in_multiple_splits": 10183990,
+      "rows_by_split": [
+        212462834,
+        26561338,
+        26556936
+      ]
+    },
+    "1": {
+      "groups": 10639963,
+      "groups_in_multiple_splits": 10608200,
+      "rows_by_split": [
+        221320831,
+        27654660,
+        27663547
+      ]
+    },
+    "2": {
+      "groups": 7788459,
+      "groups_in_multiple_splits": 7765046,
+      "rows_by_split": [
+        162001892,
+        20246136,
+        20251906
+      ]
+    },
+    "3": {
+      "groups": 5027325,
+      "groups_in_multiple_splits": 5012251,
+      "rows_by_split": [
+        104564328,
+        13075038,
+        13071084
+      ]
+    },
+    "4": {
+      "groups": 2389441,
+      "groups_in_multiple_splits": 2382187,
+      "rows_by_split": [
+        49707252,
+        6208423,
+        6209791
+      ]
+    },
+    "5": {
+      "groups": 7588227,
+      "groups_in_multiple_splits": 7565241,
+      "rows_by_split": [
+        157826645,
+        19732350,
+        19734907
+      ]
+    },
+    "6": {
+      "groups": 4244842,
+      "groups_in_multiple_splits": 4231894,
+      "rows_by_split": [
+        88291952,
+        11038620,
+        11035320
+      ]
+    },
+    "7": {
+      "groups": 6022825,
+      "groups_in_multiple_splits": 6004772,
+      "rows_by_split": [
+        125273434,
+        15663128,
+        15656888
+      ]
+    },
+    "8": {
+      "groups": 4448,
+      "groups_in_multiple_splits": 4439,
+      "rows_by_split": [
+        92633,
+        11572,
+        11443
+      ]
+    },
+    "9": {
+      "groups": 1790731,
+      "groups_in_multiple_splits": 1785462,
+      "rows_by_split": [
+        37245473,
+        4656936,
+        4656597
+      ]
+    },
+    "10": {
+      "groups": 52656,
+      "groups_in_multiple_splits": 52485,
+      "rows_by_split": [
+        1095086,
+        137094,
+        136876
+      ]
+    }
+  },
+  "scope": "Group overlap only; protein and sequence similarity are not checked."
+}

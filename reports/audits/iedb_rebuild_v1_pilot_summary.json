@@ -1,0 +1,261 @@
+{
+  "status": "validated",
+  "scope": "pilot",
+  "families": {
+    "HLA-A": {
+      "events": 1517,
+      "pending": 160,
+      "verified": 1357,
+      "proteins_eligible": 11,
+      "windows": 8380,
+      "positive_windows": 3004,
+      "pending_candidate_windows": 230,
+      "methods": {
+        "iedb_explicit_parent_reference": 1294,
+        "full_reference_alignment": 63
+      },
+      "pending_reasons": {
+        "source_coordinates_missing_or_invalid": 3,
+        "source_version_unpinned": 13,
+        "parent_absent_or_projection_ambiguous": 2,
+        "modified_or_non_plain_peptide": 128,
+        "source_reference_unavailable": 14
+      }
+    },
+    "HLA-B": {
+      "events": 193,
+      "verified": 156,
+      "pending": 37,
+      "proteins_eligible": 3,
+      "windows": 2370,
+      "positive_windows": 656,
+      "pending_candidate_windows": 206,
+      "methods": {
+        "iedb_explicit_parent_reference": 148,
+        "full_reference_alignment": 8
+      },
+      "pending_reasons": {
+        "modified_or_non_plain_peptide": 23,
+        "source_reference_unavailable": 13,
+        "source_version_unpinned": 1
+      }
+    },
+    "HLA-DP": {
+      "events": 4,
+      "verified": 4,
+      "proteins_eligible": 3,
+      "windows": 2240,
+      "positive_windows": 35,
+      "pending_candidate_windows": 0,
+      "methods": {
+        "full_reference_alignment": 3,
+        "iedb_explicit_parent_reference": 1
+      },
+      "pending_reasons": {}
+    },
+    "HLA-DQ": {
+      "events": 34,
+      "verified": 27,
+      "pending": 7,
+      "proteins_eligible": 3,
+      "windows": 906,
+      "positive_windows": 65,
+      "pending_candidate_windows": 12,
+      "methods": {
+        "full_reference_alignment": 16,
+        "iedb_explicit_parent_reference": 11
+      },
+      "pending_reasons": {
+        "parent_absent_or_projection_ambiguous": 7
+      }
+    },
+    "H2-K": {
+      "events": 17,
+      "pending": 7,
+      "verified": 10,
+      "proteins_eligible": 2,
+      "windows": 2134,
+      "positive_windows": 47,
+      "pending_candidate_windows": 36,
+      "methods": {
+        "full_reference_alignment": 3,
+        "iedb_explicit_parent_reference": 7
+      },
+      "pending_reasons": {
+        "parent_absent_or_projection_ambiguous": 5,
+        "source_reference_unavailable": 2
+      }
+    },
+    "H2-IA": {
+      "events": 5,
+      "verified": 3,
+      "pending": 2,
+      "proteins_eligible": 4,
+      "windows": 377,
+      "positive_windows": 17,
+      "pending_candidate_windows": 17,
+      "methods": {
+        "full_reference_alignment": 3
+      },
+      "pending_reasons": {
+        "source_reference_unavailable": 2
+      }
+    }
+  },
+  "raw": {
+    "H2-IA_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 5,
+      "included": 5
+    },
+    "H2-IA_tcell_export_full.jsonl.gz": {},
+    "H2-K_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 4,
+      "included": 4
+    },
+    "H2-K_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 13,
+      "included": 13
+    },
+    "HLA-DQ_tcell_export_full.jsonl.gz": {},
+    "HLA-DQ_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 34,
+      "included": 34
+    },
+    "HLA-DP_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 4,
+      "included": 4
+    },
+    "HLA-DP_tcell_export_full.jsonl.gz": {},
+    "HLA-B_tcell_export_full.jsonl.gz": {},
+    "HLA-B_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 193,
+      "included": 193
+    },
+    "HLA-A_tcell_export_full.jsonl.gz": {
+      "in_parent_scope": 5,
+      "included": 5
+    },
+    "HLA-A_mhc_export_full.jsonl.gz": {
+      "in_parent_scope": 1512,
+      "included": 1512
+    }
+  },
+  "validation": {
+    "HLA-A": {
+      "verified_events": 1357,
+      "pending_events": 160,
+      "positive_windows": 3004,
+      "pending_candidate_windows": 230,
+      "windows": 8380
+    },
+    "HLA-B": {
+      "verified_events": 156,
+      "pending_events": 37,
+      "positive_windows": 656,
+      "pending_candidate_windows": 206,
+      "windows": 2370
+    },
+    "HLA-DP": {
+      "verified_events": 4,
+      "pending_events": 0,
+      "positive_windows": 35,
+      "pending_candidate_windows": 0,
+      "windows": 2240
+    },
+    "HLA-DQ": {
+      "verified_events": 27,
+      "pending_events": 7,
+      "positive_windows": 65,
+      "pending_candidate_windows": 12,
+      "windows": 906
+    },
+    "H2-K": {
+      "verified_events": 10,
+      "pending_events": 7,
+      "positive_windows": 47,
+      "pending_candidate_windows": 36,
+      "windows": 2134
+    },
+    "H2-IA": {
+      "verified_events": 3,
+      "pending_events": 2,
+      "positive_windows": 17,
+      "pending_candidate_windows": 17,
+      "windows": 377
+    }
+  },
+  "global_index": {
+    "unique_sequences": 16036,
+    "positive_sequences": 3824,
+    "observations": 16407,
+    "positive_observations": 3824
+  },
+  "previous": {
+    "HLA-A": {
+      "old_rows": 10560,
+      "old_unique_positions": 7980,
+      "old_positive_positions": 2818,
+      "new_positions": 400,
+      "new_positive_positions": 17,
+      "positions_on_previously_omitted_proteins": 400,
+      "positions_unchanged": 7415,
+      "position_1_to_0": 198,
+      "position_0_to_1": 367,
+      "old_positions_missing_in_rebuild": 0
+    },
+    "HLA-B": {
+      "old_rows": 1841,
+      "old_unique_positions": 1561,
+      "old_positive_positions": 614,
+      "new_positions": 809,
+      "new_positive_positions": 64,
+      "positions_on_previously_omitted_proteins": 809,
+      "positions_unchanged": 1473,
+      "position_1_to_0": 55,
+      "position_0_to_1": 33,
+      "old_positions_missing_in_rebuild": 0
+    },
+    "HLA-DP": {
+      "old_rows": 1139,
+      "old_unique_positions": 1139,
+      "old_positive_positions": 12,
+      "positions_unchanged": 1139,
+      "new_positions": 1101,
+      "new_positive_positions": 23,
+      "positions_on_previously_omitted_proteins": 1101,
+      "old_positions_missing_in_rebuild": 0
+    },
+    "HLA-DQ": {
+      "old_rows": 96,
+      "old_unique_positions": 96,
+      "old_positive_positions": 10,
+      "positions_unchanged": 64,
+      "position_0_to_1": 32,
+      "new_positions": 810,
+      "new_positive_positions": 23,
+      "positions_on_previously_omitted_proteins": 810,
+      "old_positions_missing_in_rebuild": 0
+    },
+    "H2-K": {
+      "old_rows": 0,
+      "old_unique_positions": 0,
+      "old_positive_positions": 0,
+      "new_positions": 2134,
+      "new_positive_positions": 47,
+      "positions_on_previously_omitted_proteins": 2134,
+      "old_positions_missing_in_rebuild": 0
+    },
+    "H2-IA": {
+      "old_rows": 189,
+      "old_unique_positions": 189,
+      "old_positive_positions": 17,
+      "new_positions": 188,
+      "new_positive_positions": 17,
+      "positions_on_previously_omitted_proteins": 188,
+      "positions_unchanged": 172,
+      "position_1_to_0": 17,
+      "old_positions_missing_in_rebuild": 0
+    }
+  },
+  "seconds": 105.67
+}

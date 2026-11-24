@@ -1,0 +1,26 @@
+{
+  "status": "completed",
+  "criterion": "identical_25aa_sequence_opposite_labels",
+  "embeddings_compared": false,
+  "sources": 11,
+  "original_rows": 55763575,
+  "unique_sequences": 15135904,
+  "contradictory_sequences": 3494284,
+  "contradictory_rows": 21877306,
+  "rows_by_source": {
+    "human/mhc-I/HLA-A/classification_human_mhc-I_HLA-A.csv": 4097008,
+    "human/mhc-I/HLA-B/classification_human_mhc-I_HLA-B.csv": 4481313,
+    "human/mhc-I/HLA-C/classification_human_mhc-I_HLA-C.csv": 3278058,
+    "human/mhc-II/HLA-DP/classification_human_mhc-II_HLA-DP.csv": 2559927,
+    "human/mhc-II/HLA-DQ/classification_human_mhc-II_HLA-DQ.csv": 1245355,
+    "human/mhc-II/HLA-DR/classification_human_mhc-II_HLA-DR.csv": 3641040,
+    "mouse/mhc-I/H2-D/classification_mouse_mhc-I_H2-D.csv": 887062,
+    "mouse/mhc-I/H2-K/classification_mouse_mhc-I_H2-K.csv": 1220769,
+    "mouse/mhc-I/H2-L/classification_mouse_mhc-I_H2-L.csv": 2761,
+    "mouse/mhc-II/H2-IA/classification_mouse_mhc-II_H2-IA.csv": 446573,
+    "mouse/mhc-II/H2-IE/classification_mouse_mhc-II_H2-IE.csv": 17440
+  },
+  "id_scope": "group_id and protein_group_id are local to source_file; global_group_id uses shuffle offsets",
+  "row_index_convention": "source_row_index is zero-based, excluding the CSV header",
+  "note": "Opposite annotations do not by themselves prove mislabelling."
+}

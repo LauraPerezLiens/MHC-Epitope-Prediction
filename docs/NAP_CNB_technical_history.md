@@ -16,7 +16,7 @@ The earliest commit in the inspected main repository is `9731ea3` (11 November 2
 
 Publication preparation and provenance tests appear in `57628ce`, `af50cfa` and `9533d38` (16 November). The analysis and experiment documentation commit `9d7c0a0` and merge `536548a` follow on 17 November. The source-evidence audits and rebuild reports record the work of 18–19 November. The signed feature stores and dataset metadata document the transition through v2 selection, representation certification and D1. The Git tree at review contains local changes and untracked files. Those working-tree artifacts and signed local results are separately identified evidence and should not be attributed to earlier commits.
 
-[Historical MLP chronology and removed artifacts](mlp_experiment_history.md) · [Primary block provenance and backup commits](../results/nap_cnb_v2_prott5_audit_3a3/prott5_phase_3a3_report.md) · [Current dataset organization](nap_cnb_v2_dataset_organization.md)
+[Historical MLP chronology and removed artifacts](mlp_experiment_history.md) · [Primary block provenance and backup commits](../reports/audits/prott5_audit_3a3.md) · [Current dataset organization](nap_cnb_v2_dataset_organization.md)
 
 ## 3. Original pipeline
 
@@ -38,7 +38,7 @@ The TensorFlow/Keras **UNet-C Ensemble**, also called ProteinUnet in older docum
 
 Historical augmentation used BLOSUM62-based sequence derivatives with the parent group's label and structural representation. The primary features were stored for the input sequence, and the per-group structural features were reused. The resulting joint input has 1,792 columns. The historical tree stored NPY matrices, row and group metadata, and compressed source files with receipts. It contained 1,449,852,950 augmented and original rows, initially in 14,503 source blocks and later in 14,499 globally reordered chunks. These block counts refer to different physical layouts of the same reported row universe. The archived corpus and current D1 represent different evidence and acquisition contracts. A synthetic sequence assigned the parent's label is a modeling assumption and adds no observed assay outcome.
 
-[Structure predictor and mapper](../data_pipeline/scripts/secondary_structure_prediction/README.md) · [SecondaryBERT pretraining](../data_pipeline/scripts/secondaryBERT/README.md) · [Model validation and feature layout](../data_pipeline/docs/data_and_models.md) · [Historical embedding audit](../results/nap_cnb_v2_embedding_audit/embedding_audit_report.md)
+[Structure predictor and mapper](../data_pipeline/scripts/secondary_structure_prediction/README.md) · [SecondaryBERT pretraining](../data_pipeline/scripts/secondaryBERT/README.md) · [Model validation and feature layout](../data_pipeline/docs/data_and_models.md) · [Historical embedding audit](../reports/audits/nap_cnb_v2_embedding_audit.md)
 
 ### 3.3 Historical models, scaling and evaluation
 
@@ -79,7 +79,7 @@ The group audit measured 55,595,967 of 55,763,575 scoped historical groups in mu
 
 The practical response in v2 was to establish a shared split by exact primary identity with an explicit provenance check for historical groups. This removes exact primary and exact representation overlap. Protein-level and coordinate overlap remain separately measured limitations. The resulting design gives an evaluation estimand that can be stated and checked.
 
-[Group split audit](../results/group_split_check/summary.json) · [MLP discussion and dual-scope data](mlp_experiment_history.md) · [4C validation](../results/nap_cnb_v2_dataset_views/splits/validation.json)
+[Group split audit](../reports/audits/group_split_check_summary.json) · [MLP discussion and dual-scope data](mlp_experiment_history.md) · [4C validation](../results/nap_cnb_v2_dataset_views/splits/validation.json)
 
 ### 4.2 Evidence semantics and conflicting labels
 
@@ -89,7 +89,7 @@ Source audits then examined whether changes in normalization and coordinate hand
 
 The v2 decision was to reconstruct evidence and labels from validated records and trace, rather than edit disputed historical rows in place. The reconstruction preserves family-specific labels and adds global evidence aggregation as a separate dataset view. This supports two different scientific questions with one provenance record.
 
-[Historical contradiction counts](../results/data_contradictions/summary.json) · [Normalization A/B audit](../results/iedb_download_audit_20261118/report.md) · [Modified evidence audit](../results/iedb_modified_audit_20261118/report.md) · [Pending evidence audit](../results/iedb_pending_evidence_20261118/report.md) · [Rebuild implementation](../data_pipeline/scripts/rebuild_iedb/rebuild.py)
+[Historical contradiction counts](../reports/audits/data_contradictions_summary.json) · [Normalization A/B audit](../reports/audits/iedb_download_audit.md) · [Modified evidence audit](../reports/audits/iedb_modified_audit.md) · [Pending evidence audit](../reports/audits/iedb_pending_evidence.md) · [Rebuild implementation](../data_pipeline/scripts/rebuild_iedb/rebuild.py)
 
 ### 4.3 Representation and identity
 
@@ -97,7 +97,7 @@ An earlier modality sample traced 33 groups across eleven sources with zero fail
 
 For SecondaryBERT, evidence was stronger. The canonical sources shared a documented mapping, dimension, numerical agreement across repeated candidates and configuration fingerprint. Older `chunks_pooled/` payloads differed from canonical `chunks/` and were kept outside certified reuse. A controlled reference sample then established numerical agreement with the local checkpoint. This supported a different implementation choice, namely preserving certified historical addresses and generating only missing keys.
 
-[Sampled modality audit](../results/sampled_modalities_check/summary.json) · [Phase 3A source audit](../results/nap_cnb_v2_prott5_audit_3a/prott5_phase_3a_report.md) · [Expanded numerical controls](../results/nap_cnb_v2_prott5_audit_3a2/prott5_phase_3a2_report.md) · [Historical block provenance](../results/nap_cnb_v2_prott5_audit_3a3/prott5_phase_3a3_report.md) · [Embedding audit](../results/nap_cnb_v2_embedding_audit/embedding_audit_report.md)
+[Sampled modality audit](../reports/audits/sampled_modalities_check_summary.json) · [Phase 3A source audit](../reports/audits/prott5_audit_3a.md) · [Expanded numerical controls](../reports/audits/prott5_audit_3a2.md) · [Historical block provenance](../reports/audits/prott5_audit_3a3.md) · [Embedding audit](../reports/audits/nap_cnb_v2_embedding_audit.md)
 
 ## 5. NAP-CNB v2 releases and validation
 

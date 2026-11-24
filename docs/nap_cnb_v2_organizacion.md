@@ -104,8 +104,8 @@ La evaluación de redundancia debe conservar la cadena de origen y las pruebas d
 | Construcción, etiquetas y estructura inicial | [Informe de fase 1](../results/nap_cnb_v2_phase1/phase1_report.md) |
 | Recuperación y límite de ProteinUnet | [Recuperación](../results/nap_cnb_v2_phase1/structure_recovery_report.md) · [Inventario de pendientes](../results/nap_cnb_v2_structure_completion/completion_report.md) |
 | Selección estructural y distribución por familia | [Selección definitiva](../results/nap_cnb_v2_final_selection/final_selection_report.md) |
-| Cobertura de embeddings | [Auditoría de fuentes](../results/nap_cnb_v2_embedding_audit/embedding_audit_report.md) |
-| ProtT5 histórico | [3A](../results/nap_cnb_v2_prott5_audit_3a/prott5_phase_3a_report.md) · [3A.2](../results/nap_cnb_v2_prott5_audit_3a2/prott5_phase_3a2_report.md) · [3A.3](../results/nap_cnb_v2_prott5_audit_3a3/prott5_phase_3a3_report.md) |
+| Cobertura de embeddings | [Auditoría de fuentes](../reports/audits/nap_cnb_v2_embedding_audit.md) |
+| ProtT5 histórico | [3A](../reports/audits/prott5_audit_3a.md) · [3A.2](../reports/audits/prott5_audit_3a2.md) · [3A.3](../reports/audits/prott5_audit_3a3.md) |
 | Decisión de regenerar ProtT5 | [Protocolo 3B](nap_cnb_v2_prott5.md) · [Piloto](../results/nap_cnb_v2_prott5/pilot_report.md) |
 
 Para una futura consolidación, conservar informes e inventarios y agrupar scripts experimentales con sus pruebas y referencias. Tras revisar importaciones y consumidores, proponer extracciones pequeñas de utilidades, luego trasladar o retirar C y D por grupos. Cualquier traslado o retirada de scripts, copias históricas o datos queda pendiente de una revisión y autorización separadas.

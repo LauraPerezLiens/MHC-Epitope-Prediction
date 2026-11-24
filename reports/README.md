@@ -1,5 +1,10 @@
 # Data reports
 
+**Empieza aquí:** [Auditoría consolidada, diagnóstico y plan](auditoria_consolidada.md)
+reúne qué se auditó, qué se encontró, qué se hizo y qué se propone, con el
+inventario de lo que se conserva, se comprime o se retira. Los experimentos
+individuales están en [experiments/](experiments/).
+
 [reorder_chunk_label_counts_20261110.csv](reorder_chunk_label_counts_20261110.csv) records label counts before training-time balancing for each historical shuffled chunk.
 
 | Column | Meaning |

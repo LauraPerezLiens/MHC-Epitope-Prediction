@@ -2,6 +2,7 @@
 
 | Si buscas | Empieza aquí |
 |---|---|
+| **Qué demuestra cada carpeta de `results/`, y los números vigentes** | [Índice de evidencia](INDICE_EVIDENCIA.md) |
 | Componentes y dependencias | [Arquitectura](architecture/README.md) |
 | Entregas certificadas, etiquetas, splits y procedencia | [Organización de datasets v2](nap_cnb_v2_dataset_organization.md) |
 | Generación, conservación y validación de embeddings | [ProtT5](nap_cnb_v2_prott5.md) y [SecondaryBERT](nap_cnb_v2_secondarybert.md) |

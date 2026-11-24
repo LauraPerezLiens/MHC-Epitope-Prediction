@@ -12,7 +12,7 @@ El CSV histórico de aumento conserva `original_seq`, `blosum_seq`, `group_id`, 
 
 La fase 4B encontró 1.675.495 ventanas originales v2 con varios candidatos históricos y 1.563.062 sin enlace. Esos recuentos describen la comparación de **originales**, no la elegibilidad de las variantes. Esta revisión no atribuye a D2 ninguna tasa de colisiones, coincidencias con originales, conflicto de etiquetas, cobertura de variantes únicas o enlace inequívoco.
 
-[Auditoría de etiquetas heredadas y muestra de grupos](../results/iedb_modified_audit_20261118/report.md) · [Historial técnico](NAP_CNB_technical_history.md) · [Procedencia y metadatos de chunks](../data_pipeline/docs/data_and_models.md) · [Métricas de enlaces 4B](../results/nap_cnb_v2_dataset_views/metrics.json)
+[Auditoría de etiquetas heredadas y muestra de grupos](../reports/audits/iedb_modified_audit.md) · [Historial técnico](NAP_CNB_technical_history.md) · [Procedencia y metadatos de chunks](../data_pipeline/docs/data_and_models.md) · [Métricas de enlaces 4B](../results/nap_cnb_v2_dataset_views/metrics.json)
 
 ## B. Inventario y cobertura
 
@@ -30,7 +30,7 @@ Las cifras de disco de los árboles son bloques asignados en el inventario 4E. L
 | Splits y D1 | `results/nap_cnb_v2_dataset_views/` | 14.530.324 asignaciones, 15.100.592 pares D1 | 164.425.896 bytes el Parquet de asignaciones | Certificados para v2. Las particiones históricas no son intercambiables |
 | Scaler histórico | `neural_network/MLP/standardizer_all_train_chunks.npz` | Estadísticas de dos modalidades, 14.499 chunks registrados | 421.906 bytes aparentes en la inspección anterior | Ajuste del TRAIN histórico aumentado con sus features. Sin certificación para otro conjunto |
 
-[Auditoría de almacenamiento](../reports/NAP_CNB_repository_audit.md) · [Recuentos históricos por chunk](../reports/reorder_chunk_label_counts_20261110.csv) · [Auditoría de embeddings](../results/nap_cnb_v2_embedding_audit/embedding_audit_report.md) · [ProtT5 certificado](../results/nap_cnb_v2_prott5/final_report.md) · [SecondaryBERT certificado](../results/nap_cnb_v2_secondarybert/secondarybert_report.md)
+[Auditoría de almacenamiento](../reports/NAP_CNB_repository_audit.md) · [Recuentos históricos por chunk](../reports/reorder_chunk_label_counts_20261110.csv) · [Auditoría de embeddings](../reports/audits/nap_cnb_v2_embedding_audit.md) · [ProtT5 certificado](../results/nap_cnb_v2_prott5/final_report.md) · [SecondaryBERT certificado](../results/nap_cnb_v2_secondarybert/secondarybert_report.md)
 
 ## C. Reutilización y límites
 
@@ -43,7 +43,7 @@ Las cifras de disco de los árboles son bloques asignados en el inventario 4E. L
 
 Los vectores certificados de una primaria original corresponden a esa clave. Su historial no justifica reasignarlos a una primaria diferente. Tampoco hay una cifra verificada de embeddings adicionales requeridos, reutilizables o faltantes para D2. Los valores agregados del corpus legado no permiten inferirla.
 
-[Auditoría de procedencia ProtT5](../results/nap_cnb_v2_prott5_audit_3a3/prott5_phase_3a3_report.md) · [Auditoría numérica de compatibilidad](../results/nap_cnb_v2_prott5_audit_3a2/prott5_phase_3a2_report.md)
+[Auditoría de procedencia ProtT5](../reports/audits/prott5_audit_3a3.md) · [Auditoría numérica de compatibilidad](../reports/audits/prott5_audit_3a2.md)
 
 ## D. Etiquetas y contrato de evaluación
 
@@ -55,7 +55,7 @@ Como condición de comparabilidad, cualquier conjunto futuro que se compare con 
 
 BLOSUM62 con etiqueta original tampoco tiene una entrega v2 certificada. Su replay legado usa una anotación, representación y partición históricas; sigue siendo un experimento distinto de una vista familiar corregida. Una comparación de cualquier nuevo conjunto con los perfiles balanceados exigiría su propio scaler ajustado solo con la población TRAIN efectiva, prevalencias observadas por tipo de registro y una evaluación fija. Los scalers histórico, base y D1 representan poblaciones diferentes.
 
-[D1 y firmas](../results/nap_cnb_v2_dataset_views/d1_manifest.json) · [Validación de particiones](../results/nap_cnb_v2_dataset_views/splits/validation.json) · [Auditoría de solapamiento histórico](../results/group_split_check/summary.json) · [Perfiles y scalers](NAP_CNB_v2_training_guide.md)
+[D1 y firmas](../results/nap_cnb_v2_dataset_views/d1_manifest.json) · [Validación de particiones](../results/nap_cnb_v2_dataset_views/splits/validation.json) · [Auditoría de solapamiento histórico](../reports/audits/group_split_check_summary.json) · [Perfiles y scalers](NAP_CNB_v2_training_guide.md)
 
 ## E. Capacidad y decisiones pendientes
 
