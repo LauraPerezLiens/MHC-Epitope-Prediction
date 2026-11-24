@@ -3,7 +3,7 @@
 import csv, collections, glob, os
 csv.field_size_limit(10**9)
 PSEUDO = "/data/nap/lperez_nn/reference/pseudosequences/pseudosequences.netmhcpan.34aa.csv"
-ROOT = "/tmp/claude-7259/-data-nap-lperez-nn/71faedc6-a6ec-485d-aa35-95634e1242e6/scratchpad/data_raw_extract/data_raw"
+ROOT = os.environ.get("RAW_ROOT", "/data/nap/lperez_nn/data/data_raw_20261124")
 pseudo = {r["allele"]: r["pseudosequence"] for r in csv.DictReader(open(PSEUDO))}
 
 

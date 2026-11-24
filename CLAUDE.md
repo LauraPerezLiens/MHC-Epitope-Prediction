@@ -195,6 +195,35 @@ Esto significa que **nuestro dataset contiene solo epítopos de origen propio (m
 
 A nivel de péptido único en H2-K, el snapshot histórico tiene 38.944 y el nuevo 39.009: **solo 65 de diferencia**. El efecto del paginado, si existe, es pequeño en péptidos únicos; queda por medirlo a nivel de `assay_id`, que es donde se vería la duplicación (pendiente nº 2–3).
 
+**F. El colapso familia→alelo, medido.** Censo de alelos sobre la re-descarga (`alleles.py`, 9 familias ya bajadas):
+
+| Familia | Filas | **Alelos distintos** |
+|---|---:|---:|
+| human/mhc-I/HLA-B | 665.167 | **125** |
+| human/mhc-I/HLA-A | 579.497 | **81** |
+| human/mhc-I/HLA-C | 140.172 | **33** |
+| mouse/mhc-II/H2-IA | 32.008 | 12 |
+| mouse/mhc-I/H2-D | 46.111 | 8 |
+| mouse/mhc-II/H2-IE | 406 | 8 |
+| mouse/mhc-I/H2-K | 88.669 | 7 |
+| mouse/mhc-I/H2-L | 158 | 2 |
+| **Total** | | **276** |
+
+El pipeline colapsa **276 alelos en 11 etiquetas de familia**. Esto cuantifica §0.4.1, que hasta ahora era un argumento cualitativo.
+
+**G. Dentro de una misma familia, los alelos comparten la mitad de los residuos de unión.** Pseudosecuencias NetMHCpan de 34 aa, identidad posición a posición:
+
+| Par | Iguales | |
+|---|---:|---:|
+| H2-Kb vs H2-Kd | 17/34 | **50 %** |
+| H2-Kb vs H2-Kk | 21/34 | 62 % |
+| H2-Kd vs H2-Kk | 19/34 | 56 % |
+| H2-Kb vs H2-Db | 20/34 | 59 % |
+
+**H2-Kb y H2-Kd difieren en la mitad de las posiciones del surco de unión, y el pipeline los trata como la misma clase «H2-K».** Nótese que H2-Kb vs H2-Db (familias *distintas*) se parecen **más** (59 %) que H2-Kb vs H2-Kd (50 %) dentro de la *misma* familia: la partición por familia no agrupa por similitud de unión. Es la explicación estructural de por qué Wert2021 encontró subóptima la predicción cruzada Kb↔Kd y concluyó que hacen falta redes por haplotipo.
+
+**H. La prioridad §0.5.3 (alelo en la entrada) es viable con pérdida mínima.** Cobertura de `reference/pseudosequences/pseudosequences.netmhcpan.34aa.csv` sobre la re-descarga: **190 de 276 alelos, que son el 95,70 % de las filas** (1.485.485 de 1.552.188). El 4,30 % sin cubrir son, casi todos, **serotipos de baja resolución, no alelos**: `HLA-A2`, `HLA-A24`, `HLA-B7`, `HLA-B27`… más los de clase II de ratón (`H2-IAb` con 23.624 filas, `H2-IAg7`) que esa tabla de clase I no incluye, y dos mutantes puntuales (`HLA-B*27:05 C67S mutant`). Son filas a descartar o a resolver aparte, no un obstáculo de diseño.
+
 ### 0.6.4. Estado de la re-descarga (proceso vivo)
 
 Lanzada el 24 nov a las 12:46 UTC (`download_v2.py`, log en `logs/download_v2_20261124.log`). Escribe `manifest.json` incrementalmente tras cada familia, así que **es reanudable por inspección**: las familias ya presentes en el manifiesto están completas.
