@@ -130,7 +130,8 @@ Tampoco están en git, por reglas previas: `data/` (salvo READMEs), `logs/`, `mo
 
 - **El `origin` real es `git@github.com:LauraPerezLiens/MHC-Epitope-Prediction.git`**, no `lperez_nn`. Corrige §9.1, que listaba ambos sin aclarar cuál estaba en uso.
 - Rama de trabajo: `ml_model_comparison`. Commit de esta tarea: `f7cd3d7`.
-- **El push no funciona desde este servidor:** la clave `~/.ssh/id_ed25519` no está registrada en la cuenta de GitHub (`Permission denied (publickey)`). Hay que añadir su clave pública en GitHub → Settings → SSH and GPG keys, o cambiar el remoto a HTTPS con un token. **Hasta entonces los commits se quedan en local.**
+- **Permiso de push concedido a Claude** en `.claude/settings.json`: `Bash(git push:*)` permitido, con `--force`, `--force-with-lease`, `-f`, `--delete` y `--mirror` **denegados** explícitamente. Lo irreversible sigue requiriendo intervención humana.
+- **Autenticación:** la clave `~/.ssh/id_ed25519` de este servidor debe estar registrada en GitHub → Settings → SSH and GPG keys. Si el push falla con `Permission denied (publickey)`, es que no lo está, y los commits se quedan en local hasta registrarla.
 
 ### 0.6.3. Hallazgos confirmados
 
