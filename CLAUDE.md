@@ -656,6 +656,72 @@ Usa el **PID directo (3348177)**, no un patrón de `pgrep`, para evitar el fallo
 
 ---
 
+## 0.9. La regresión logística con los mismos datos, y qué dicen los dos juntos
+
+Documentado el 24 nov 2026 a petición de Laura. **Misma línea experimental que el MLP de §0.8**, verificado en `results/logistic_regression_balanced/config.json`: mismo `root` (`data_input_nn_shuffled_concatenate`), mismo scaler (`standardizer_all_train_chunks.npz`, SHA-256 `668dccf1…`), misma semilla 42, mismo `eval_target_per_class: 29006` y `"protocol": "mlp_exact_50_50_v1"`. **Hereda por tanto los cinco problemas de §0.8**: partición por fila, selección por TEST, 50/50 forzado en TRAIN y evaluación, sin AP, sobre datos aumentados.
+
+### 0.9.1. Resultados
+
+**Época 1 completa** (`results/logistic_regression_balanced/`, 62,30 h):
+
+| | TRAIN | TEST |
+|---|---:|---:|
+| loss | 0,633107 | 0,627876 |
+| accuracy | 0,634127 | 0,640316 |
+| **ROC-AUC** | 0,689035 | **0,696888** |
+| MCC | 0,268908 | 0,281324 |
+
+**Época 2: interrumpida y archivada** en `results/logistic_regression_balanced_epoch2_archived/` el 22 nov a las 11:36, en el **chunk 5.740 de 14.499 (39,6 %)**. Último registro: TEST EVAL ALL ROC-AUC **0,695420**, loss 0,628932. **El proceso ya no corre** (PID 3027487 muerto).
+
+### 0.9.2. La regresión logística estaba saturada
+
+574 puntos de monitorización a lo largo del final de la época 1 y el 39,6 % de la época 2:
+
+| | ROC-AUC de TEST |
+|---|---:|
+| Mínimo | 0,692489 |
+| Máximo | 0,699425 |
+| Último (chunk 5.740) | 0,695420 |
+
+**Rango total: 0,0069.** Es ruido. La regresión logística **convergió dentro de la primera época** y la segunda no aportaba nada; interrumpirla fue correcto. Era previsible: es un modelo lineal sobre features fijas, no tiene capacidad que desplegar con más pasadas.
+
+### 0.9.3. El MLP también se está aplanando, y se puede cuantificar
+
+Trayectoria del ROC-AUC online de TRAIN del MLP, extraída de sus 2.627 bloques de `run.log` y promediada por décimos de época:
+
+| Décimo | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | **Ganancia** |
+|---|---|---|---|---|---|---|---|---|---|---|---:|
+| **Época 1** | 0,7335 | 0,7566 | 0,7648 | 0,7697 | 0,7729 | 0,7753 | 0,7773 | 0,7790 | 0,7803 | 0,7814 | **+0,0479** |
+| **Época 2** | 0,7828 | 0,7834 | 0,7840 | 0,7845 | 0,7851 | 0,7855 | 0,7860 | 0,7864 | 0,7868 | 0,7872 | **+0,0044** |
+
+**La ganancia por época cae 11× de la primera a la segunda.** Si la tendencia sigue decayendo, las ocho épocas restantes sumarían del orden de **+0,005 de ROC-AUC** — y sería un ROC-AUC con fuga, balanceado y sin AP. **Esto confirma cuantitativamente la decisión de §0.8.1**: los 20,6 días restantes no compraban nada, y dejar terminar la época 2 era exactamente lo necesario para poder afirmarlo con datos en lugar de por intuición.
+
+### 0.9.4. El hallazgo importante: cuánto del MLP es fuga
+
+Poniendo los cuatro números juntos. Las dos primeras filas son el protocolo con fuga de §0.8/§0.9; las dos últimas son los resultados honestos de §0.2, con partición primaria exacta.
+
+| Protocolo | LR | MLP | **Diferencia MLP − LR** |
+|---|---:|---:|---:|
+| Partición **por fila** (con fuga), eval 50/50 | 0,696888 | 0,795539 | **+0,098651** |
+| Partición **primaria exacta** (limpia), prevalencia real | 0,654641 | 0,680107 | **+0,025466** |
+
+**Con el protocolo contaminado el MLP parece aportar +0,0987 sobre el modelo lineal. Con una partición limpia aporta +0,0255. Es decir, alrededor del 74 % de la ventaja aparente del MLP sobre la regresión logística desaparece al cerrar la fuga.**
+
+La interpretación es coherente con §0.1: la capacidad extra del MLP no se estaba gastando en aprender estructura generalizable, sino en **memorizar los grupos que aparecen a la vez en TRAIN y en TEST** (99,70 % de los grupos en varias particiones). Un modelo lineal no puede memorizar tanto, así que se beneficia menos de la fuga — y por eso la brecha se hincha.
+
+> **Cautela, para no sobrevender el resultado.** Los dos protocolos difieren en **más** que la fuga: también en el balanceo de la evaluación (50/50 forzado frente a prevalencia natural) y en los datos (aumentados frente a originales). Por tanto **el 74 % no es una descomposición causal limpia**, es una magnitud consistente con la fuga como causa dominante. A favor de la comparación: el ROC-AUC es una métrica de ranking y por tanto poco sensible a la prevalencia, así que el balanceo explica poco de la brecha. Para convertirlo en una afirmación publicable haría falta **una ablación controlada**: mismo conjunto de datos y misma evaluación, variando *solo* la unidad de partición.
+
+### 0.9.5. Qué queda documentado de esta línea
+
+1. **La regresión logística sobre 1.792 features satura en 0,69 (con fuga) y 0,65 (limpio).** No es cuestión de más épocas.
+2. **El MLP satura cerca de 0,79 (con fuga) y 0,68 (limpio).** Su ganancia por época cae 11× entre la primera y la segunda.
+3. **La diferencia entre los dos modelos es casi toda fuga.** Lo que queda —+0,0255 de ROC-AUC, o en AP 1,619 frente a 1,476 de lift— es la aportación real de la no linealidad, y es pequeña.
+4. **Ninguno de los dos acerca el 0,865 de Wert2021** (lift 15,9× frente a 1,62×). El problema no es la familia de modelo: es la formulación de la tarea y la representación, exactamente lo que dice §0.4.
+
+> **Consecuencia práctica:** probar arquitecturas más grandes sobre esta representación es la vía menos prometedora. Lo que §0.9.4 sugiere es que **el margen está en los datos y en la partición**, no en el modelo. Refuerza el orden de prioridades de §0.5: E0 primero, alelo en la entrada, y péptido en lugar de ventana.
+
+---
+
 ## 1. Contexto doctoral y finalidad científica
 
 El trabajo se desarrolla en el Centro Nacional de Biotecnología (CNB-CSIC), dentro del proyecto RISE (PREX2023-000056), mediante contrato predoctoral FPI iniciado el 1 de enero de 2026. El doctorado pertenece al programa de Biociencias Moleculares de la Universidad Autónoma de Madrid, con matrícula del 17 de febrero de 2026. Título de tesis: «Desarrollo de algoritmos para el diseño de inmunoterapias en oncología (RISE)». Dirección: Esteban Veiga; Carlos Óscar S. Sorzano participa en la supervisión computacional. Tutora UAM: Blanca Lizarbe. Horizonte previsto: marzo de 2029.
