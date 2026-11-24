@@ -10,6 +10,7 @@
 !/model/README.md
 /results/*
 !/results/README.md
+!/results/RESULTADOS.md
 
 # Local operational logs
 /logs/

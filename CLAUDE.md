@@ -105,6 +105,8 @@ Esta sección se apoya en artefactos del repositorio y en los artículos publica
 
 ### 0.2. Resultados honestos actuales (D1, TEST puntuado una vez)
 
+> 📄 **Resumen legible de TODOS los resultados de `results/`: [`results/RESULTADOS.md`](results/RESULTADOS.md)**, escrito el 24 nov 2026. Reúne en un solo documento las métricas de E1/E2 y la ablación, la construcción del dataset (fases 1 y selección definitiva), las particiones, ProtT5, SecondaryBERT y por qué D2 está parado. Es el sitio al que ir para consultar un número sin abrir los 17 directorios.
+
 | Modelo | Partición | ROC-AUC | AP | Prevalencia | AP/prev |
 |---|---|---:|---:|---:|---:|
 | LR | primaria exacta | 0,654641 | 0,375738 | 0,25451 | 1,476 |
