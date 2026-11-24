@@ -1,7 +1,8 @@
 # Verificación de descarga IEDB
 
 - Descarga nueva: `data/data_raw_20261124`
-- Snapshot histórico: `/tmp/claude-7259/-data-nap-lperez-nn/94aea7d6-1e31-45e3-a6fc-95a0c044de16/scratchpad/old_snapshot/data_raw`
+- Snapshot histórico: extraído de `data/used_data/data_raw.tar.zst` (snapshot del 10 nov 2026, 3,2 GB al extraer).
+  Se extrajo a un directorio temporal que ya no existe; es re-extraíble con `zstd -dc ... | tar xf -`.
 - Dataset de Wert2021: `/data/nap/lperez_nn/reference/neoantigenpred_zip/neoantigenpred-master/media/downloadable_content/H2Kb_data.csv`
 
 ## 1. Nuevo frente al histórico, por `assay_id`
