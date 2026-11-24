@@ -69,3 +69,5 @@ miniconda3/
 # neoantigenpred-master.zip (ignorado por *.zip) en la raiz del repo.
 /reference/neoantigenpred_zip/
 
+# Documento maestro de contexto: vive solo en este servidor
+CLAUDE.md
