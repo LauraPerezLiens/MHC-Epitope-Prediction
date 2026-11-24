@@ -99,7 +99,7 @@ Certificar la procedencia de los datos IEDB del pipeline, que §3 y §21 dejan s
 | Artefacto | Ruta | Nota |
 |---|---|---|
 | Script de descarga del pipeline | `data_pipeline/scripts/data_download/build_iedb_dataset.py` | **Ya revisado.** Paginaba por `offset` **sin `order`**, lo que en PostgREST no garantiza orden estable entre páginas → riesgo de filas perdidas y duplicadas. Causa de la re-descarga. |
-| **Script de descarga definitivo** | `data_pipeline/scripts/data_download/build_iedb_dataset_v2.py` | **Escrito el 24 nov; sustituye a `build_iedb_dataset.py`.** Ver §0.6.7. |
+| **Script de descarga definitivo** | `data_pipeline/scripts/data_download/build_iedb_dataset_v2.py` | **Escrito el 24 nov; sustituye a `build_iedb_dataset.py`.** Ver §0.6.5. |
 | Scripts de esta verificación | `data_pipeline/scripts/iedb_verification_20261124/` | Copiados del scratchpad al repo el 24 nov para que no se pierdan. |
 | Snapshot histórico extraído | `data/used_data/data_raw.tar.zst` (3,2 GB al extraer) | Se extrajo al scratchpad; **re-extraíble**, no hace falta conservarlo. |
 | Re-descarga nueva | `data/data_raw_20261124/` + `manifest.json` | En curso (ver 0.6.4). |
@@ -277,13 +277,17 @@ En H2-K, **solo el 0,7 % de las filas tiene el alelo atribuido de forma directa*
 
 **O. Riesgo de fuga por publicación, no detectado hasta ahora.** `reference__pmid` tiene solo **89 valores distintos para las 87.593 filas de H2-K** y 583 para las 569.013 de HLA-A. Un único estudio de inmunopeptidómica aporta decenas de miles de filas con el mismo tipo celular, el mismo anticuerpo y el mismo sesgo de preparación. **Particionar por proteína no protege de esto:** un modelo puede aprender la huella técnica de un laboratorio. Hay que medir la fuga por `pmid` y considerar partición por publicación como control adicional, al nivel de la partición por componentes de proteína de §0.2.
 
+**Q. `tcell_export` usa un vocabulario de ensayo y de evidencia COMPLETAMENTE DISTINTO al de `mhc_export`,** y el pipeline los concatenaba sin distinguirlos. En `tcell_export` los métodos son ELISPOT, 51-cromo, ICS, ELISA, multímero/tetrámero, SPR, ensayo in vivo, 3H-timidina… es decir **inmunogenicidad**, no presentación ni unión. Y los códigos de evidencia del alelo son otros: `Cited reference`, `Not determined`, `MHC binding assay` y —lo importante— **`MHC binding prediction`**.
+
+**Hay, por tanto, tres objetivos distintos mezclados en una sola etiqueta binaria:** presentación (elución por espectrometría, mayoría de `mhc_export`), afinidad de unión, e inmunogenicidad (`tcell_export`). No son intercambiables. Esto se suma al hallazgo N y refuerza §0.4: parte del techo 0,66–0,68 puede venir de que la etiqueta agrega fenómenos distintos.
+
+**R. Hay filas cuyo alelo lo asignó un predictor, no un experimento.** `MHC binding prediction` como `mhc_restriction__evidence_code`: 179 filas en el `tcell_export` de H2-L (perfil `full`), 110 tras agregar por péptido-alelo. **Entrenar sobre ellas es circular**: el modelo aprendería la salida de otro modelo. Junto con el 42,7 % de HLA-A inferido por motivo (hallazgo L), define un criterio de filtrado obligatorio antes de publicar cualquier comparación con NetMHCpan: **excluir las filas cuya etiqueta de alelo provenga de una predicción.**
+
 **P. La resolución de alelo en humano es buena; el problema es el colapso, no los datos.** En HLA-A: 554.918 filas (97,5 %) con alelo de cuatro dígitos (`HLA-A*02:01`…), 14.071 (2,5 %) serotipos de baja resolución (`HLA-A24`, `HLA-A2`…) y 3 mutantes. Los serotipos son además mayoritariamente de elución (72,7 %), coherente con el hallazgo L. **Conclusión: trabajar por alelo es viable sin apenas pérdida; el 2,5 % de serotipos se descarta o se trata aparte.** Nótese el desbalance extremo: `HLA-A*02:01` es 219.292 filas, el 38,5 % de HLA-A.
 
 ### 0.6.4. Estado de la re-descarga (proceso vivo)
 
-Lanzada el 24 nov a las 12:46 UTC (`download_v2.py`, log en `logs/download_v2_20261124.log`). Escribe `manifest.json` incrementalmente tras cada familia, así que **es reanudable por inspección**: las familias ya presentes en el manifiesto están completas.
-
-Completado (ratón, 5 familias):
+**TERMINADA** el 24 nov a las 14:32 UTC (`download_v2.py`, log en `logs/download_v2_20261124.log`, marca `DONE`). Las 11 familias, **2.177.675 filas** en total, con `manifest.json` completo.
 
 | Familia | `mhc` | `tcell` |
 |---|---:|---:|
@@ -292,25 +296,18 @@ Completado (ratón, 5 familias):
 | mouse/mhc-I/H2-L | 44 | 114 |
 | mouse/mhc-II/H2-IA | 29.895 | 2.113 |
 | mouse/mhc-II/H2-IE | 233 | 173 |
+| human/mhc-I/HLA-A | 569.013 | 10.484 |
+| human/mhc-I/HLA-B | 664.053 | 1.114 |
+| human/mhc-I/HLA-C | 139.852 | 320 |
+| human/mhc-II/HLA-DR | 405.608 | 6.375 |
+| human/mhc-II/HLA-DQ | 50.191 | 780 |
+| human/mhc-II/HLA-DP | 162.186 | 347 |
 
-Pendiente: `human/mhc-I/{HLA-A,HLA-B,HLA-C}` y `human/mhc-II/{HLA-DR,HLA-DQ,HLA-DP}`. En el momento de escribir esto iba por HLA-A, página 7 (~80.000 filas y subiendo).
+> **Esta descarga es del perfil `legacy`**: mismos filtros que `build_iedb_dataset.py`, es decir **solo positivos y solo epitopos de la propia especie**. Sirvio para verificar procedencia, que era su proposito. Para trabajar (E0, negativos, alelo en la entrada) hace falta una descarga del perfil `full` con `build_iedb_dataset_v2.py` (véase §0.6.5).
 
-> **Nota sobre H2-L: 44 filas en `mhc_export`.** §3.1 atribuye 69 M de filas BLOSUM históricas a H2-L. Con 44 ensayos MHC, esa cifra solo puede venir de expansión masiva por ventanas + aumento. Merece comprobación explícita al comparar con el snapshot viejo.
+> **Nota sobre H2-L: 44 filas en `mhc_export`** con el perfil `legacy`, frente a **534** con el perfil `full`. §3.1 atribuye 69 M de filas BLOSUM historicas a H2-L: con 44 ensayos, esa cifra solo puede venir de expansion masiva por ventanas mas aumento. Merece comprobacion explicita.
 
-**Para comprobar si terminó:** `tail -5 logs/download_v2_20261124.log` (busca `DONE`) y `ps aux | grep download_v2`.
-
-### 0.6.5. Pendiente, en orden
-
-1. **Esperar a que termine la re-descarga** de las seis familias humanas.
-2. ~~Ejecutar la comparación por `assay_id`.~~ **Hecho para 7 de 11 familias** → hallazgo A bis. Repetir sobre las 11 cuando termine la descarga. Antiguo texto: `data_pipeline/scripts/iedb_verification_20261124/compare_downloads.py` (requiere el snapshot viejo extraído; si el scratchpad se ha limpiado, re-extraer con `zstd -d` desde `data/used_data/data_raw.tar.zst`). Ojo: la ruta `OLD` del script apunta al scratchpad de la sesión anterior — **hay que actualizarla**. Da, por familia y export: filas viejas, nuevas, duplicadas en el viejo, solo-viejo, solo-nuevo y comunes, todo sobre `assay_id`.
-3. ~~Cuantificar el daño del paginado antiguo.~~ **Hecho: el daño es 1 fila.** D1 no se reconstruye por este motivo.
-4. ~~Comparar el H-2K nuevo contra el `H2Kb_data.csv` de Wert.~~ **Hecho** → hallazgos C y D.
-5. ~~Explicar las 666 filas *Mus musculus* que el filtro de organismo no justifica.~~ **Hecho** → hallazgo E: defecto del preprocesado de Wert, no pérdida nuestra.
-6. **Decidir y documentar el universo de epítopos** de la tarea: solo propio/murino (actual, defendible para neoantígenos) o todo IEDB por alelo (lo de Wert2021). Condiciona qué comparación con el 0,865 es legítima.
-7. **Escribir el informe** en `reports/audits/iedb_provenance_20261124.md` y actualizar §3 de este documento con release, filtros y criterios reales, que es lo que §21 declara ausente. Añadir el hallazgo D a §0.4 como quinta decisión de diseño.
-8. **Luego, no antes:** E0 (§0.5.1), usando `LSTMcvonehot.py` como referencia de arquitectura y decidiendo primero si el brazo de control usa los 4.828 del paper o los 8.901 del CSV distribuido.
-
-### 0.6.7. El script de descarga definitivo
+### 0.6.5. El script de descarga definitivo
 
 `data_pipeline/scripts/data_download/build_iedb_dataset_v2.py`, escrito el 24 nov 2026. **Sustituye a `build_iedb_dataset.py`**, que no debe volver a usarse para datos nuevos (se conserva solo para reproducir la procedencia de D1). Probado en vivo sobre `mouse/mhc-I/H2-L` en los dos perfiles.
 
@@ -342,7 +339,86 @@ $P ... --profile full --out DIR --only mouse/mhc-I/H2-K
 
 > **Entorno:** `pandas` y `requests` están en `nap_env`, **no** en `base`. Usar `/home/nap/miniconda3/envs/nap_env/bin/python`.
 
-### 0.6.6. Decisiones tomadas en esta tarea
+### 0.6.6. Verificación a tres bandas, cerrada sobre las 11 familias
+
+Script: `data_pipeline/scripts/iedb_verification_20261124/verify_download.py`. Consolida y sustituye a `compare_downloads.py`, `newonly_distribution.py` y `wert_vs_h2k.py`. Informe: [`reports/audits/iedb_verificacion_descarga_20261124.md`](reports/audits/iedb_verificacion_descarga_20261124.md), detalle en el `.json` hermano.
+
+Dos comparaciones con **claves distintas, y eso no es un detalle**: nuevo contra viejo por `assay_id` (única forma de separar «IEDB creció» de «el paginado falló»), y nuestro H2-K contra Wert **por secuencia de péptido**, porque su CSV viene de otro export y no tiene `assay_id` utilizable.
+
+**Resultado sobre las 11 familias** (antes solo había 7):
+
+| Magnitud | Valor |
+|---|---:|
+| Filas en el snapshot del 10 nov | 1.985.260 |
+| **Duplicadas en el viejo** | **0** |
+| Filas en la re-descarga del 24 nov | 2.177.675 |
+| **Solo en el viejo** | **1** |
+| Solo en el nuevo | 192.416 |
+| **De ellas, intercaladas** (por debajo del máx. `assay_id` viejo) | **33 (0,017 %)** |
+| En común | 1.985.259 |
+
+`verify_download.py` añade la columna *intercalado*, que es la prueba diagnóstica: un paginado que pierde páginas deja huecos repartidos por todo el rango de identificadores. Hay 33 sobre 192.416. **Hallazgo A bis queda cerrado y confirmado sobre el conjunto completo: el paginado antiguo no dañó los datos y D1 no se reconstruye por este motivo.** Las 192.383 restantes son crecimiento de IEDB en dos semanas, concentrado en HLA-B (+70.780), HLA-DR (+58.691), HLA-A (+46.851) y H2-IA (+9.216).
+
+Lado Wert, reconfirmado: 12.394 péptidos únicos, 9.827 positivos por su criterio real (`!= "Negative"`), de los que tenemos **5.504 (56,01 %)**. Nuestros 45.150 péptidos de H2-K incluyen 39.646 que él no tiene. **`negativos de wert presentes = 0`**, lo que es la comprobación de consistencia del perfil `legacy`: no descarga negativos por construcción.
+
+### 0.6.7. Procesado: de IEDB a tabla por péptido y alelo
+
+`data_pipeline/scripts/data_processing/build_peptide_table.py`. **Este es el paso intermedio que faltaba en el pipeline.** El histórico iba de IEDB a ventanas de 25 aa de un salto y por el camino tiraba casi toda la información del ensayo. Este script no decide la tarea: **anota, clasifica y marca contradicciones**, dejando las decisiones como filtros aplicables sobre la salida.
+
+Salida: un Parquet por familia, **una fila por (alelo literal, péptido)**. Se agrupa por `allele_raw` y no por el normalizado, porque agrupar por el normalizado fundiría los serotipos con alelos reales.
+
+| Columna | Para qué sirve |
+|---|---|
+| `allele_raw`, `allele_norm`, `allele_resolution` | Alelo literal, normalizado al vocabulario NetMHCpan, y su resolución (`4digit`/`serotype`/`mutant`). |
+| **`pseudosequence`** | **34 aa del surco de unión. Es la columna que permite probar si meter el alelo en la entrada mejora la red (§0.5.3).** |
+| `label`, `label_tier`, `n_positive`, `n_negative` | Etiqueta por voto mayoritario y el detalle que la sostiene. |
+| **`conflicting`** | **Mismo péptido y mismo alelo con ensayos positivos Y negativos.** Ruido de etiqueta real, no artefacto del colapso por familia. |
+| `assay_class` | `elution_ms` (presentación) / `binding` (afinidad) / `tcell_functional` (inmunogenicidad) / `structural`. Separa los tres objetivos del hallazgo Q. |
+| `allele_evidence_class` | `direct` / `antibody` / `inferred_motif` / **`prediction`** / `binding_assay` / `tcell_assay` / `cited` / `not_determined`. Permite excluir las filas circulares del hallazgo R. |
+| `affinity_nm` | Solo en nM; el resto de unidades (ángstroms, minutos, grados) se descarta. Relleno del 0,16–0,68 %: inservible para regresión. |
+| `parent_accession`, `start_pos`, `end_pos` | Reconstruir ventanas o generar negativos del mismo proteoma. |
+| `pmid`, `n_pmids` | **Eje de fuga no cubierto por la partición por proteína** (hallazgo O). |
+| `peptide_canonical` | `False` si el péptido tiene letras fuera de los 20 canónicos. |
+
+**Normalización de alelo.** IEDB y NetMHCpan no usan el mismo vocabulario: `HLA-A*02:01` → `HLA-A0201`, `H2-Kb` → `H-2-Kb`. Los mutantes y serotipos devuelven `None` y se quedan sin pseudosecuencia, como corresponde.
+
+> **Limitación: la tabla de pseudosecuencias es solo de clase I.** Comprobado: 11.839 entradas HLA-A/B/C más primates/bóvidos/cerdo, y **ninguna** de HLA-DR/DQ/DP ni de H2-IA/IE. Para clase II hacen falta las pseudosecuencias de NetMHCIIpan, que son de otra longitud y de dos cadenas. **La prioridad §0.5.3 es ejecutable hoy en clase I y está bloqueada en clase II** por falta de referencia.
+
+Validado sobre tres familias:
+
+| Familia / perfil | Filas péptido-alelo | Péptidos | Alelos | Prevalencia | Contradictorios | Con pseudosec. |
+|---|---:|---:|---:|---:|---:|---:|
+| H2-K (`legacy`) | 61.917 | 45.150 | 7 | 100 % | 0 | 100,0 % |
+| HLA-A (`legacy`) | 247.327 | 177.490 | 81 | 100 % | 0 | 95,4 % |
+| H2-L (`full`) | 1.012 | 1.000 | 2 | **44,57 %** | **67 (6,62 %)** | 100,0 % |
+
+La prevalencia de 100 % y los 0 contradictorios en el perfil `legacy` **no son un error: son la comprobación de que el filtro `ilike.*Positive*` hace imposible medir contradicción**. Solo con el perfil `full` aparece estructura: prevalencia real del 44,57 % y un **6,62 % de pares péptido-alelo con evidencia experimental contradictoria**. Ese número no se podía conocer antes.
+
+```bash
+P=/home/nap/miniconda3/envs/nap_env/bin/python
+$P -u data_pipeline/scripts/data_processing/build_peptide_table.py \
+    --raw data/data_raw_20261124 --out data/peptide_table_20261124
+```
+
+### 0.6.8. Pendiente, en orden
+
+**Cerrado el 24 nov:** ~~esperar la re-descarga~~ (terminada, 11/11); ~~comparacion por `assay_id`~~ (hecha sobre las 11, §0.6.6); ~~cuantificar el dano del paginado~~ (1 fila; 33 intercaladas de 192.416); ~~comparar con el `H2Kb_data.csv` de Wert~~ (56,01 %); ~~explicar las 666 filas murinas~~ (hallazgo E); ~~script de descarga definitivo~~ (§0.6.5); ~~cómo procesar lo descargado~~ (§0.6.7); ~~certificar la release de IEDB~~ (no existe endpoint; sustituida por huella de contenido).
+
+Lo que queda, por orden:
+
+1. **Decidir el universo de epitopos de la tarea.** Es la decision bloqueante y **es de Laura, no del codigo**: solo propio/murino (lo actual, defendible para neoantigenos) o todo IEDB por alelo (lo de Wert2021, dominado por patogeno). Condiciona que comparacion con el 0,865 es legitima y que perfil de descarga se usa a partir de ahora.
+2. **Lanzar la descarga del perfil `full`** una vez decidido el punto 1. Vigilar disco: HLA-A y HLA-B pasaran de ~600 k filas cada una a bastante mas, y H2-L ya mostro un factor 12x.
+3. **Decidir la politica de filtrado sobre la tabla de peptidos**, con las columnas que §0.6.7 ya deja anotadas. Cuatro decisiones, ninguna obvia:
+   - **`allele_evidence_class`:** excluir `prediction` es obligatorio (circularidad, hallazgo R). Que hacer con `inferred_motif` (42,7 % de HLA-A) y `antibody` (95,9 % de H2-K) es un juicio de valor: excluirlos deja H2-K practicamente sin datos.
+   - **`assay_class`:** elegir UN objetivo (presentacion, union o inmunogenicidad) o modelarlos por separado. Mezclarlos es lo que se ha hecho hasta ahora (hallazgo Q).
+   - **`conflicting`:** excluir, o conservar como medida de ruido irreducible.
+   - **`allele_resolution`:** descartar los serotipos (2,5 % en HLA-A) o resolverlos aparte.
+4. **Medir la fuga por `pmid`** y anadir la particion por publicacion como control, al nivel de la particion por componentes de proteina de §0.2 (hallazgo O). No estaba contemplada y la particion por proteina no la cubre.
+5. **Probar el alelo como entrada** (§0.5.3): la columna `pseudosequence` ya esta. Ejecutable hoy en clase I; **bloqueado en clase II** por falta de pseudosecuencias de NetMHCIIpan.
+6. **Escribir el informe de procedencia** en `reports/audits/iedb_provenance_20261124.md`, actualizar §3 con filtros y criterios reales, y anadir el hallazgo D a §0.4 como quinta decision de diseno.
+7. **Luego, no antes:** E0 (§0.5.1), con `LSTMcvonehot.py` como referencia, decidiendo primero si el brazo de control usa los 4.828 del paper o los 8.901 del CSV distribuido.
+
+### 0.6.9. Decisiones tomadas en esta tarea
 
 - Mantener los filtros IEDB **idénticos** a `build_iedb_dataset.py` en la re-descarga, para aislar el efecto del paginado. Cambiar filtros y paginado a la vez haría la comparación ininterpretable.
 - Comparar por `assay_id`, no por conteo de filas: es la única forma de distinguir «IEDB cambió» de «el paginado falló».
