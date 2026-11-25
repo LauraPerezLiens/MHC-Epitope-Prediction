@@ -49,6 +49,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -520,6 +521,31 @@ CANONICAL_AA = set("ACDEFGHIKLMNPQRSTVWY")
 # `epitope__species`, que es el taxon agregado y por tanto agrupa las cepas.
 SELF_SPECIES = {"human": "Homo sapiens", "mouse": "Mus musculus"}
 
+# --------------------------------------------------------------------------- #
+# Alelos artificiales. Un mutante puntual como `HLA-B*27:05 C67S mutant` o
+# `HLA-A*02:01 K66A mutant` es una molecula construida en laboratorio para
+# estudiar el surco: no existe en ninguna persona ni en ningun raton. Y la
+# mutacion esta justo en las posiciones que deciden la especificidad, porque
+# ese es el proposito del experimento, de modo que su repertorio es
+# deliberadamente distinto del silvestre.
+#
+# Medido sobre este dataset: el 86,3 % de los peptidos del mutante C67S de
+# HLA-B*27:09 NO estan en el repertorio del silvestre, y serian el 37 % de los
+# datos de ese alelo si se fundieran. Como el mutante no tiene pseudosecuencia
+# propia en la tabla de NetMHCpan, heredaria la del silvestre: se le ensenaria
+# al modelo que B*27:09 presenta peptidos que no presenta. No es ruido, es
+# corrupcion activa de la etiqueta.
+#
+# Cuesta 6.930 filas, el 0,35 %, y el 98,9 % de ellas son dos alelos de un
+# solo estudio cada uno. Decision de Laura del 25 nov.
+#
+# NO se filtran en cambio las etiquetas de baja resolucion (`HLA-DR` pelado,
+# `HLA-A2`, `HLA-DRB1`, `H2-k class I`): son 211.598 filas, el 10,76 %, muy
+# concentradas en clase II (HLA-DR perderia el 45,14 %), y son datos reales
+# aunque el alelo no este resuelto. Decision de Laura del 25 nov: conservarlas.
+# --------------------------------------------------------------------------- #
+RE_ALELO_MUTANTE = re.compile(r"\bmutant\b", re.IGNORECASE)
+
 # Columnas exentas de la exigencia de completitud. `reference__pmid` esta vacio
 # en los envios directos a IEDB, que no tienen publicacion asociada: son datos
 # legitimos y su ausencia de referencia no descalifica la medida. Decision de
@@ -782,7 +808,16 @@ def slim_one(
                 ),
                 "epitope__species", f'contiene "{self_species}"',
             )
-        # 5. Solo positivos. Los negativos no se usan en este proyecto, y
+        # 5. Alelos artificiales fuera.
+        if "mhc_restriction__name" in df.columns:
+            _apply(
+                "mhc_restriction__name",
+                ~df["mhc_restriction__name"].fillna("").str.contains(
+                    RE_ALELO_MUTANTE
+                ),
+                "mhc_restriction__name", "no es un mutante puntual de laboratorio",
+            )
+        # 6. Solo positivos. Los negativos no se usan en este proyecto, y
         #    ademas la elucion no produce ninguno: de los 575.559 negativos
         #    experimentales, los filtros anteriores ya dejan 12.133, porque
         #    son casi todos peptidos sinteticos de ensayo de union sin
@@ -795,7 +830,7 @@ def slim_one(
                 ),
                 "assay__qualitative_measurement", 'empieza por "Positive"',
             )
-        # 6. Ninguna celda vacia. Deja una tabla en la que toda columna esta
+        # 7. Ninguna celda vacia. Deja una tabla en la que toda columna esta
         #    rellena en toda fila, de modo que nada rio abajo tiene que
         #    tratar ausencias. Lo que quita: epitopos sin coordenadas en su
         #    proteina, y filas cuya referencia es un envio directo a IEDB y
