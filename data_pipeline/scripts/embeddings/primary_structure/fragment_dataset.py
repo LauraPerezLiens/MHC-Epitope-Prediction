@@ -172,6 +172,8 @@ class FragmentDataset:
 
         self.tabla = D.reset_index(drop=True)
         self.chunks = sorted(self.tabla.chunk.unique())
+        self.dtype = np.dtype(np.float32)
+        self.devolver_indices = False
 
         # Que los embeddings de los chunks implicados existan de verdad. Sin
         # esto el fallo aparece a mitad de la primera epoca, con un
@@ -206,10 +208,10 @@ class FragmentDataset:
     def dim(self) -> int:
         return 1024 + (3 if self.features == "primary_secondary" else 0)
 
-    def _onehot(self, cadenas: pd.Series) -> np.ndarray:
+    def _onehot(self, cadenas: pd.Series, dtype=np.float32) -> np.ndarray:
         """(n, w, 3) one-hot de C/H/E. Una letra desconocida deja el vector a 0."""
         n = len(cadenas)
-        out = np.zeros((n, self.w, 3), dtype=np.float32)
+        out = np.zeros((n, self.w, 3), dtype=dtype)
         for i, s in enumerate(cadenas.values):
             for j, ch in enumerate(s):
                 k = Q3_IDX.get(ch)
@@ -220,17 +222,32 @@ class FragmentDataset:
     def _residues(self, c: int) -> np.ndarray:
         return np.load(self.emb_dir / f"chunk_{c:06d}_residues.npy", mmap_mode="r")
 
-    def _arma(self, sub: pd.DataFrame, X1024: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        X = X1024.astype(np.float32)
+    def _arma(self, sub: pd.DataFrame, X1024: np.ndarray):
+        """Monta el lote. Con `dtype=float16` se sirve en la precision en la que
+        esta el disco, que es la mitad de bytes a mover hasta la GPU; la
+        conversion a float32 y la estandarizacion se hacen alli."""
+        X = X1024.astype(self.dtype, copy=False)
         if self.features == "primary_secondary":
-            X = np.concatenate([X, self._onehot(sub.secondary_structure)], axis=2)
-        return X, sub.label.to_numpy(dtype=np.float32)
+            X = np.concatenate(
+                [X, self._onehot(sub.secondary_structure, self.dtype)], axis=2)
+        y = sub.label.to_numpy(dtype=np.float32)
+        if self.devolver_indices:
+            return X, y, sub.index.to_numpy()
+        return X, y
 
     # ------------------------------------------------------------------- lotes
     def batches(self, batch_size: int = 512, shuffle: bool = True,
                 seed: int = 0, chunks_en_memoria: int = 16,
-                mmap_aleatorio: bool = False):
-        """Itera lotes `(X, y)`. X es (B, w, dim) float32 e y es (B,) float32."""
+                mmap_aleatorio: bool = False, dtype=np.float32,
+                indices: bool = False):
+        """Itera lotes `(X, y)`, o `(X, y, idx)` con `indices=True`.
+
+        X es (B, w, dim) del `dtype` pedido e y es (B,) float32. `idx` son los
+        indices de `self.tabla`, para poder desglosar las metricas por familia o
+        por especie sin tener que reconstruir el orden de las filas.
+        """
+        self.dtype = np.dtype(dtype)
+        self.devolver_indices = indices
         rng = np.random.default_rng(seed)
         if mmap_aleatorio:
             yield from self._batches_mmap(batch_size, shuffle, rng)
