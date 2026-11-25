@@ -1,0 +1,265 @@
+[
+  {
+    "1_todas": 707935,
+    "2_ligando_eluido": 581855,
+    "3_sin_modificacion": 527899,
+    "4_peptido_canonico": 527895,
+    "5_positivos": 527734,
+    "origen": {
+      "propio": 511804,
+      "sin_anotar": 13888,
+      "otro": 2042
+    },
+    "alelo": {
+      "natural": 514489,
+      "serotipo": 13245
+    },
+    "positivos_alelo_natural": 514489,
+    "positivos_propios_alelo_natural": 498597,
+    "positivos_otros_alelo_natural": 2031,
+    "peptidos_unicos_tras_filtrar": 161678,
+    "familia": "human/HLA-A",
+    "tipo": "mhc"
+  },
+  {
+    "1_todas": 739486,
+    "2_ligando_eluido": 682299,
+    "3_sin_modificacion": 623956,
+    "4_peptido_canonico": 623944,
+    "5_positivos": 623944,
+    "origen": {
+      "propio": 606465,
+      "sin_anotar": 16399,
+      "otro": 1080
+    },
+    "alelo": {
+      "natural": 605392,
+      "serotipo": 10727,
+      "mutante": 7825
+    },
+    "positivos_alelo_natural": 605392,
+    "positivos_propios_alelo_natural": 588897,
+    "positivos_otros_alelo_natural": 1076,
+    "peptidos_unicos_tras_filtrar": 238573,
+    "familia": "human/HLA-B",
+    "tipo": "mhc"
+  },
+  {
+    "1_todas": 146930,
+    "2_ligando_eluido": 142976,
+    "3_sin_modificacion": 130714,
+    "4_peptido_canonico": 130708,
+    "5_positivos": 130696,
+    "origen": {
+      "propio": 127770,
+      "sin_anotar": 2575,
+      "otro": 351
+    },
+    "alelo": {
+      "natural": 130565,
+      "serotipo": 131
+    },
+    "positivos_alelo_natural": 130565,
+    "positivos_propios_alelo_natural": 127642,
+    "positivos_otros_alelo_natural": 348,
+    "peptidos_unicos_tras_filtrar": 63734,
+    "familia": "human/HLA-C",
+    "tipo": "mhc"
+  },
+  {
+    "1_todas": 172031,
+    "2_ligando_eluido": 162597,
+    "3_sin_modificacion": 154282,
+    "4_peptido_canonico": 154282,
+    "5_positivos": 154282,
+    "origen": {
+      "propio": 153770,
+      "sin_anotar": 437,
+      "otro": 75
+    },
+    "alelo": {
+      "natural": 154238,
+      "serotipo": 44
+    },
+    "positivos_alelo_natural": 154238,
+    "positivos_propios_alelo_natural": 153732,
+    "positivos_otros_alelo_natural": 69,
+    "peptidos_unicos_tras_filtrar": 80605,
+    "familia": "human/HLA-DP",
+    "tipo": "mhc"
+  },
+  {
+    "1_todas": 71534,
+    "2_ligando_eluido": 50879,
+    "3_sin_modificacion": 48051,
+    "4_peptido_canonico": 48050,
+    "5_positivos": 48050,
+    "origen": {
+      "propio": 46378,
+      "otro": 885,
+      "sin_anotar": 787
+    },
+    "alelo": {
+      "natural": 48002,
+      "serotipo": 48
+    },
+    "positivos_alelo_natural": 48002,
+    "positivos_propios_alelo_natural": 46332,
+    "positivos_otros_alelo_natural": 885,
+    "peptidos_unicos_tras_filtrar": 31597,
+    "familia": "human/HLA-DQ",
+    "tipo": "mhc"
+  },
+  {
+    "1_todas": 965856,
+    "2_ligando_eluido": 407749,
+    "3_sin_modificacion": 374686,
+    "4_peptido_canonico": 374685,
+    "5_positivos": 374685,
+    "origen": {
+      "propio": 367382,
+      "sin_anotar": 3779,
+      "otro": 3524
+    },
+    "alelo": {
+      "natural": 364347,
+      "serotipo": 10338
+    },
+    "positivos_alelo_natural": 364347,
+    "positivos_propios_alelo_natural": 357157,
+    "positivos_otros_alelo_natural": 3443,
+    "peptidos_unicos_tras_filtrar": 183132,
+    "familia": "human/HLA-DR",
+    "tipo": "mhc"
+  },
+  {
+    "1_todas": 50884,
+    "2_ligando_eluido": 45791,
+    "3_sin_modificacion": 42819,
+    "4_peptido_canonico": 42816,
+    "5_positivos": 42812,
+    "origen": {
+      "propio": 42497,
+      "otro": 261,
+      "sin_anotar": 54
+    },
+    "alelo": {
+      "natural": 42811,
+      "serotipo": 1
+    },
+    "positivos_alelo_natural": 42811,
+    "positivos_propios_alelo_natural": 42497,
+    "positivos_otros_alelo_natural": 260,
+    "peptidos_unicos_tras_filtrar": 18183,
+    "familia": "mouse/H2-D",
+    "tipo": "mhc"
+  },
+  {
+    "1_todas": 94689,
+    "2_ligando_eluido": 87681,
+    "3_sin_modificacion": 79650,
+    "4_peptido_canonico": 79650,
+    "5_positivos": 79649,
+    "origen": {
+      "propio": 79214,
+      "otro": 324,
+      "sin_anotar": 111
+    },
+    "alelo": {
+      "natural": 79643,
+      "mutante": 6
+    },
+    "positivos_alelo_natural": 79643,
+    "positivos_propios_alelo_natural": 79208,
+    "positivos_otros_alelo_natural": 324,
+    "peptidos_unicos_tras_filtrar": 38993,
+    "familia": "mouse/H2-K",
+    "tipo": "mhc"
+  },
+  {
+    "1_todas": 534,
+    "2_ligando_eluido": 13,
+    "3_sin_modificacion": 13,
+    "4_peptido_canonico": 13,
+    "5_positivos": 13,
+    "origen": {
+      "otro": 10,
+      "propio": 3
+    },
+    "alelo": {
+      "natural": 13
+    },
+    "positivos_alelo_natural": 13,
+    "positivos_propios_alelo_natural": 3,
+    "positivos_otros_alelo_natural": 10,
+    "peptidos_unicos_tras_filtrar": 8,
+    "familia": "mouse/H2-L",
+    "tipo": "mhc"
+  },
+  {
+    "1_todas": 35262,
+    "2_ligando_eluido": 31578,
+    "3_sin_modificacion": 26421,
+    "4_peptido_canonico": 26416,
+    "5_positivos": 26416,
+    "origen": {
+      "propio": 25022,
+      "otro": 1367,
+      "sin_anotar": 27
+    },
+    "alelo": {
+      "natural": 26390,
+      "mutante": 26
+    },
+    "positivos_alelo_natural": 26390,
+    "positivos_propios_alelo_natural": 24999,
+    "positivos_otros_alelo_natural": 1364,
+    "peptidos_unicos_tras_filtrar": 18345,
+    "familia": "mouse/H2-IA",
+    "tipo": "mhc"
+  },
+  {
+    "1_todas": 1202,
+    "2_ligando_eluido": 203,
+    "3_sin_modificacion": 201,
+    "4_peptido_canonico": 201,
+    "5_positivos": 201,
+    "origen": {
+      "propio": 152,
+      "otro": 40,
+      "sin_anotar": 9
+    },
+    "alelo": {
+      "natural": 201
+    },
+    "positivos_alelo_natural": 201,
+    "positivos_propios_alelo_natural": 152,
+    "positivos_otros_alelo_natural": 40,
+    "peptidos_unicos_tras_filtrar": 189,
+    "familia": "mouse/H2-IE",
+    "tipo": "mhc"
+  },
+  {
+    "1_todas": 2986343,
+    "2_ligando_eluido": 2193621,
+    "3_sin_modificacion": 2008692,
+    "4_peptido_canonico": 2008660,
+    "5_positivos": 2008482,
+    "origen": {
+      "propio": 1960457,
+      "sin_anotar": 38066,
+      "otro": 9959
+    },
+    "alelo": {
+      "natural": 1966091,
+      "serotipo": 34534,
+      "mutante": 7857
+    },
+    "positivos_alelo_natural": 1966091,
+    "positivos_propios_alelo_natural": 1919216,
+    "positivos_otros_alelo_natural": 9850,
+    "peptidos_unicos_tras_filtrar": 835037,
+    "familia": "TOTAL",
+    "tipo": "mhc"
+  }
+]

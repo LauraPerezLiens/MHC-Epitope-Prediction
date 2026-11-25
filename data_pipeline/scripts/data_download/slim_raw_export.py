@@ -699,12 +699,20 @@ def slim_one(
 
     dst_dir.mkdir(parents=True, exist_ok=True)
     stem = src.stem + "_slim"
-    if out_format == "parquet":
-        dst = dst_dir / f"{stem}.parquet"
-        df.to_parquet(dst, index=False, compression="zstd")
-    else:
-        dst = dst_dir / f"{stem}.csv"
-        df.to_csv(dst, index=False)
+    # El Parquet es el artefacto de trabajo (tipado, columnar, ~10x mas
+    # pequeno). El CSV es la copia inspeccionable a mano, y se emite siempre
+    # que `out_format` lo pida porque leer el dato con los ojos es parte de
+    # decidir los filtros que quedan abiertos.
+    escritos: list[Path] = []
+    if out_format in ("parquet", "both"):
+        d = dst_dir / f"{stem}.parquet"
+        df.to_parquet(d, index=False, compression="zstd")
+        escritos.append(d)
+    if out_format in ("csv", "both"):
+        d = dst_dir / f"{stem}.csv"
+        df.to_csv(d, index=False)
+        escritos.append(d)
+    dst = escritos[0]
 
     n = len(df)
     cols_info = {
@@ -734,6 +742,10 @@ def slim_one(
         "sha256_salida": _sha256(dst),
         "bytes_entrada": src.stat().st_size,
         "bytes_salida": dst.stat().st_size,
+        "salidas": {
+            str(d): {"sha256": _sha256(d), "bytes": d.stat().st_size}
+            for d in escritos
+        },
     }
 
 
@@ -837,14 +849,16 @@ def main() -> int:
             "No elimina filas ni aplica ningun filtro cientifico."
         )
     )
-    ap.add_argument("--raw", required=True, type=Path,
-                    help="directorio de la descarga cruda (con manifest.json)")
+    ap.add_argument("--raw", type=Path, default=None,
+                    help=("directorio de la descarga cruda (con manifest.json). No hace falta "
+                          "con --emit-csv o --census, que trabajan sobre la salida ya escrita."))
     ap.add_argument("--out", required=True, type=Path,
                     help="directorio de salida; replica la estructura especie/clase/familia")
     ap.add_argument("--only", action="append", default=None,
                     help="limita a una familia, p. ej. mouse/mhc-I/H2-K (repetible)")
-    ap.add_argument("--format", choices=("parquet", "csv"), default="parquet",
-                    help="formato de salida (por omision parquet, mucho mas compacto)")
+    ap.add_argument("--format", choices=("parquet", "csv", "both"), default="both",
+                    help=("formato de salida. Por omision 'both': el Parquet es el artefacto "
+                          "de trabajo y el CSV la copia inspeccionable a mano."))
     ap.add_argument("--chunksize", type=int, default=200_000)
     ap.add_argument("--force", action="store_true",
                     help="reprocesa ficheros ya presentes en el manifiesto de salida")
@@ -856,6 +870,10 @@ def main() -> int:
                     help=("NO filtra las filas cuyo objeto no es 'Linear peptide'. Por "
                           "omision se filtran, porque un organismo o una celula tumoral no "
                           "es un ejemplo de este problema."))
+    ap.add_argument("--emit-csv", action="store_true",
+                    help=("escribe el CSV equivalente al lado de cada Parquet ya existente, "
+                          "sin releer los CSV crudos. Para anadir la copia inspeccionable a "
+                          "una salida que se genero solo en Parquet."))
     ap.add_argument("--census", action="store_true",
                     help=("tras escribir, censa los valores de las columnas categoricas "
                           "sobre las 11 familias y lo anota en el manifiesto"))
@@ -865,12 +883,12 @@ def main() -> int:
                           "que la lista curada no tira nada que este relleno en otra familia"))
     args = ap.parse_args()
 
-    raw: Path = args.raw.resolve()
     out: Path = args.out.resolve()
+    raw: Path = (args.raw or args.out).resolve()
     if not raw.is_dir():
         print(f"ERROR: no existe {raw}", file=sys.stderr)
         return 2
-    if out == raw:
+    if args.raw is not None and out == raw:
         print("ERROR: --out no puede ser el mismo directorio que --raw", file=sys.stderr)
         return 2
 
@@ -900,8 +918,12 @@ def main() -> int:
 
     sources = sorted(raw.rglob("*_export_full.csv")) + sorted(raw.rglob("*_export.csv"))
     if not sources:
-        print(f"ERROR: ningun *_export*.csv bajo {raw}", file=sys.stderr)
-        return 2
+        # Los modos que trabajan sobre la salida ya escrita no necesitan los
+        # CSV crudos, que estan archivados y comprimidos.
+        if not (args.emit_csv or args.census):
+            print(f"ERROR: ningun *_export*.csv bajo {raw}", file=sys.stderr)
+            return 2
+        print(f"(sin CSV crudos bajo {raw}: se trabaja solo sobre la salida ya escrita)")
 
     tot_in = tot_out = 0
     tot_rows = 0
@@ -936,6 +958,22 @@ def main() -> int:
         tot_in += info["bytes_entrada"]
         tot_out += info["bytes_salida"]
         tot_rows += info["filas_salida"]
+
+    if args.emit_csv:
+        print("\n--- emitiendo CSV a partir de los Parquet ya escritos ---")
+        for key, info in manifest["ficheros"].items():
+            pq = Path(info["salida"])
+            if pq.suffix != ".parquet" or not pq.exists():
+                print(f"[salta] {key}: no hay Parquet en {pq}")
+                continue
+            csvp = pq.with_suffix(".csv")
+            df = pd.read_parquet(pq)
+            df.to_csv(csvp, index=False)
+            info.setdefault("salidas", {})[str(csvp)] = {
+                "sha256": _sha256(csvp), "bytes": csvp.stat().st_size,
+            }
+            print(f"[csv  ] {key} -> {csvp}  {csvp.stat().st_size/1e6:.1f} MB")
+        man_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
 
     if args.census:
         manifest["censo_de_valores"] = census(out, manifest)
