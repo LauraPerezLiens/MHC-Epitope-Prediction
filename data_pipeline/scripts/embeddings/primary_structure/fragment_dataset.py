@@ -97,6 +97,12 @@ import pandas as pd
 
 Q3 = "CHE"
 Q3_IDX = {c: i for i, c in enumerate(Q3)}
+# 255 es "letra desconocida": no coincide con ningun indice, de modo que su
+# vector one-hot queda a cero sin necesidad de una rama aparte.
+_LUT_Q3 = np.full(256, 255, dtype=np.uint8)
+for _i, _c in enumerate(Q3):
+    _LUT_Q3[ord(_c)] = _i
+_ARANGE3 = np.arange(3, dtype=np.uint8)
 
 
 class FragmentDataset:
@@ -209,15 +215,22 @@ class FragmentDataset:
         return 1024 + (3 if self.features == "primary_secondary" else 0)
 
     def _onehot(self, cadenas: pd.Series, dtype=np.float32) -> np.ndarray:
-        """(n, w, 3) one-hot de C/H/E. Una letra desconocida deja el vector a 0."""
+        """(n, w, 3) one-hot de C/H/E. Una letra desconocida deja el vector a 0.
+
+        Vectorizado: las cadenas se concatenan y se leen como bytes, una tabla
+        de 256 entradas traduce la letra a indice y el one-hot sale por
+        comparacion con difusion. La version con dos bucles de Python costaba el
+        39 % del tiempo de epoca del brazo `primary_secondary` (medido: 2.789
+        ej/s frente a 4.571 del brazo `primary`, con los mismos datos).
+        """
         n = len(cadenas)
-        out = np.zeros((n, self.w, 3), dtype=dtype)
-        for i, s in enumerate(cadenas.values):
-            for j, ch in enumerate(s):
-                k = Q3_IDX.get(ch)
-                if k is not None:
-                    out[i, j, k] = 1.0
-        return out
+        bruto = "".join(cadenas.values)
+        if len(bruto) != n * self.w:
+            raise SystemExit(
+                f"ABORTADO: alguna estructura no mide {self.w}; "
+                f"{len(bruto)} caracteres para {n} filas")
+        k = _LUT_Q3[np.frombuffer(bruto.encode("ascii"), dtype=np.uint8)]
+        return (k.reshape(n, self.w, 1) == _ARANGE3).astype(dtype)
 
     def _residues(self, c: int) -> np.ndarray:
         return np.load(self.emb_dir / f"chunk_{c:06d}_residues.npy", mmap_mode="r")
