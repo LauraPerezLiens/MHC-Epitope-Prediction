@@ -520,6 +520,14 @@ CANONICAL_AA = set("ACDEFGHIKLMNPQRSTVWY")
 # `epitope__species`, que es el taxon agregado y por tanto agrupa las cepas.
 SELF_SPECIES = {"human": "Homo sapiens", "mouse": "Mus musculus"}
 
+# Columnas exentas de la exigencia de completitud. `reference__pmid` esta vacio
+# en los envios directos a IEDB, que no tienen publicacion asociada: son datos
+# legitimos y su ausencia de referencia no descalifica la medida. Decision de
+# Laura del 25 nov. El resto de columnas si tienen que estar rellenas: un
+# epitopo sin coordenadas en su proteina no se puede situar, y tenemos el
+# accession precisamente para poder situarlo.
+COMPLETITUD_EXENTAS = {"reference__pmid"}
+
 # --------------------------------------------------------------------------- #
 # Filtros de fila del nucleo (`--columns core`), decididos por Laura el 25 nov
 # tras revisar H2-D. Cada uno elimina filas que no pueden ser un ejemplo valido:
@@ -661,6 +669,8 @@ def slim_one(
     profile: str = "core",
     filter_linear: bool = True,
     self_species: str | None = None,
+    only_positives: bool = True,
+    require_complete: bool = True,
 ) -> dict:
     """Proyecta un CSV crudo sobre la lista curada del perfil `profile`.
 
@@ -772,6 +782,42 @@ def slim_one(
                 ),
                 "epitope__species", f'contiene "{self_species}"',
             )
+        # 5. Solo positivos. Los negativos no se usan en este proyecto, y
+        #    ademas la elucion no produce ninguno: de los 575.559 negativos
+        #    experimentales, los filtros anteriores ya dejan 12.133, porque
+        #    son casi todos peptidos sinteticos de ensayo de union sin
+        #    proteina madre.
+        if only_positives and "assay__qualitative_measurement" in df.columns:
+            _apply(
+                "assay__qualitative_measurement",
+                df["assay__qualitative_measurement"].fillna("").str.startswith(
+                    "Positive"
+                ),
+                "assay__qualitative_measurement", 'empieza por "Positive"',
+            )
+        # 6. Ninguna celda vacia. Deja una tabla en la que toda columna esta
+        #    rellena en toda fila, de modo que nada rio abajo tiene que
+        #    tratar ausencias. Lo que quita: epitopos sin coordenadas en su
+        #    proteina, y filas cuya referencia es un envio directo a IEDB y
+        #    por tanto no tiene pmid.
+        if require_complete:
+            presentes = [
+                c for c in keep
+                if c in df.columns and c not in COMPLETITUD_EXENTAS
+            ]
+            incompletas = df[presentes].isna().any(axis=1)
+            vacios_por_col = {
+                c: int(df.loc[incompletas, c].isna().sum())
+                for c in presentes
+                if int(df.loc[incompletas, c].isna().sum())
+            }
+            _apply(
+                "_completitud", ~incompletas, None,
+                "ninguna columna conservada vacia, salvo "
+                + ", ".join(sorted(COMPLETITUD_EXENTAS)),
+            )
+            if vacios_por_col:
+                filtros["_completitud"]["vacios_por_columna"] = vacios_por_col
 
     df = df.reset_index(drop=True)[keep]  # orden estable, el de la lista curada
 
@@ -948,6 +994,12 @@ def main() -> int:
                     help=("NO filtra las filas cuyo objeto no es 'Linear peptide'. Por "
                           "omision se filtran, porque un organismo o una celula tumoral no "
                           "es un ejemplo de este problema."))
+    ap.add_argument("--keep-negatives", action="store_true",
+                    help=("conserva los ensayos negativos. Por omision se filtran: no se usan "
+                          "en este proyecto y la elucion no produce ninguno."))
+    ap.add_argument("--allow-incomplete", action="store_true",
+                    help=("permite celdas vacias. Por omision se exige que toda columna "
+                          "conservada este rellena en toda fila."))
     ap.add_argument("--kind", choices=("mhc", "tcell", "ambos"), default="mhc",
                     help=("que export procesar. Por omision solo 'mhc': 'tcell' quedo "
                           "aparcado por decision de Laura del 25 nov."))
@@ -1028,6 +1080,8 @@ def main() -> int:
             src, out / rel.parent, kind, args.format, args.chunksize,
             profile=args.columns, filter_linear=not args.keep_nonpeptide,
             self_species=self_species,
+            only_positives=not args.keep_negatives,
+            require_complete=not args.allow_incomplete,
         )
         manifest["ficheros"][key] = info
         man_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))

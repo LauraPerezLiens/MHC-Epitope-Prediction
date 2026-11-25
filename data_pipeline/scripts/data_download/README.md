@@ -104,17 +104,18 @@ which values.
 | `epitope__name` | only the 20 canonical amino acids | Entries such as `GPPGPAGPAGERGEQG + HYL(P3)` are not plain peptides. |
 | `epitope__molecule_parent_iri` | not empty | Without an accession the source protein cannot be recovered, so the row cannot become a window or a same-proteome decoy. |
 | `epitope__species` | contains the family's own species | `Homo sapiens` for the human families, `Mus musculus` for the murine ones. Cheap: in eluted ligands only 0.50 % of positives came from another organism. |
+| `assay__qualitative_measurement` | starts with `Positive` | Negatives are not used in this project, and elution produces none anyway. `--keep-negatives` disables it. |
+| completeness | no kept column empty, except `reference__pmid` | Leaves a table where every column is filled in every row, so nothing downstream has to handle absences. `reference__pmid` is exempt: it is empty in direct IEDB submissions, which have no associated publication, and that does not disqualify the measurement. `--allow-incomplete` disables it. |
 
 In `tcell_export` there is one extra object-type filter,
 `assay_antigen__object_type`, which does bite — it removes rows whose assayed
 antigen was a whole organism, a protein or a tumour cell. `--keep-nonpeptide`
 disables the object-type filters.
 
-Not filtered, on purpose: the qualitative value and
-`assay_antigen__epitope_relation`. **Note that negatives are not used in this
-project**, and the accession requirement happens to remove most of them anyway
-(575.559 → 12.133), since binding-assay negatives are largely synthetic peptides
-with no parent protein.
+Not filtered, on purpose: the assay type. `assay__method` is kept so positives
+can be counted per type, and it turns out the three mass-spectrometry methods
+supply 99.2 % of them — the dataset is an immunopeptidomics dataset in fact,
+without having filtered for it.
 
 `--kind` defaults to `mhc`; `tcell` is set aside for now.
 
@@ -208,7 +209,7 @@ pathogen-derived epitope).
 | What | Where | Note |
 |---|---|---|
 | Raw download, `full` profile | `data/used_data/data_raw_full_20261124.tar.zst` | 98 MB archived, 4.8 GB extracted. **Archived on purpose: not for routine use.** Extract to re-run the projection. |
-| Clean working set | `data/data_raw_full_20261124_clean/` | Parquet plus CSV, 11 columns, `mhc` only, 1.979.022 rows, with `manifest_slim.json`. |
+| Clean working set | `data/data_raw_full_20261124_clean/` | Parquet plus CSV, 11 columns, `mhc` only, **1.966.070 rows, all positive**, with `manifest_slim.json`. |
 | Positive counts | `reports/audits/recuento_positivos_limpios_20261125.json` | |
 
 ```bash
