@@ -72,34 +72,63 @@ a column that is empty in H2-K can be well populated in HLA-A or in class II.
 
 Two column profiles:
 
-- `--columns core` (default) — **20 columns in `mhc`, 22 in `tcell`**: what is
-  needed to count positives, to filter, and to build examples.
-- `--columns full` — the wide curated list, 75 and 126 columns. An inventory,
-  not a working set.
+- `--columns core` (default) — **11 columns**, and the four row filters below.
+  This is the working set.
+- `--columns full` — the wide curated list, 75 columns, no row filters. An
+  inventory for looking things up, not a working set.
 
-It applies **one row filter**: object type `Linear peptide`.
-`epitope__object_type` removes nothing, because the IEDB query already filters it
-upstream, so it acts as an assertion and the column is dropped as constant. The
-filter that bites is `assay_antigen__object_type` in `tcell_export`, which drops
-rows whose assayed antigen was a whole organism, a protein or a tumour cell —
-counting those as peptide positives falsifies the count. `--keep-nonpeptide`
-disables it.
+The core columns:
 
-Nothing else is filtered, on purpose: the qualitative value,
-`assay_antigen__epitope_relation`, `mhc_restriction__evidence_code` and the
-source organism are open decisions, and the columns needed to make them are kept.
+| Column | Why |
+|---|---|
+| `assay_id` | unique key; provenance and dedup |
+| `epitope__name` | the peptide sequence |
+| `epitope__molecule_parent_iri` | UniProt/NCBI accession — the only way back to the source protein |
+| `epitope__starting_position`, `epitope__ending_position` | position within that protein |
+| `epitope__source_organism` | strain detail; the species itself is now constant per file |
+| `mhc_restriction__name` | the literal allele |
+| `assay__method` | assay type, so positives can be counted per type |
+| `assay__qualitative_measurement` | the label |
+| `reference__pmid`, `reference__date` | publication-leakage axis and temporal split |
+
+### Row filters
+
+`--columns core` applies five filters, in this order. Each one removes rows that
+cannot be a valid example, and the manifest records what each removed and with
+which values.
+
+| Filter | Condition | Why |
+|---|---|---|
+| `epitope__object_type` | `== "Linear peptide"` | Removes nothing — the IEDB query already filters it upstream — so it acts as an assertion and the column is dropped as constant. |
+| `epitope__modifications` | empty | An oxidised or acetylated peptide is not the same molecule, and its amino acid sequence does not say so: it would enter as if unmodified. The column is used to filter and is **not** kept. |
+| `epitope__name` | only the 20 canonical amino acids | Entries such as `GPPGPAGPAGERGEQG + HYL(P3)` are not plain peptides. |
+| `epitope__molecule_parent_iri` | not empty | Without an accession the source protein cannot be recovered, so the row cannot become a window or a same-proteome decoy. |
+| `epitope__species` | contains the family's own species | `Homo sapiens` for the human families, `Mus musculus` for the murine ones. Cheap: in eluted ligands only 0.50 % of positives came from another organism. |
+
+In `tcell_export` there is one extra object-type filter,
+`assay_antigen__object_type`, which does bite — it removes rows whose assayed
+antigen was a whole organism, a protein or a tumour cell. `--keep-nonpeptide`
+disables the object-type filters.
+
+Not filtered, on purpose: the qualitative value and
+`assay_antigen__epitope_relation`. **Note that negatives are not used in this
+project**, and the accession requirement happens to remove most of them anyway
+(575.559 → 12.133), since binding-assay negatives are largely synthetic peptides
+with no parent protein.
+
+`--kind` defaults to `mhc`; `tcell` is set aside for now.
 
 Output is Parquet (the working artefact: typed, columnar, roughly ten times
 smaller) **and** CSV (the copy you can read by eye), because inspecting the data
-by hand is part of deciding those filters. `--format` takes `parquet`, `csv` or
-`both` (default); `--emit-csv` writes the CSV next to an existing Parquet without
-re-reading the raw files, which is useful once the raw CSVs have been archived.
+by hand is part of deciding the remaining filters. `--format` takes `parquet`,
+`csv` or `both` (default); `--emit-csv` writes the CSV next to an existing
+Parquet without re-reading the raw files, which is useful once the raw CSVs have
+been archived.
 
 Other modes:
 
 - `--census` — value counts for every categorical column, aggregated over all 11
-  families, written into the manifest. This is what makes the open filtering
-  decisions answerable with numbers.
+  families, written into the manifest.
 - `--audit-dropped` — fill rate of the **discarded** columns over all 11
   families. This is the safety check on the curation: any discarded column with
   appreciable fill is a curation error. Re-run it after changing the lists.
@@ -111,14 +140,19 @@ every output, and the git commit.
 
 ```bash
 $P -u data_pipeline/scripts/data_download/slim_raw_export.py \
-    --raw data/data_raw_full_20261124 --out data/data_raw_full_20261124_clean \
-    --columns core --census
+    --raw data/_extract_tmp/data_raw_full_20261124 \
+    --out data/data_raw_full_20261124_clean \
+    --kind mhc --columns core --format both --census
 ```
 
 ### `count_clean_positives.py` — how many positives survive
 
 Applies a cumulative funnel over the clean Parquet files and breaks the
-survivors down by epitope origin and allele reliability:
+survivors down by epitope origin and allele reliability. Note that since the
+clean dataset now applies the modification, canonical-peptide and own-species
+filters itself, steps 3, 4 and the origin split are no-ops on it; the script
+stays useful for re-running the funnel over a `--columns full` projection or a
+fresh download:
 
 1. all rows
 2. `+` eluted ligand — `assay__response_measured == 'ligand presentation'`
@@ -174,7 +208,7 @@ pathogen-derived epitope).
 | What | Where | Note |
 |---|---|---|
 | Raw download, `full` profile | `data/used_data/data_raw_full_20261124.tar.zst` | 98 MB archived, 4.8 GB extracted. **Archived on purpose: not for routine use.** Extract to re-run the projection. |
-| Clean working set | `data/data_raw_full_20261124_clean/` | Parquet plus CSV, 20/22 columns, with `manifest_slim.json`. |
+| Clean working set | `data/data_raw_full_20261124_clean/` | Parquet plus CSV, 11 columns, `mhc` only, 1.979.022 rows, with `manifest_slim.json`. |
 | Positive counts | `reports/audits/recuento_positivos_limpios_20261125.json` | |
 
 ```bash

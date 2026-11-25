@@ -414,7 +414,6 @@ CORE_MHC: dict[str, list[str]] = {
     ],
     "peptido": [
         "epitope__name",                        # la secuencia
-        "epitope__modifications",               # 6,3 %: oxidado/cisteinilado
     ],
     "proteina_madre": [
         "epitope__molecule_parent_iri",         # accession UniProt: ventanas y senuelos
@@ -422,27 +421,20 @@ CORE_MHC: dict[str, list[str]] = {
         "epitope__ending_position",
     ],
     "origen": [
-        "epitope__species",                     # taxon agregado: source_is_self
-        "epitope__source_organism",             # cepa: desglose de patogenos
+        # Tras el filtro de especie propia esta columna solo distingue cepas
+        # (Mus musculus, C57BL/6, NOD, domesticus). `epitope__species` se cae
+        # por quedar constante dentro de cada fichero.
+        "epitope__source_organism",
     ],
     "alelo": [
         "mhc_restriction__name",                # alelo literal
-        "mhc_restriction__evidence_code",       # excluir circularidad y anticuerpo
     ],
     "ensayo": [
-        "assay__method",
-        "assay__response_measured",             # presentacion / union / otro
+        "assay__method",                        # tipo de ensayo
         "assay__qualitative_measurement",       # LA ETIQUETA
-        "assay__quantitative_measurement",
-        "assay__units",                         # sin esto la anterior es basura
-        "assay__measurement_inequality",        # valores censurados (>, <)
-    ],
-    "contexto": [
-        "host__name",
     ],
     "publicacion": [
-        "reference__pmid",
-        "reference__submission_id",             # pmid no esta al 100 %
+        "reference__pmid",                      # eje de fuga
         "reference__date",                      # split temporal
     ],
 }
@@ -504,16 +496,49 @@ CORE_TCELL: dict[str, list[str]] = {
 #     peptido falsea el recuento.
 #
 # Lo que NO se filtra, a proposito, porque es una decision abierta (§0.6.8.3):
-# `assay_antigen__epitope_relation` (el 9,30 % no es `Epitope`),
-# `mhc_restriction__evidence_code` (`MHC binding prediction` es circular) y el
-# valor cualitativo. Esas columnas se conservan para que el filtro se aplique
-# despues, con los recuentos delante.
+# `assay_antigen__epitope_relation` (el 9,30 % no es `Epitope`) y el valor
+# cualitativo. Los negativos se conservan: hacen falta para contar cuantos
+# positivos aporta cada tipo de ensayo, y la elucion no produce ninguno.
+#
+# TAMPOCO se filtra por tipo de ensayo. Se conserva `assay__method` para poder
+# contar positivos por tipo, y se descarta `assay__response_measured`: era el
+# discriminador mas limpio entre presentacion y union, pero decision de Laura
+# del 25 nov es no distinguir ahora que se mide.
 # --------------------------------------------------------------------------- #
 LINEAR_PEPTIDE = "Linear peptide"
 FILTER_OBJECT_TYPE: dict[str, list[str]] = {
     "mhc": ["epitope__object_type"],
     "tcell": ["epitope__object_type", "assay_antigen__object_type"],
 }
+
+# Los 20 aminoacidos canonicos. Un `epitope__name` con cualquier otra letra no
+# es un peptido simple: hay entradas del tipo `GPPGPAGPAGERGEQG + HYL(P3)` que
+# ninguna representacion de secuencia puede tratar.
+CANONICAL_AA = set("ACDEFGHIKLMNPQRSTVWY")
+
+# Especie propia de cada rama del arbol de directorios. Se compara contra
+# `epitope__species`, que es el taxon agregado y por tanto agrupa las cepas.
+SELF_SPECIES = {"human": "Homo sapiens", "mouse": "Mus musculus"}
+
+# --------------------------------------------------------------------------- #
+# Filtros de fila del nucleo (`--columns core`), decididos por Laura el 25 nov
+# tras revisar H2-D. Cada uno elimina filas que no pueden ser un ejemplo valido:
+#
+#   1. `epitope__modifications` no vacio  -> FUERA. Un peptido oxidado o
+#      acetilado no es la misma molecula, y su secuencia de aminoacidos no
+#      recoge la diferencia: entraria como si fuera el peptido sin modificar.
+#      La columna se usa para filtrar y NO se conserva.
+#   2. `epitope__name` no canonico        -> FUERA. No es un peptido simple.
+#   3. `epitope__molecule_parent_iri` vacio -> FUERA. Sin accession no se puede
+#      recuperar la proteina madre ni generar senuelos del mismo proteoma.
+#   4. `epitope__species` no es la propia -> FUERA. Se conserva solo
+#      `Homo sapiens` en las familias humanas y `Mus musculus` en las murinas.
+#      Cuesta poco: en ligando eluido solo el 0,50 % de los positivos era de
+#      otro organismo (hallazgo V).
+#
+# Estos cuatro NO se aplican con `--columns full`, que sigue siendo el
+# inventario completo sin filtrar.
+# --------------------------------------------------------------------------- #
 
 # --------------------------------------------------------------------------- #
 # Columnas descartadas, con el motivo. Se registra en el manifiesto para que la
@@ -635,11 +660,14 @@ def slim_one(
     chunksize: int,
     profile: str = "core",
     filter_linear: bool = True,
+    self_species: str | None = None,
 ) -> dict:
     """Proyecta un CSV crudo sobre la lista curada del perfil `profile`.
 
-    El unico filtrado de filas es el de objeto no peptidico, y solo si
-    `filter_linear`. Se registra cuantas filas quita cada condicion.
+    Con `--columns core` aplica ademas los cuatro filtros de fila del nucleo
+    (modificacion quimica, peptido no canonico, falta de accession de proteina
+    madre y especie ajena). Se registra cuantas filas quita cada condicion y
+    con que valores.
     """
     if profile == "core":
         groups = CORE_MHC if kind == "mhc" else CORE_TCELL
@@ -659,7 +687,13 @@ def slim_one(
         [c for c in FILTER_OBJECT_TYPE[kind] if c in header_set]
         if filter_linear else []
     )
-    read_cols = keep + [c for c in filt_cols if c not in keep]
+    core_filter_cols = (
+        [c for c in ("epitope__modifications", "epitope__species") if c in header_set]
+        if profile == "core" else []
+    )
+    read_cols = keep + [
+        c for c in filt_cols + core_filter_cols if c not in keep
+    ]
     dropped = [c for c in header if c not in set(keep)]
 
     n_in = _count_csv_rows(src)
@@ -695,6 +729,50 @@ def slim_one(
             },
         }
         df = df[mask]
+
+    def _apply(nombre: str, mask: pd.Series, col: str | None, condicion: str) -> None:
+        """Aplica un filtro de fila y registra que quito y con que valores."""
+        nonlocal df
+        quitadas = int((~mask).sum())
+        reg: dict = {
+            "condicion": condicion,
+            "filas_antes": int(len(df)),
+            "filas_eliminadas": quitadas,
+        }
+        if col is not None and quitadas:
+            vc = df.loc[~mask, col].fillna("(vacio)").value_counts()
+            reg["valores_eliminados"] = {str(k): int(v) for k, v in vc.head(25).items()}
+        filtros[nombre] = reg
+        df = df[mask]
+
+    if profile == "core":
+        if "epitope__modifications" in df.columns:
+            _apply(
+                "epitope__modifications", df["epitope__modifications"].isna(),
+                "epitope__modifications", "vacio (sin modificacion quimica)",
+            )
+        if "epitope__name" in df.columns:
+            _apply(
+                "epitope__name", df["epitope__name"].map(
+                    lambda p: isinstance(p, str) and bool(p) and set(p) <= CANONICAL_AA
+                ),
+                None, "solo los 20 aminoacidos canonicos",
+            )
+        if "epitope__molecule_parent_iri" in df.columns:
+            _apply(
+                "epitope__molecule_parent_iri",
+                df["epitope__molecule_parent_iri"].notna(),
+                None, "no vacio (hay accession de proteina madre)",
+            )
+        if self_species and "epitope__species" in df.columns:
+            _apply(
+                "epitope__species",
+                df["epitope__species"].fillna("").str.contains(
+                    self_species, case=False, regex=False
+                ),
+                "epitope__species", f'contiene "{self_species}"',
+            )
+
     df = df.reset_index(drop=True)[keep]  # orden estable, el de la lista curada
 
     dst_dir.mkdir(parents=True, exist_ok=True)
@@ -870,6 +948,9 @@ def main() -> int:
                     help=("NO filtra las filas cuyo objeto no es 'Linear peptide'. Por "
                           "omision se filtran, porque un organismo o una celula tumoral no "
                           "es un ejemplo de este problema."))
+    ap.add_argument("--kind", choices=("mhc", "tcell", "ambos"), default="mhc",
+                    help=("que export procesar. Por omision solo 'mhc': 'tcell' quedo "
+                          "aparcado por decision de Laura del 25 nov."))
     ap.add_argument("--emit-csv", action="store_true",
                     help=("escribe el CSV equivalente al lado de cada Parquet ya existente, "
                           "sin releer los CSV crudos. Para anadir la copia inspeccionable a "
@@ -938,17 +1019,22 @@ def main() -> int:
             continue
 
         kind = "tcell" if "tcell" in src.name else "mhc"
+        if args.kind != "ambos" and kind != args.kind:
+            continue
+        # La especie propia sale del arbol de directorios: human/... o mouse/...
+        self_species = SELF_SPECIES.get(rel.parts[0])
         print(f"[{kind:5s}] {key} ... ", end="", flush=True)
         info = slim_one(
             src, out / rel.parent, kind, args.format, args.chunksize,
             profile=args.columns, filter_linear=not args.keep_nonpeptide,
+            self_species=self_species,
         )
         manifest["ficheros"][key] = info
         man_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
 
         red = 100.0 * (1 - info["bytes_salida"] / info["bytes_entrada"])
         quitadas = info["filas_eliminadas"]
-        marca = f" (-{quitadas:,} no peptido)" if quitadas else ""
+        marca = f" (-{quitadas:,} filtradas)" if quitadas else ""
         print(
             f"{info['filas_salida']:>9,} filas{marca}  "
             f"{info['columnas_entrada']}→{info['columnas_salida']} cols  "
