@@ -262,8 +262,12 @@ def main() -> int:
             m.eval()
         ys, idxs = [], []
         logits = {k: [] for k in modelos}
+        # Por memoria mapeada, NO por ventana de chunks: VALIDATION son 308 k
+        # filas repartidas por los 111 chunks, asi que cargar chunks enteros
+        # leeria los 93 GB para quedarse con 2.800 filas de cada uno. Ordenado
+        # por (chunk, fila) se leen 13 GB en un barrido casi secuencial.
         for Xb, yb, ib in ds.batches(batch_size=args.batch, shuffle=False,
-                                     chunks_en_memoria=args.chunks_en_memoria,
+                                     mmap_aleatorio=True,
                                      dtype=np.float16, indices=True):
             ent = prepara(torch.from_numpy(Xb))
             for k, m in modelos.items():

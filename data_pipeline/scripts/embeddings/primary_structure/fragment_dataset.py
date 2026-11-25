@@ -275,9 +275,25 @@ class FragmentDataset:
             del cache
 
     def _batches_mmap(self, bs, shuffle, rng):
+        """Acceso por memoria mapeada: lee SOLO las filas que hacen falta.
+
+        Es el camino correcto para evaluar. Con la ventana de chunks, puntuar
+        VALIDATION —308 k filas repartidas por los 111 chunks— obliga a cargar
+        los 111 chunks enteros, 93 GB, para quedarse con 2.800 filas de cada
+        uno. Aqui se leen 13 GB en lugar de 93.
+
+        Sin barajado las filas se recorren **ordenadas por (chunk, fila)**, que
+        es el orden del disco: convierte 308 k lecturas dispersas en un barrido
+        casi secuencial. El orden de salida deja de ser el de la tabla, y por
+        eso `indices=True` existe: las metricas se reconstruyen por indice, no
+        por posicion.
+        """
         abiertos: dict[int, np.ndarray] = {}
-        orden_filas = (rng.permutation(len(self.tabla)) if shuffle
-                       else np.arange(len(self.tabla)))
+        if shuffle:
+            orden_filas = rng.permutation(len(self.tabla))
+        else:
+            orden_filas = np.lexsort((self.tabla.fila.values,
+                                      self.tabla.chunk.values))
         for i in range(0, len(self.tabla), bs):
             s = self.tabla.iloc[orden_filas[i:i + bs]]
             filas = []
