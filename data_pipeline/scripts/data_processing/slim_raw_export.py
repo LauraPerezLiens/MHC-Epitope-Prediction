@@ -400,6 +400,122 @@ KEEP_TCELL: dict[str, list[str]] = {
 }
 
 # --------------------------------------------------------------------------- #
+# NUCLEO (`--columns core`, por omision). ~20 columnas por export: lo que se
+# necesita para contar positivos, para filtrar y para construir los ejemplos.
+#
+# Criterio: entra una columna si (a) define el ejemplo (peptido, alelo,
+# etiqueta), (b) es un filtro que vamos a aplicar o a decidir, o (c) hace falta
+# para que otra columna sea interpretable. Todo lo demas se queda en
+# `--columns full`, que sigue disponible sin volver a descargar.
+# --------------------------------------------------------------------------- #
+CORE_MHC: dict[str, list[str]] = {
+    "claves": [
+        "assay_id",                             # unico; procedencia y dedup
+    ],
+    "peptido": [
+        "epitope__name",                        # la secuencia
+        "epitope__modifications",               # 6,3 %: oxidado/cisteinilado
+    ],
+    "proteina_madre": [
+        "epitope__molecule_parent_iri",         # accession UniProt: ventanas y senuelos
+        "epitope__starting_position",
+        "epitope__ending_position",
+    ],
+    "origen": [
+        "epitope__species",                     # taxon agregado: source_is_self
+        "epitope__source_organism",             # cepa: desglose de patogenos
+    ],
+    "alelo": [
+        "mhc_restriction__name",                # alelo literal
+        "mhc_restriction__evidence_code",       # excluir circularidad y anticuerpo
+    ],
+    "ensayo": [
+        "assay__method",
+        "assay__response_measured",             # presentacion / union / otro
+        "assay__qualitative_measurement",       # LA ETIQUETA
+        "assay__quantitative_measurement",
+        "assay__units",                         # sin esto la anterior es basura
+        "assay__measurement_inequality",        # valores censurados (>, <)
+    ],
+    "contexto": [
+        "host__name",
+    ],
+    "publicacion": [
+        "reference__pmid",
+        "reference__submission_id",             # pmid no esta al 100 %
+        "reference__date",                      # split temporal
+    ],
+}
+
+CORE_TCELL: dict[str, list[str]] = {
+    "claves": [
+        "assay_id",
+    ],
+    "peptido": [
+        "epitope__name",
+        "epitope__modifications",
+    ],
+    "antigeno_del_ensayo": [
+        "assay_antigen__name",                  # lo que se probo de verdad
+        "assay_antigen__epitope_relation",      # hallazgo S: filtro a decidir
+    ],
+    "proteina_madre": [
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+    ],
+    "origen": [
+        "epitope__species",
+        "epitope__source_organism",
+    ],
+    "alelo": [
+        "mhc_restriction__name",
+        "mhc_restriction__evidence_code",       # 26,7 % 'MHC binding prediction'
+    ],
+    "ensayo": [
+        "assay__method",
+        "assay__response_measured",
+        "assay__qualitative_measurement",
+        "assay__number_of_subjects_positive",   # etiqueta graduada
+        "assay__number_of_subjects_tested",
+    ],
+    "contexto": [
+        "host__name",
+        "first_immunogen__object_type",         # inmunogenicidad natural vs inducida
+    ],
+    "publicacion": [
+        "reference__pmid",
+        "reference__submission_id",
+        "reference__date",
+    ],
+}
+
+# --------------------------------------------------------------------------- #
+# FILTRADO DE FILAS. Unico filtro que este script aplica, y solo porque no hay
+# ninguna decision cientifica que tomar: un objeto que no es un peptido lineal
+# no puede ser un ejemplo de este problema.
+#
+#   * `epitope__object_type`: ya es 100 % 'Linear peptide' porque la consulta a
+#     IEDB lo filtra en origen. Aqui funciona como ASERCION: si apareciera otra
+#     cosa, es que la descarga no es la que creemos.
+#   * `assay_antigen__object_type` (solo `tcell_export`): este SI muerde. En
+#     H2-K hay 519 filas cuyo antigeno es un `Organism` entero, 271 una
+#     proteina y 168 una celula tumoral. Contar esas filas como positivos de
+#     peptido falsea el recuento.
+#
+# Lo que NO se filtra, a proposito, porque es una decision abierta (§0.6.8.3):
+# `assay_antigen__epitope_relation` (el 9,30 % no es `Epitope`),
+# `mhc_restriction__evidence_code` (`MHC binding prediction` es circular) y el
+# valor cualitativo. Esas columnas se conservan para que el filtro se aplique
+# despues, con los recuentos delante.
+# --------------------------------------------------------------------------- #
+LINEAR_PEPTIDE = "Linear peptide"
+FILTER_OBJECT_TYPE: dict[str, list[str]] = {
+    "mhc": ["epitope__object_type"],
+    "tcell": ["epitope__object_type", "assay_antigen__object_type"],
+}
+
+# --------------------------------------------------------------------------- #
 # Columnas descartadas, con el motivo. Se registra en el manifiesto para que la
 # decision quede documentada y sea revisable, no solo ejecutada.
 # --------------------------------------------------------------------------- #
@@ -517,9 +633,18 @@ def slim_one(
     kind: str,
     out_format: str,
     chunksize: int,
+    profile: str = "core",
+    filter_linear: bool = True,
 ) -> dict:
-    """Proyecta un CSV crudo sobre la lista curada. No elimina ninguna fila."""
-    groups = KEEP_MHC if kind == "mhc" else KEEP_TCELL
+    """Proyecta un CSV crudo sobre la lista curada del perfil `profile`.
+
+    El unico filtrado de filas es el de objeto no peptidico, y solo si
+    `filter_linear`. Se registra cuantas filas quita cada condicion.
+    """
+    if profile == "core":
+        groups = CORE_MHC if kind == "mhc" else CORE_TCELL
+    else:
+        groups = KEEP_MHC if kind == "mhc" else KEEP_TCELL
     wanted = _flatten(groups)
     blocks = _column_block(groups)
 
@@ -528,24 +653,49 @@ def slim_one(
 
     keep = [c for c in wanted if c in header_set]
     missing = [c for c in wanted if c not in header_set]
+
+    # Columnas que hacen falta para filtrar aunque no se conserven.
+    filt_cols = (
+        [c for c in FILTER_OBJECT_TYPE[kind] if c in header_set]
+        if filter_linear else []
+    )
+    read_cols = keep + [c for c in filt_cols if c not in keep]
     dropped = [c for c in header if c not in set(keep)]
 
     n_in = _count_csv_rows(src)
 
     frames = []
     for chunk in pd.read_csv(
-        src, usecols=keep, dtype=str, chunksize=chunksize, low_memory=False
+        src, usecols=read_cols, dtype=str, chunksize=chunksize, low_memory=False
     ):
         frames.append(chunk)
-    df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=keep)
+    df = (
+        pd.concat(frames, ignore_index=True)
+        if frames else pd.DataFrame(columns=read_cols)
+    )
     del frames
-    df = df[keep]  # orden estable, el de la lista curada
 
     if len(df) != n_in:
         raise SystemExit(
-            f"ABORTADO: {src} tenia {n_in} filas y la proyeccion dio {len(df)}. "
-            "Este script no debe perder ni una fila."
+            f"ABORTADO: {src} tenia {n_in} filas y la lectura dio {len(df)}. "
+            "La proyeccion de columnas no debe alterar el numero de filas."
         )
+
+    # Filtrado de filas: objeto no peptidico.
+    filtros: dict[str, dict] = {}
+    for col in filt_cols:
+        vc = df[col].fillna("(vacio)").value_counts()
+        mask = df[col] == LINEAR_PEPTIDE
+        filtros[col] = {
+            "condicion": f'== "{LINEAR_PEPTIDE}"',
+            "filas_antes": int(len(df)),
+            "filas_eliminadas": int((~mask).sum()),
+            "valores_eliminados": {
+                k: int(v) for k, v in vc.items() if k != LINEAR_PEPTIDE
+            },
+        }
+        df = df[mask]
+    df = df.reset_index(drop=True)[keep]  # orden estable, el de la lista curada
 
     dst_dir.mkdir(parents=True, exist_ok=True)
     stem = src.stem + "_slim"
@@ -570,9 +720,11 @@ def slim_one(
         "entrada": str(src),
         "salida": str(dst),
         "tipo": kind,
+        "perfil_columnas": profile,
         "filas_entrada": n_in,
         "filas_salida": n,
-        "filas_eliminadas": 0,
+        "filas_eliminadas": n_in - n,
+        "filtros_de_fila": filtros,
         "columnas_entrada": len(header),
         "columnas_salida": len(keep),
         "columnas_conservadas": cols_info,
@@ -583,6 +735,48 @@ def slim_one(
         "bytes_entrada": src.stat().st_size,
         "bytes_salida": dst.stat().st_size,
     }
+
+
+def census(out: Path, manifest: dict, max_card: int = 80) -> dict:
+    """Censo de valores de las columnas categoricas, agregado sobre las 11 familias.
+
+    Es lo que hace falta para decidir los filtros que quedan abiertos: no se
+    puede elegir entre presentacion, union e inmunogenicidad sin ver cuantas
+    filas tiene cada `assay__method`, ni excluir las etiquetas circulares sin
+    ver el reparto de `mhc_restriction__evidence_code`.
+    """
+    agg: dict[str, dict[str, dict[str, int]]] = {"mhc": {}, "tcell": {}}
+    tot: dict[str, int] = {"mhc": 0, "tcell": 0}
+    for info in manifest["ficheros"].values():
+        kind = info["tipo"]
+        df = pd.read_parquet(info["salida"])
+        tot[kind] += len(df)
+        for c in df.columns:
+            if df[c].nunique(dropna=True) > max_card:
+                continue
+            vc = df[c].fillna("(vacio)").value_counts()
+            d = agg[kind].setdefault(c, {})
+            for k, v in vc.items():
+                d[str(k)] = d.get(str(k), 0) + int(v)
+
+    report: dict = {}
+    for kind in ("mhc", "tcell"):
+        if not tot[kind]:
+            continue
+        cols = {}
+        for c, d in agg[kind].items():
+            if len(d) > max_card:
+                continue
+            cols[c] = dict(sorted(d.items(), key=lambda kv: -kv[1]))
+        report[kind] = {"filas": tot[kind], "columnas": cols}
+        print(f"\n===== censo {kind}_export  (n={tot[kind]:,}) =====")
+        for c, d in cols.items():
+            print(f"\n[{c}]  {len(d)} valores")
+            for k, v in list(d.items())[:25]:
+                print(f"    {k[:62]:62s} {v:12,}  {100.0*v/tot[kind]:6.2f} %")
+            if len(d) > 25:
+                print(f"    ... y {len(d)-25} valores mas (el manifiesto los tiene todos)")
+    return report
 
 
 def audit_dropped(raw: Path, sources: list[Path]) -> dict:
@@ -654,6 +848,17 @@ def main() -> int:
     ap.add_argument("--chunksize", type=int, default=200_000)
     ap.add_argument("--force", action="store_true",
                     help="reprocesa ficheros ya presentes en el manifiesto de salida")
+    ap.add_argument("--columns", choices=("core", "full"), default="core",
+                    help=("'core' (por omision) deja ~20 columnas por export: lo necesario "
+                          "para contar positivos, filtrar y construir ejemplos. 'full' deja "
+                          "la lista curada ancha (75 y 126 columnas)."))
+    ap.add_argument("--keep-nonpeptide", action="store_true",
+                    help=("NO filtra las filas cuyo objeto no es 'Linear peptide'. Por "
+                          "omision se filtran, porque un organismo o una celula tumoral no "
+                          "es un ejemplo de este problema."))
+    ap.add_argument("--census", action="store_true",
+                    help=("tras escribir, censa los valores de las columnas categoricas "
+                          "sobre las 11 familias y lo anota en el manifiesto"))
     ap.add_argument("--audit-dropped", action="store_true",
                     help=("mide el relleno de las columnas descartadas sobre TODAS las "
                           "familias y lo anota en el manifiesto; es la comprobacion de "
@@ -679,11 +884,14 @@ def main() -> int:
             "generado_por": "data_pipeline/scripts/data_processing/slim_raw_export.py",
             "descarga_origen": str(raw),
             "formato": args.format,
+            "perfil_columnas": args.columns,
+            "filtro_linear_peptide": not args.keep_nonpeptide,
             "nota": (
-                "Proyeccion de columnas. No se elimina ninguna fila y no se aplica "
-                "ningun filtro cientifico: ni cualitativo, ni de organismo fuente, "
-                "ni de tipo de objeto, ni de codigo de evidencia. Esas decisiones "
-                "se toman en build_peptide_table.py."
+                "Proyeccion de columnas mas un unico filtro de fila: objeto "
+                "'Linear peptide'. NO se aplica ningun otro filtro: ni cualitativo, "
+                "ni de organismo fuente, ni de codigo de evidencia, ni de relacion "
+                "antigeno-epitopo. Esas decisiones quedan abiertas y las columnas "
+                "necesarias para tomarlas se conservan."
             ),
             "ficheros": {},
         }
@@ -709,13 +917,18 @@ def main() -> int:
 
         kind = "tcell" if "tcell" in src.name else "mhc"
         print(f"[{kind:5s}] {key} ... ", end="", flush=True)
-        info = slim_one(src, out / rel.parent, kind, args.format, args.chunksize)
+        info = slim_one(
+            src, out / rel.parent, kind, args.format, args.chunksize,
+            profile=args.columns, filter_linear=not args.keep_nonpeptide,
+        )
         manifest["ficheros"][key] = info
         man_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
 
         red = 100.0 * (1 - info["bytes_salida"] / info["bytes_entrada"])
+        quitadas = info["filas_eliminadas"]
+        marca = f" (-{quitadas:,} no peptido)" if quitadas else ""
         print(
-            f"{info['filas_salida']:>9,} filas  "
+            f"{info['filas_salida']:>9,} filas{marca}  "
             f"{info['columnas_entrada']}→{info['columnas_salida']} cols  "
             f"{info['bytes_entrada']/1e6:7.1f}→{info['bytes_salida']/1e6:6.1f} MB  "
             f"(-{red:.1f} %)"
@@ -723,6 +936,10 @@ def main() -> int:
         tot_in += info["bytes_entrada"]
         tot_out += info["bytes_salida"]
         tot_rows += info["filas_salida"]
+
+    if args.census:
+        manifest["censo_de_valores"] = census(out, manifest)
+        man_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
 
     if args.audit_dropped:
         print("\n--- auditoria de columnas descartadas ---")
