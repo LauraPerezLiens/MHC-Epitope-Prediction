@@ -16,15 +16,27 @@ familias y se embebieron una sola vez. Y estan ordenados alfabeticamente por
 secuencia, no en el orden de las filas. `index.parquet` es la traduccion:
 secuencia -> (chunk, fila dentro del chunk).
 
-DOS MODOS DE FEATURES
----------------------
+MODOS DE FEATURES
+-----------------
   `primary`            (w, 1024)  solo ProtT5
   `primary_secondary`  (w, 1027)  ProtT5 + 3 canales one-hot de C/H/E
+  `primary_sbert`      (w, 1792)  ProtT5 + SecondaryBERT por residuo
+  `sbert`              (w,  768)  solo SecondaryBERT
+  `secondary`          (w,    3)  solo el one-hot de C/H/E
 
-Los tres canales son la forma barata de probar si la estructura secundaria
-aporta: si 3 dimensiones no mueven nada, las 768 de SecondaryBERT es muy
-improbable que lo hagan, y ese es el resultado negativo que §0.5.6 propone
-publicar.
+El orden de concatenacion —ProtT5, one-hot, SecondaryBERT— es un contrato: el
+scaler estandariza las primeras 1024 columnas y deja el resto, asi que
+cambiarlo desalinearia las estadisticas.
+
+Los tres canales one-hot son la forma barata de probar si la estructura
+secundaria aporta. **Y los brazos con SecondaryBERT son los que cierran la
+pregunta**, porque al one-hot se le puede objetar que 3 canales sobre 21.507
+features se ahogan: `w x 768` = 16.128 features iguala el peso de las dos
+modalidades en la entrada. Lo que NO hacen es aportar informacion nueva: la
+entrada de SecondaryBERT es exactamente la cadena de C/H/E, que el one-hot ya
+codifica sin perdida, de modo que lo que se mide es si una recodificacion
+preentrenada ayuda. Es el resultado negativo que §0.5.6 propone publicar, y asi
+queda medido por los dos lados.
 
 > **Las filas sin estructura secundaria se descartan SIEMPRE, tambien en el modo
 > `primary`.** Son 5.246 de 3.338.349 (0,157 %). Descartarlas en los dos modos
@@ -104,6 +116,17 @@ for _i, _c in enumerate(Q3):
     _LUT_Q3[ord(_c)] = _i
 _ARANGE3 = np.arange(3, dtype=np.uint8)
 
+# Modalidades de entrada: (usa ProtT5, usa one-hot C/H/E, usa SecondaryBERT).
+# La dimension por residuo se deduce de aqui, no se escribe a mano.
+MODALIDADES = {
+    "primary":           (True,  False, False),
+    "primary_secondary": (True,  True,  False),
+    "primary_sbert":     (True,  False, True),
+    "sbert":             (False, False, True),
+    "secondary":         (False, True,  False),
+}
+DIM_PROTT5, DIM_SBERT = 1024, 768
+
 
 class FragmentDataset:
     """Fragmentos de una particion, con sus embeddings y su estructura."""
@@ -120,12 +143,19 @@ class FragmentDataset:
         especies: list[str] | None = None,
         permitir_sin_ss: bool = False,
         solo_chunks_presentes: bool = False,
+        embeddings_sbert: str | Path | None = None,
+        sbert_precargado: np.ndarray | None = None,
         verbose: bool = True,
     ) -> None:
-        if features not in ("primary", "primary_secondary"):
-            raise ValueError(f"features desconocido: {features!r}")
+        if features not in MODALIDADES:
+            raise ValueError(f"features desconocido: {features!r}; "
+                             f"hay {sorted(MODALIDADES)}")
         self.features = features
+        self.usa_prott5, self.usa_onehot, self.usa_sbert = MODALIDADES[features]
+        if self.usa_sbert and embeddings_sbert is None:
+            raise ValueError(f"features={features!r} necesita embeddings_sbert")
         self.emb_dir = Path(embeddings)
+        self.sbert_dir = Path(embeddings_sbert) if embeddings_sbert else None
 
         cols = ["familia", "especie", "clase", "fragmento", "secondary_structure",
                 "label", "alelo", "accession", "pmid", "ss_status",
@@ -150,7 +180,7 @@ class FragmentDataset:
             raise SystemExit(f"ABORTADO: {sin_split:,} filas sin particion asignada")
 
         pasos = [("particion " + split, D.split == split)]
-        if not permitir_sin_ss or features == "primary_secondary":
+        if not permitir_sin_ss or self.usa_onehot or self.usa_sbert:
             pasos.append(("con estructura secundaria", D.ss_status == "ok"))
         if excluir_contradictorios:
             pasos.append(("sin contradiccion", ~D.contradictorio))
@@ -166,25 +196,28 @@ class FragmentDataset:
         if not len(D):
             raise SystemExit("ABORTADO: no queda ninguna fila tras los filtros")
 
-        idx = pd.read_parquet(self.emb_dir / "index.parquet")
-        D = D.merge(idx, on="fragmento", how="left")
-        huerfanas = int(D.chunk.isna().sum())
-        if huerfanas:
-            raise SystemExit(
-                f"ABORTADO: {huerfanas:,} filas cuyo fragmento no esta en los "
-                f"embeddings. El index.parquet no corresponde a estos fragmentos.")
-        D["chunk"] = D.chunk.astype("int32")
-        D["fila"] = D.fila.astype("int32")
+        if self.usa_prott5:
+            idx = pd.read_parquet(self.emb_dir / "index.parquet")
+            D = D.merge(idx, on="fragmento", how="left")
+            huerfanas = int(D.chunk.isna().sum())
+            if huerfanas:
+                raise SystemExit(
+                    f"ABORTADO: {huerfanas:,} filas cuyo fragmento no esta en los "
+                    f"embeddings. El index.parquet no corresponde a estos "
+                    f"fragmentos.")
+            D["chunk"] = D.chunk.astype("int32")
+            D["fila"] = D.fila.astype("int32")
 
         self.tabla = D.reset_index(drop=True)
-        self.chunks = sorted(self.tabla.chunk.unique())
+        self.chunks = sorted(self.tabla.chunk.unique()) if self.usa_prott5 else []
         self.dtype = np.dtype(np.float32)
         self.devolver_indices = False
+        self.sbert = None
 
         # Que los embeddings de los chunks implicados existan de verdad. Sin
         # esto el fallo aparece a mitad de la primera epoca, con un
         # FileNotFoundError opaco.
-        if solo_chunks_presentes:
+        if solo_chunks_presentes and self.usa_prott5:
             # Solo para validar la logica mientras la generacion esta a medias.
             hay = {c for c in self.chunks
                    if (self.emb_dir / f"chunk_{c:06d}_residues.npy").exists()}
@@ -201,10 +234,112 @@ class FragmentDataset:
                 f"{len(self.chunks)} chunks implicados (p. ej. "
                 f"{faltan[:5]}). Si la generacion sigue en marcha, espera a "
                 f"que termine.")
+
+        if self.usa_sbert:
+            self._carga_sbert(verbose, sbert_precargado)
+        self._arrays(verbose)
         if verbose:
             print(f"  -> {len(self.tabla):,} ejemplos de {n0:,} | "
                   f"prevalencia {100*self.tabla.label.mean():.2f} % | "
                   f"ventana {self.w} | chunks implicados {len(self.chunks)}")
+
+    def _arrays(self, verbose: bool) -> None:
+        """Pasa a numpy lo que usa el bucle caliente y suelta el resto.
+
+        `tabla.iloc[idx]` sobre 2,5 M filas con columnas de objeto no es gratis,
+        y se hace una vez por lote. Aqui se extraen de una vez los vectores que
+        el bucle necesita —etiqueta, chunk, fila, fila de SecondaryBERT y los
+        indices Q3— y la tabla se queda solo para las metricas por familia, que
+        se resuelven por indice y fuera del bucle.
+
+        Los indices Q3 se precalculan como `(N, w)` uint8: son 52 MB para 2,5 M
+        filas y ahorran concatenar las cadenas en cada lote. Ademas, enviar
+        `(B, w)` uint8 a la GPU en lugar de `(B, w, 3)` fp16 es 6 veces menos
+        que mover, y el one-hot se construye alli.
+        """
+        self._label = self.tabla.label.to_numpy(dtype=np.float32)
+        self._chunk = (self.tabla.chunk.to_numpy(dtype=np.int32)
+                       if self.usa_prott5 else None)
+        self._fila = (self.tabla.fila.to_numpy(dtype=np.int32)
+                      if self.usa_prott5 else None)
+        self._fsb = (self.tabla.fila_sbert.to_numpy(dtype=np.int64)
+                     if self.usa_sbert else None)
+        self._q3 = None
+        if self.usa_onehot:
+            bruto = "".join(self.tabla.secondary_structure.values)
+            self._q3 = _LUT_Q3[np.frombuffer(bruto.encode("ascii"),
+                                             dtype=np.uint8)
+                               ].reshape(len(self.tabla), self.w).copy()
+        # Columnas que ya no hacen falta. `fragmento` y `secondary_structure` se
+        # conservan porque el selftest comprueba con ellas la correspondencia
+        # vector-secuencia, que es la verificacion que no se puede perder.
+        sobran = [c for c in ("alelo", "ss_status", "contradictorio", "ventana",
+                              "split", "pmid") if c in self.tabla.columns]
+        self.tabla = self.tabla.drop(columns=sobran)
+        for c in ("familia", "especie", "clase"):
+            if c in self.tabla.columns:
+                self.tabla[c] = self.tabla[c].astype("category")
+        if verbose:
+            mb = self.tabla.memory_usage(deep=True).sum() / 1e6
+            print(f"  tabla en memoria {mb:,.0f} MB "
+                  f"(se han soltado {len(sobran)} columnas)")
+
+    # ------------------------------------------------------------ SecondaryBERT
+    def _carga_sbert(self, verbose: bool,
+                     precargado: np.ndarray | None = None) -> None:
+        """Carga TODO SecondaryBERT en RAM y guarda la fila de cada ejemplo.
+
+        Caben de sobra y eso simplifica el resto: los embeddings estan
+        deduplicados por **cadena Q3**, no por fragmento —257.691 cadenas unicas
+        para 2.210.409 fragmentos en w21, el 11,7 %—, asi que son 8,3 GB en w21
+        y 16,6 en w25. Con el tensor entero en memoria no hay que coordinar dos
+        particiones de chunks distintas: la del indice de ProtT5 y la de este.
+        """
+        idx = pd.read_parquet(self.sbert_dir / "index.parquet")
+        tam = int(idx.fila.max()) + 1 if len(idx) else 0
+        # Fila global = chunk * tamano_de_chunk + fila. El tamano se deduce del
+        # propio indice para no tener que pasarlo como parametro.
+        self._sbert_tam = tam
+        idx["fila_sbert"] = (idx.chunk.astype("int64") * tam
+                             + idx.fila.astype("int64"))
+        D = self.tabla.merge(idx[["secondary_structure", "fila_sbert"]],
+                             on="secondary_structure", how="left")
+        huerfanas = int(D.fila_sbert.isna().sum())
+        if huerfanas:
+            raise SystemExit(
+                f"ABORTADO: {huerfanas:,} filas cuya cadena Q3 no esta en los "
+                f"embeddings de SecondaryBERT. El index.parquet no corresponde "
+                f"a estos fragmentos.")
+        self.tabla = D
+        self.tabla["fila_sbert"] = self.tabla.fila_sbert.astype("int64")
+
+        if precargado is not None:
+            # El tensor se comparte entre TRAIN, VALIDATION y TEST del mismo
+            # proceso: son los MISMOS vectores, indexados por cadena Q3, y una
+            # copia por particion triplicaria la memoria sin ganar nada.
+            self.sbert = precargado
+        else:
+            partes = []
+            for f in sorted(self.sbert_dir.glob("chunk_*_residues.npy")):
+                partes.append(np.load(f))
+            if not partes:
+                raise SystemExit(f"sin chunk_*_residues.npy en {self.sbert_dir}")
+            self.sbert = np.concatenate(partes, axis=0)
+            del partes
+        if self.sbert.shape[1] != self.w or self.sbert.shape[2] != DIM_SBERT:
+            raise SystemExit(
+                f"ABORTADO: SecondaryBERT tiene forma {self.sbert.shape}, se "
+                f"esperaba (N, {self.w}, {DIM_SBERT})")
+        tope = int(self.tabla.fila_sbert.max())
+        if tope >= self.sbert.shape[0]:
+            raise SystemExit(
+                f"ABORTADO: el indice apunta a la fila {tope:,} y solo hay "
+                f"{self.sbert.shape[0]:,} vectores de SecondaryBERT")
+        if verbose:
+            print(f"  SecondaryBERT en RAM: {self.sbert.shape} "
+                  f"{self.sbert.dtype} = {self.sbert.nbytes/1e9:.1f} GB | "
+                  f"cadenas Q3 distintas en esta particion "
+                  f"{self.tabla.fila_sbert.nunique():,}")
 
     # ---------------------------------------------------------------- utilidades
     def __len__(self) -> int:
@@ -212,7 +347,8 @@ class FragmentDataset:
 
     @property
     def dim(self) -> int:
-        return 1024 + (3 if self.features == "primary_secondary" else 0)
+        return (DIM_PROTT5 * self.usa_prott5 + 3 * self.usa_onehot
+                + DIM_SBERT * self.usa_sbert)
 
     def _onehot(self, cadenas: pd.Series, dtype=np.float32) -> np.ndarray:
         """(n, w, 3) one-hot de C/H/E. Una letra desconocida deja el vector a 0.
@@ -235,57 +371,104 @@ class FragmentDataset:
     def _residues(self, c: int) -> np.ndarray:
         return np.load(self.emb_dir / f"chunk_{c:06d}_residues.npy", mmap_mode="r")
 
-    def _arma(self, sub: pd.DataFrame, X1024: np.ndarray):
-        """Monta el lote. Con `dtype=float16` se sirve en la precision en la que
-        esta el disco, que es la mitad de bytes a mover hasta la GPU; la
-        conversion a float32 y la estandarizacion se hacen alli."""
-        X = X1024.astype(self.dtype, copy=False)
-        if self.features == "primary_secondary":
-            X = np.concatenate(
-                [X, self._onehot(sub.secondary_structure, self.dtype)], axis=2)
-        y = sub.label.to_numpy(dtype=np.float32)
+    def _arma(self, idx: np.ndarray, mm: dict | None = None) -> dict:
+        """Monta el lote y lo entrega POR PIEZAS, sin concatenar en CPU.
+
+        Devuelve un diccionario con `prott5` (B, w, 1024) fp16, `q3` (B, w)
+        uint8 y `sbert` (B, w, 768) fp16, segun la modalidad, mas `y` y, si se
+        pidio, `idx`.
+
+        **Concatenar en CPU era el cuello de botella.** Juntar ProtT5 con
+        SecondaryBERT en un `(B, w, 1792)` son 154 MB de memcpy por lote, y con
+        el one-hot 88 MB, puro trabajo de CPU que no aporta nada: la GPU
+        concatena eso en microsegundos. El `q3` viaja como indice uint8 —43 KB
+        por lote en lugar de 258 KB— y el one-hot se construye en la GPU.
+
+        El orden de concatenacion que el entrenamiento debe respetar es
+        **ProtT5, one-hot, SecondaryBERT**, y es un contrato: el scaler
+        estandariza las primeras 1024 columnas y deja el resto.
+        """
+        lote: dict = {"y": self._label[idx]}
+        if self.usa_prott5:
+            n = len(idx)
+            pt = np.empty((n, self.w, DIM_PROTT5), dtype=np.float16)
+            ch, fi = self._chunk[idx], self._fila[idx]
+            for c in np.unique(ch):
+                m = np.flatnonzero(ch == c)
+                r = fi[m]
+                # Ordenar las filas antes de leerlas convierte una recogida
+                # dispersa en un barrido casi secuencial del chunk; el destino
+                # se reordena en consecuencia, de modo que el barajado del lote
+                # se mantiene intacto.
+                o = np.argsort(r, kind="stable")
+                pt[m[o]] = mm[int(c)][r[o]]
+            lote["prott5"] = pt
+        if self.usa_onehot:
+            lote["q3"] = self._q3[idx]
+        if self.usa_sbert:
+            lote["sbert"] = self.sbert[self._fsb[idx]]
         if self.devolver_indices:
-            return X, y, sub.index.to_numpy()
-        return X, y
+            lote["idx"] = idx
+        return lote
 
     # ------------------------------------------------------------------- lotes
     def batches(self, batch_size: int = 512, shuffle: bool = True,
                 seed: int = 0, chunks_en_memoria: int = 16,
-                mmap_aleatorio: bool = False, dtype=np.float32,
-                indices: bool = False):
-        """Itera lotes `(X, y)`, o `(X, y, idx)` con `indices=True`.
+                mmap_aleatorio: bool = False, indices: bool = False):
+        """Itera lotes como **diccionario de piezas**, no como un tensor unico.
 
-        X es (B, w, dim) del `dtype` pedido e y es (B,) float32. `idx` son los
-        indices de `self.tabla`, para poder desglosar las metricas por familia o
-        por especie sin tener que reconstruir el orden de las filas.
+        Claves posibles: `prott5` (B, w, 1024) fp16, `q3` (B, w) uint8, `sbert`
+        (B, w, 768) fp16, `y` (B,) float32 y, con `indices=True`, `idx` con los
+        indices de `self.tabla` para desglosar las metricas por familia.
+
+        Se entrega por piezas a proposito: concatenarlas en CPU son 154 MB de
+        memcpy por lote en el brazo con SecondaryBERT, trabajo que la GPU hace
+        en microsegundos. Todo viaja en la precision en la que esta el disco.
         """
-        self.dtype = np.dtype(dtype)
         self.devolver_indices = indices
         rng = np.random.default_rng(seed)
-        if mmap_aleatorio:
+        if not self.usa_prott5:
+            # Sin ProtT5 no hay nada en disco que recorrer: SecondaryBERT y el
+            # one-hot estan en RAM. Barajar fila a fila es gratis, y recorrer
+            # los 93 GB de ProtT5 para no usarlos seria absurdo.
+            yield from self._batches_ram(batch_size, shuffle, rng)
+        elif mmap_aleatorio:
             yield from self._batches_mmap(batch_size, shuffle, rng)
         else:
             yield from self._batches_ventana(batch_size, shuffle, rng,
                                              chunks_en_memoria)
 
+    def _batches_ram(self, bs, shuffle, rng):
+        """Todo en memoria: barajado perfecto fila a fila, sin tocar el disco."""
+        orden = (rng.permutation(len(self._label)) if shuffle
+                 else np.arange(len(self._label)))
+        for i in range(0, len(orden), bs):
+            yield self._arma(orden[i:i + bs])
+
     def _batches_ventana(self, bs, shuffle, rng, M):
+        """Ventana de M chunks, leidos por memoria mapeada y SIN copiarlos.
+
+        La version anterior hacia `np.asarray(memmap)` de los 16 chunks del
+        grupo: 13,8 GB de copia privada por proceso, que con dos entrenamientos
+        a la vez son 27,6 GB que el sistema no puede compartir. Leyendo del
+        memmap, las paginas viven en la **cache de pagina**, que SI es comun a
+        los dos procesos —leen los mismos ficheros— y es desalojable si hace
+        falta. La RAM privada baja a la del lote.
+        """
         orden = list(self.chunks)
         if shuffle:
             rng.shuffle(orden)          # rebaraja QUE chunks van juntos
         for k in range(0, len(orden), M):
             grupo = orden[k:k + M]
-            sub = self.tabla[self.tabla.chunk.isin(grupo)]
-            if not len(sub):
+            sel = np.flatnonzero(np.isin(self._chunk, grupo))
+            if not len(sel):
                 continue
-            # Se carga cada chunk del grupo una sola vez, de forma secuencial.
-            cache = {c: np.asarray(self._residues(c)) for c in grupo}
-            orden_filas = rng.permutation(len(sub)) if shuffle else np.arange(len(sub))
-            for i in range(0, len(sub), bs):
-                s = sub.iloc[orden_filas[i:i + bs]]
-                X1024 = np.stack([cache[c][r] for c, r in
-                                  zip(s.chunk.values, s.fila.values)])
-                yield self._arma(s, X1024)
-            del cache
+            if shuffle:
+                rng.shuffle(sel)
+            mm = {c: self._residues(c) for c in grupo}   # memmaps, sin copia
+            for i in range(0, len(sel), bs):
+                yield self._arma(sel[i:i + bs], mm)
+            mm.clear()
 
     def _batches_mmap(self, bs, shuffle, rng):
         """Acceso por memoria mapeada: lee SOLO las filas que hacen falta.
@@ -301,20 +484,13 @@ class FragmentDataset:
         eso `indices=True` existe: las metricas se reconstruyen por indice, no
         por posicion.
         """
-        abiertos: dict[int, np.ndarray] = {}
+        mm = {int(c): self._residues(int(c)) for c in self.chunks}
         if shuffle:
-            orden_filas = rng.permutation(len(self.tabla))
+            orden_filas = rng.permutation(len(self._label))
         else:
-            orden_filas = np.lexsort((self.tabla.fila.values,
-                                      self.tabla.chunk.values))
-        for i in range(0, len(self.tabla), bs):
-            s = self.tabla.iloc[orden_filas[i:i + bs]]
-            filas = []
-            for c, r in zip(s.chunk.values, s.fila.values):
-                if c not in abiertos:
-                    abiertos[c] = self._residues(c)
-                filas.append(np.asarray(abiertos[c][r]))
-            yield self._arma(s, np.stack(filas))
+            orden_filas = np.lexsort((self._fila, self._chunk))
+        for i in range(0, len(orden_filas), bs):
+            yield self._arma(orden_filas[i:i + bs], mm)
 
     # -------------------------------------------------------------- integridad
     def selftest(self, n: int = 20_000, seed: int = 0) -> bool:
@@ -329,32 +505,68 @@ class FragmentDataset:
         m = min(n, len(self.tabla))
         s = self.tabla.iloc[rng.choice(len(self.tabla), m, replace=False)]
         fallos = 0
-        for c, g in s.groupby("chunk"):
-            seqs = (self.emb_dir / f"chunk_{int(c):06d}_seq.txt").read_text().split("\n")
-            res = self._residues(int(c))
-            if len(seqs) != res.shape[0]:
-                print(f"  chunk {c}: {len(seqs)} secuencias y {res.shape[0]} filas",
-                      file=sys.stderr)
-                fallos += 1
-                continue
-            for r, frag in zip(g.fila.values, g.fragmento.values):
-                if seqs[r] != frag:
+        if self.usa_prott5:
+            for c, g in s.groupby("chunk"):
+                seqs = (self.emb_dir / f"chunk_{int(c):06d}_seq.txt"
+                        ).read_text().split("\n")
+                res = self._residues(int(c))
+                if len(seqs) != res.shape[0]:
+                    print(f"  chunk {c}: {len(seqs)} secuencias y "
+                          f"{res.shape[0]} filas", file=sys.stderr)
                     fallos += 1
-                    if fallos < 4:
-                        print(f"  chunk {c} fila {r}: esperaba {frag} y hay {seqs[r]}",
-                              file=sys.stderr)
-        print(f"selftest: {m:,} filas comprobadas | fallos {fallos}")
-        # Forma y finitud de un lote real.
-        X, y = next(iter(self.batches(batch_size=256, shuffle=True, seed=seed,
+                    continue
+                for r, frag in zip(g.fila.values, g.fragmento.values):
+                    if seqs[r] != frag:
+                        fallos += 1
+                        if fallos < 4:
+                            print(f"  chunk {c} fila {r}: esperaba {frag} y "
+                                  f"hay {seqs[r]}", file=sys.stderr)
+            print(f"selftest ProtT5: {m:,} filas comprobadas | fallos {fallos}")
+
+        if self.usa_sbert:
+            # Misma comprobacion para SecondaryBERT, pero la clave es la CADENA
+            # Q3 y la fila es global, asi que hay que deshacer el chunk.
+            fsb = 0
+            cache: dict[int, list[str]] = {}
+            for fila_g, q3 in zip(s.fila_sbert.values, s.secondary_structure.values):
+                c, r = divmod(int(fila_g), self._sbert_tam)
+                if c not in cache:
+                    cache[c] = (self.sbert_dir / f"chunk_{c:06d}_seq.txt"
+                                ).read_text().split("\n")
+                if cache[c][r] != q3:
+                    fsb += 1
+                    if fsb < 4:
+                        print(f"  sbert chunk {c} fila {r}: esperaba {q3} y "
+                              f"hay {cache[c][r]}", file=sys.stderr)
+            print(f"selftest SecondaryBERT: {m:,} filas comprobadas | fallos {fsb}")
+            fallos += fsb
+
+        # Forma y finitud de un lote real, pieza a pieza.
+        lote = next(iter(self.batches(batch_size=256, shuffle=True, seed=seed,
                                       chunks_en_memoria=2)))
-        ok_forma = X.shape[1:] == (self.w, self.dim)
-        print(f"  lote: X {X.shape} y {y.shape} | forma esperada "
-              f"({self.w}, {self.dim}): {ok_forma} | finito {np.isfinite(X).all()}")
-        if self.features == "primary_secondary":
-            canales = X[:, :, 1024:]
-            print(f"  canales C/H/E: suma por residuo siempre 1: "
-                  f"{bool((canales.sum(axis=2) == 1).all())}")
-        return fallos == 0 and ok_forma
+        dim_vista = 0
+        ok = True
+        for k, esperada in (("prott5", DIM_PROTT5), ("sbert", DIM_SBERT)):
+            if k in lote:
+                v = lote[k]
+                bien = v.shape[1:] == (self.w, esperada) and np.isfinite(v).all()
+                ok &= bool(bien)
+                dim_vista += esperada
+                print(f"  {k:7s} {v.shape} {v.dtype} | esperada "
+                      f"({self.w}, {esperada}) y finito: {bien}")
+        if "q3" in lote:
+            v = lote["q3"]
+            # 255 es "letra desconocida"; no deberia haber ninguna aqui porque
+            # las filas sin estructura ya se han filtrado.
+            bien = v.shape[1:] == (self.w,) and not (v == 255).any()
+            ok &= bool(bien)
+            dim_vista += 3
+            print(f"  q3      {v.shape} {v.dtype} | esperada ({self.w},) y "
+                  f"sin letras desconocidas: {bien}")
+        ok &= dim_vista == self.dim
+        print(f"  dimension total {dim_vista} | declarada {self.dim}: "
+              f"{dim_vista == self.dim} | y {lote['y'].shape}")
+        return fallos == 0 and ok
 
 
 def main() -> int:
@@ -363,7 +575,10 @@ def main() -> int:
     ap.add_argument("--embeddings", required=True)
     ap.add_argument("--splits", required=True)
     ap.add_argument("--split", default="train")
-    ap.add_argument("--features", choices=("primary", "primary_secondary"),
+    ap.add_argument("--embeddings-sbert",
+                    help="directorio de SecondaryBERT por residuo; obligatorio "
+                         "para --features primary_sbert y sbert")
+    ap.add_argument("--features", choices=tuple(sorted(MODALIDADES)),
                     default="primary_secondary")
     ap.add_argument("--excluir-contradictorios", action="store_true")
     ap.add_argument("--permitir-sin-ss", action="store_true")
@@ -373,6 +588,7 @@ def main() -> int:
     ds = FragmentDataset(
         fragments=args.fragments, embeddings=args.embeddings, splits=args.splits,
         split=args.split, features=args.features,
+        embeddings_sbert=args.embeddings_sbert,
         excluir_contradictorios=args.excluir_contradictorios,
         permitir_sin_ss=args.permitir_sin_ss,
     )

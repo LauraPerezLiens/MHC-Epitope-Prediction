@@ -87,7 +87,7 @@ import pandas as pd
 
 RAIZ = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(RAIZ / "data_pipeline/scripts/embeddings/primary_structure"))
-from fragment_dataset import FragmentDataset  # noqa: E402
+from fragment_dataset import MODALIDADES, FragmentDataset  # noqa: E402
 
 DIM_PROTT5 = 1024
 
@@ -172,9 +172,14 @@ def main() -> int:
     ap_.add_argument("--fragments", required=True)
     ap_.add_argument("--embeddings", required=True)
     ap_.add_argument("--splits", required=True)
-    ap_.add_argument("--scaler", required=True, type=Path)
+    ap_.add_argument("--scaler", type=Path,
+                     help="obligatorio salvo en los brazos sin ProtT5, cuyas "
+                          "features no lo necesitan")
+    ap_.add_argument("--embeddings-sbert",
+                     help="SecondaryBERT por residuo; obligatorio para "
+                          "--features primary_sbert y sbert")
     ap_.add_argument("--out", required=True, type=Path)
-    ap_.add_argument("--features", choices=("primary", "primary_secondary"),
+    ap_.add_argument("--features", choices=tuple(sorted(MODALIDADES)),
                      default="primary")
     ap_.add_argument("--excluir-contradictorios", action="store_true")
     ap_.add_argument("--epochs", type=int, default=12)
@@ -208,31 +213,50 @@ def main() -> int:
           f"(CUDA_VISIBLE_DEVICES fija cual es)", flush=True)
 
     # --- scaler, ajustado en TRAIN y congelado ---
-    sc = np.load(args.scaler)
-    media = torch.tensor(sc["mean_canal"], dtype=torch.float32, device=dev)
-    desv = torch.tensor(sc["std_canal"], dtype=torch.float32, device=dev)
-    # Estandarizar el promedio equivale a promediar lo estandarizado y
-    # reescalar por std_canal/std_pool: promediar w valores correlacionados
-    # encoge la desviacion, y sin corregirlo el brazo pooled entraria con
-    # features de std ~0,31 frente a 1.
-    factor_pool = torch.tensor(sc["std_canal"] / sc["std_pool"],
-                               dtype=torch.float32, device=dev)
-    print(f"scaler: {args.scaler.name} | std media {float(desv.mean()):.4f} | "
-          f"correccion de pooling mediana {float(factor_pool.median()):.4f}",
-          flush=True)
+    usa_prott5 = MODALIDADES[args.features][0]
+    media = desv = factor_pool = None
+    if usa_prott5:
+        if args.scaler is None:
+            print(f"ERROR: --features {args.features} necesita --scaler",
+                  file=sys.stderr)
+            return 2
+        sc = np.load(args.scaler)
+        media = torch.tensor(sc["mean_canal"], dtype=torch.float32, device=dev)
+        desv = torch.tensor(sc["std_canal"], dtype=torch.float32, device=dev)
+        # Estandarizar el promedio equivale a promediar lo estandarizado y
+        # reescalar por std_canal/std_pool: promediar w valores correlacionados
+        # encoge la desviacion, y sin corregirlo el brazo pooled entraria con
+        # features de std ~0,31 frente a 1.
+        factor_pool = torch.tensor(sc["std_canal"] / sc["std_pool"],
+                                   dtype=torch.float32, device=dev)
+        print(f"scaler: {args.scaler.name} | std media {float(desv.mean()):.4f} | "
+              f"correccion de pooling mediana {float(factor_pool.median()):.4f}",
+              flush=True)
+    else:
+        # Los brazos sin ProtT5 no llevan scaler, y no es un olvido: el one-hot
+        # es 0/1 por definicion, y la ultima capa de SecondaryBERT sale de un
+        # LayerNorm, de modo que cada vector de token ya tiene media 0 y
+        # varianza 1 sobre sus 768 dimensiones.
+        print(f"sin scaler: --features {args.features} no lleva columnas de "
+              f"ProtT5 (one-hot es 0/1 y SecondaryBERT sale normalizado por "
+              f"LayerNorm)", flush=True)
 
     # --- datos ---
     comun = dict(fragments=args.fragments, embeddings=args.embeddings,
                  splits=args.splits, features=args.features,
+                 embeddings_sbert=args.embeddings_sbert,
                  excluir_contradictorios=args.excluir_contradictorios)
     print("TRAIN:", flush=True)
     tr = FragmentDataset(split="train", **comun)
+    # El tensor de SecondaryBERT se comparte: son los mismos vectores indexados
+    # por cadena Q3, y una copia por particion triplicaria 8,3 GB por nada.
+    comp = dict(comun, sbert_precargado=tr.sbert)
     print("VALIDATION:", flush=True)
-    va = FragmentDataset(split="val", **comun)
+    va = FragmentDataset(split="val", **comp)
     te = None
     if args.test:
         print("TEST:", flush=True)
-        te = FragmentDataset(split="test", **comun)
+        te = FragmentDataset(split="test", **comp)
     w, dim = tr.w, tr.dim
     dim_plano = w * dim
 
@@ -246,13 +270,47 @@ def main() -> int:
         print(f"  {k:14s} {sum(p.numel() for p in m.parameters()):>12,} parametros",
               flush=True)
 
-    def prepara(Xb):
-        """fp16 del disco -> float32 estandarizado; vista plana y promediada."""
-        X = Xb.to(dev, non_blocking=True).float()
-        X[:, :, :DIM_PROTT5] = (X[:, :, :DIM_PROTT5] - media) / desv
+    # Buffers anclados, reutilizados en todos los lotes. La memoria anclada es
+    # la que permite que la copia a GPU sea asincrona y se solape con el
+    # calculo; sin anclar, cada `.to(cuda)` es una parada sincrona. Se asignan
+    # una vez porque anclar memoria es una llamada al sistema caray no algo
+    # que convenga hacer 1.221 veces por epoca.
+    anclados: dict[str, "torch.Tensor"] = {}
+
+    def _sube(a: np.ndarray, clave: str):
+        """numpy -> GPU pasando por un buffer anclado del tamano justo."""
+        t = anclados.get(clave)
+        if t is None or t.shape[0] < a.shape[0] or t.shape[1:] != a.shape[1:]:
+            t = torch.empty((max(a.shape[0], args.batch),) + a.shape[1:],
+                            dtype=torch.from_numpy(a[:1]).dtype).pin_memory()
+            anclados[clave] = t
+        n = a.shape[0]
+        t[:n].copy_(torch.from_numpy(a))
+        return t[:n].to(dev, non_blocking=True)
+
+    ojo3 = torch.eye(3, dtype=torch.float32, device=dev)
+
+    def prepara(lote):
+        """Monta la entrada EN LA GPU: one-hot, concatenacion y estandarizado.
+
+        Nada de esto se hace en CPU a proposito. El one-hot sale de indexar una
+        identidad 3x3 con los indices Q3 —`(B, w)` uint8, 43 KB por lote— y la
+        concatenacion de hasta 1.792 canales es una operacion de GPU.
+        """
+        trozos = []
+        if "prott5" in lote:
+            X = _sube(lote["prott5"], "prott5").float()
+            X = (X - media) / desv
+            trozos.append(X)
+        if "q3" in lote:
+            trozos.append(ojo3[_sube(lote["q3"], "q3").long()])
+        if "sbert" in lote:
+            trozos.append(_sube(lote["sbert"], "sbert").float())
+        X = trozos[0] if len(trozos) == 1 else torch.cat(trozos, dim=2)
         plano = X.reshape(X.shape[0], -1)
         pool = X.mean(dim=1)
-        pool[:, :DIM_PROTT5] = pool[:, :DIM_PROTT5] * factor_pool
+        if factor_pool is not None:
+            pool[:, :DIM_PROTT5] = pool[:, :DIM_PROTT5] * factor_pool
         return {"lr_residuo": plano, "mlp_residuo": plano,
                 "lr_pooled": pool, "mlp_pooled": pool}
 
@@ -266,14 +324,13 @@ def main() -> int:
         # filas repartidas por los 111 chunks, asi que cargar chunks enteros
         # leeria los 93 GB para quedarse con 2.800 filas de cada uno. Ordenado
         # por (chunk, fila) se leen 13 GB en un barrido casi secuencial.
-        for Xb, yb, ib in ds.batches(batch_size=args.batch, shuffle=False,
-                                     mmap_aleatorio=True,
-                                     dtype=np.float16, indices=True):
-            ent = prepara(torch.from_numpy(Xb))
+        for lote in ds.batches(batch_size=args.batch, shuffle=False,
+                               mmap_aleatorio=True, indices=True):
+            ent = prepara(lote)
             for k, m in modelos.items():
                 logits[k].append(m(ent[k]).squeeze(1).float().cpu().numpy())
-            ys.append(yb)
-            idxs.append(ib)
+            ys.append(lote["y"])
+            idxs.append(lote["idx"])
         y = np.concatenate(ys)
         idx = np.concatenate(idxs)
         res = {}
@@ -299,12 +356,11 @@ def main() -> int:
         acum = {k: 0.0 for k in modelos}
         nlotes = 0
         t_ep = time.time()
-        for Xb, yb in tr.batches(batch_size=args.batch, shuffle=True,
-                                 seed=args.seed + ep,
-                                 chunks_en_memoria=args.chunks_en_memoria,
-                                 dtype=np.float16):
-            ent = prepara(torch.from_numpy(Xb))
-            yt = torch.from_numpy(yb).to(dev, non_blocking=True)
+        for lote in tr.batches(batch_size=args.batch, shuffle=True,
+                               seed=args.seed + ep,
+                               chunks_en_memoria=args.chunks_en_memoria):
+            ent = prepara(lote)
+            yt = _sube(lote["y"], "y")
             for k, m in modelos.items():
                 opt[k].zero_grad(set_to_none=True)
                 l = perdida(m(ent[k]).squeeze(1), yt)
