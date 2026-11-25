@@ -414,7 +414,8 @@ class FragmentDataset:
     # ------------------------------------------------------------------- lotes
     def batches(self, batch_size: int = 512, shuffle: bool = True,
                 seed: int = 0, chunks_en_memoria: int = 16,
-                mmap_aleatorio: bool = False, indices: bool = False):
+                mmap_aleatorio: bool = False, indices: bool = False,
+                frac_pos: float | None = None):
         """Itera lotes como **diccionario de piezas**, no como un tensor unico.
 
         Claves posibles: `prott5` (B, w, 1024) fp16, `q3` (B, w) uint8, `sbert`
@@ -424,28 +425,64 @@ class FragmentDataset:
         Se entrega por piezas a proposito: concatenarlas en CPU son 154 MB de
         memcpy por lote en el brazo con SecondaryBERT, trabajo que la GPU hace
         en microsegundos. Todo viaja en la precision en la que esta el disco.
+
+        `frac_pos` fuerza la fraccion de positivos de cada lote submuestreando
+        la clase sobrante, al estilo del `BalancedSequence` de Wert2021. **Solo
+        vale para TRAIN**: aplicarlo a VALIDATION o TEST es el defecto 3 de
+        §0.8, que hacia incomparables las metricas. Aqui se niega a aplicarse
+        con `mmap_aleatorio`, que es el camino de evaluacion.
         """
         self.devolver_indices = indices
+        if frac_pos is not None:
+            if not 0.0 < frac_pos < 1.0:
+                raise ValueError(f"frac_pos fuera de (0, 1): {frac_pos}")
+            if mmap_aleatorio:
+                raise ValueError(
+                    "frac_pos con mmap_aleatorio: ese es el camino de "
+                    "evaluacion y debe conservar la prevalencia natural (§0.8)")
         rng = np.random.default_rng(seed)
         if not self.usa_prott5:
             # Sin ProtT5 no hay nada en disco que recorrer: SecondaryBERT y el
             # one-hot estan en RAM. Barajar fila a fila es gratis, y recorrer
             # los 93 GB de ProtT5 para no usarlos seria absurdo.
-            yield from self._batches_ram(batch_size, shuffle, rng)
+            yield from self._batches_ram(batch_size, shuffle, rng, frac_pos)
         elif mmap_aleatorio:
             yield from self._batches_mmap(batch_size, shuffle, rng)
         else:
             yield from self._batches_ventana(batch_size, shuffle, rng,
-                                             chunks_en_memoria)
+                                             chunks_en_memoria, frac_pos)
 
-    def _batches_ram(self, bs, shuffle, rng):
+    def _lotes_equilibrados(self, sel, bs, rng, frac_pos):
+        """Troceado de `sel` en lotes con `frac_pos` de positivos exactos.
+
+        Submuestrea la clase sobrante, como el `BalancedSequence` de Wert2021:
+        no repite ejemplos, de modo que la epoca ve todos los de la clase
+        minoritaria y solo una parte de la otra, distinta en cada epoca porque
+        los dos grupos se barajan antes. Con prevalencia 30,43 % y 50/50, una
+        epoca usa 1,52 M de los 2,49 M de TRAIN.
+        """
+        et = self._label[sel]
+        pos, neg = sel[et == 1], sel[et == 0]
+        rng.shuffle(pos)
+        rng.shuffle(neg)
+        npos = max(int(round(bs * frac_pos)), 1)
+        nneg = max(bs - npos, 1)
+        for i in range(min(len(pos) // npos, len(neg) // nneg)):
+            yield np.concatenate([pos[i * npos:(i + 1) * npos],
+                                  neg[i * nneg:(i + 1) * nneg]])
+
+    def _batches_ram(self, bs, shuffle, rng, frac_pos=None):
         """Todo en memoria: barajado perfecto fila a fila, sin tocar el disco."""
         orden = (rng.permutation(len(self._label)) if shuffle
                  else np.arange(len(self._label)))
+        if frac_pos is not None:
+            for idx in self._lotes_equilibrados(orden, bs, rng, frac_pos):
+                yield self._arma(idx)
+            return
         for i in range(0, len(orden), bs):
             yield self._arma(orden[i:i + bs])
 
-    def _batches_ventana(self, bs, shuffle, rng, M):
+    def _batches_ventana(self, bs, shuffle, rng, M, frac_pos=None):
         """Ventana de M chunks, leidos por memoria mapeada y SIN copiarlos.
 
         La version anterior hacia `np.asarray(memmap)` de los 16 chunks del
@@ -463,11 +500,18 @@ class FragmentDataset:
             sel = np.flatnonzero(np.isin(self._chunk, grupo))
             if not len(sel):
                 continue
-            if shuffle:
-                rng.shuffle(sel)
             mm = {c: self._residues(c) for c in grupo}   # memmaps, sin copia
-            for i in range(0, len(sel), bs):
-                yield self._arma(sel[i:i + bs], mm)
+            if frac_pos is not None:
+                # El equilibrado es DENTRO de la ventana de chunks, no global:
+                # cada lote sigue saliendo de los mismos 16 vecindarios, de modo
+                # que no deshace el barajado de §0.15.2.
+                for idx in self._lotes_equilibrados(sel, bs, rng, frac_pos):
+                    yield self._arma(idx, mm)
+            else:
+                if shuffle:
+                    rng.shuffle(sel)
+                for i in range(0, len(sel), bs):
+                    yield self._arma(sel[i:i + bs], mm)
             mm.clear()
 
     def _batches_mmap(self, bs, shuffle, rng):

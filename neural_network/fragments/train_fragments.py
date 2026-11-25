@@ -187,6 +187,11 @@ def main() -> int:
     ap_.add_argument("--lr", type=float, default=1e-3)
     ap_.add_argument("--weight-decay", type=float, default=0.01)
     ap_.add_argument("--dropout", type=float, default=0.30)
+    ap_.add_argument("--frac-pos", type=float, default=None,
+                     help="fraccion de positivos por lote en TRAIN, al estilo "
+                          "del BalancedSequence de Wert2021 (0.5 = 50/50 como "
+                          "el MLP historico). Por omision, prevalencia natural. "
+                          "NO afecta a la evaluacion, que siempre es natural")
     ap_.add_argument("--paciencia", type=int, default=3)
     ap_.add_argument("--seed", type=int, default=42)
     ap_.add_argument("--chunks-en-memoria", type=int, default=16)
@@ -358,7 +363,8 @@ def main() -> int:
         t_ep = time.time()
         for lote in tr.batches(batch_size=args.batch, shuffle=True,
                                seed=args.seed + ep,
-                               chunks_en_memoria=args.chunks_en_memoria):
+                               chunks_en_memoria=args.chunks_en_memoria,
+                               frac_pos=args.frac_pos):
             ent = prepara(lote)
             yt = _sube(lote["y"], "y")
             for k, m in modelos.items():
@@ -430,9 +436,14 @@ def main() -> int:
         "parametros": {k: sum(p.numel() for p in m.parameters())
                        for k, m in modelos.items()},
         "metrica_de_seleccion": "average precision en VALIDATION",
+        "frac_pos_train": args.frac_pos,
         "protocolo": ("particion por componentes proteina-fragmento; seleccion "
                       "por VALIDATION; evaluacion a prevalencia natural; AP y "
-                      "lift reportados ademas de ROC-AUC"),
+                      "lift reportados ademas de ROC-AUC"
+                      + ("" if args.frac_pos is None else
+                         f"; TRAIN equilibrado al {100*args.frac_pos:.0f} % de "
+                         f"positivos por submuestreo, estilo BalancedSequence "
+                         f"de Wert2021, SIN tocar la evaluacion")),
         "mean_pooling_control": ("promedio sobre los w residuos, SIN el token "
                                  "</s>, que el pipeline historico SI incluia"),
         "mejor_por_modelo": mejor,
