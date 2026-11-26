@@ -3,19 +3,32 @@
 """
 slim_raw_export.py — Proyeccion de columnas sobre los CSV crudos de IEDB.
 
-QUE HACE, Y SOBRE TODO QUE NO HACE
-----------------------------------
-Es un paso de LIMPIEZA DE COLUMNAS, no de filtrado de filas.
+QUE HACE: DOS MODOS, Y HACEN COSAS DISTINTAS
+--------------------------------------------
+`--columns full` es un INVENTARIO. `--columns core` (el valor por omision) es
+el DATASET DE TRABAJO. No confundirlos: solo el segundo elimina filas.
 
-  * NO elimina ninguna fila. El numero de filas de la salida es identico al de
-    la entrada, y el script lo verifica y lo aborta si no coincide.
-  * NO aplica ningun criterio cientifico: no filtra por `Positive`, ni por
-    organismo fuente, ni por `object_type`, ni por codigo de evidencia. Todas
-    esas decisiones se toman despues, sobre la tabla de peptidos
-    (`build_peptide_table.py`), con los datos delante.
-  * SOLO descarta columnas que no aportan informacion: constantes por
-    construccion de la consulta, vacias en todas las familias, o duplicados IRI
-    de una columna legible que ya se conserva.
+  * `--columns full`  -> 75 columnas en `mhc`, 126 en `tcell`. Proyeccion de
+    columnas y NADA MAS: no elimina ni una fila (lo verifica y aborta si el
+    recuento cambia) y no aplica ningun criterio cientifico. Solo descarta
+    columnas sin informacion: constantes por construccion de la consulta,
+    vacias en todas las familias, o duplicados IRI de una columna legible que
+    si se conserva.
+
+  * `--columns core`  -> 11 columnas en `mhc`, 22 en `tcell`, y CUATRO FILTROS
+    DE FILA (decididos por Laura el 25 nov 2026; CLAUDE.md 0.6.7 sexies):
+    modificacion quimica no vacia, `epitope__name` no canonico, accession de
+    proteina madre ausente, y especie del epitopo distinta de la propia.
+    Sobre las 11 familias deja 1.979.022 filas de 2.986.343 (66,3 %). El filtro
+    caro es el de accession, y sobre todo en HLA-DR (445.756 filas, el 46,1 %
+    de la familia: peptidos sinteticos sin proteina madre).
+    `epitope__object_type` no quita ninguna fila —la consulta ya lo filtra en
+    origen— y queda como asercion.
+
+Lo que `core` NO decide, a proposito, porque son las decisiones abiertas de
+CLAUDE.md 0.6.8.3: el valor cualitativo (la etiqueta se conserva tal cual),
+`assay_antigen__epitope_relation`, `mhc_restriction__evidence_code` y el tipo
+de ensayo. Las columnas para tomarlas se conservan o estan en `full`.
 
 La lista de columnas que se conservan es CURADA Y FIJA, no se deriva de la tasa
 de relleno de un fichero concreto. Motivo: una columna vacia en H2-K puede estar
@@ -36,9 +49,15 @@ con el motivo, SHA-256 y bytes de entrada y salida, y el commit de git.
 USO
 ---
     P=/home/nap/miniconda3/envs/nap_env/bin/python
-    $P -u data_pipeline/scripts/data_processing/slim_raw_export.py \
-        --raw data/data_raw_full_20261124 \
-        --out data/data_raw_full_20261124_slim
+
+    # dataset de trabajo (lo normal): 11 columnas, solo mhc, con los 4 filtros
+    $P -u data_pipeline/scripts/data_download/slim_raw_export.py \
+        --raw data/data_raw_full_YYYYMMDD \
+        --out data/data_raw_full_YYYYMMDD_clean \
+        --columns core --census
+
+    # inventario completo, sin filtrar filas
+    $P -u ... --columns full --out DIR_slim --audit-dropped
 
     # una sola familia, y en CSV en lugar de Parquet:
     $P -u ... --only mouse/mhc-I/H2-K --format csv
