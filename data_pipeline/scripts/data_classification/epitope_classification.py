@@ -177,8 +177,19 @@ def accession_de_iri(iri: object) -> str:
     return s.rsplit("/", 1)[-1]
 
 
-def epitopos_de_familia(clean_dir: Path, especie: str, clase: str, familia: str) -> pd.DataFrame:
-    """Lee el export limpio de una familia y deduplica a epitopos unicos."""
+def epitopos_de_familia(
+    clean_dir: Path, especie: str, clase: str, familia: str,
+    descartes: dict | None = None, drop_modified: bool = True,
+) -> pd.DataFrame:
+    """Lee el export limpio de una familia y deduplica a epitopos unicos.
+
+    Descarta las filas que no se pueden situar en una proteina y, si se le
+    pasa `descartes`, anota cuantas quita cada condicion. Importa desde el
+    27 nov 2026: `slim_raw_export.py` dejo de filtrar por accession, de modo
+    que esas filas ahora LLEGAN aqui y es este script el que las retira. Sin
+    el registro, la perdida seria invisible (en la descarga del 24 eran
+    503.288 filas, de ellas 445.756 de HLA-DR).
+    """
     base = clean_dir / especie / clase / familia
     ficheros = sorted(base.glob("mhc_export*.parquet"))
     if not ficheros:
@@ -195,12 +206,38 @@ def epitopos_de_familia(clean_dir: Path, especie: str, clase: str, familia: str)
     ):
         df[destino] = pd.to_numeric(df[col], errors="coerce")
 
+    sin_accession = (df["accession"] == "")
+    sin_peptido = ~df["peptido"].str.len().gt(0)
+    sin_coords = df["inicio"].isna() | df["fin"].isna()
+    no_canonico = ~df["peptido"].map(
+        lambda p: isinstance(p, str) and bool(p) and set(p) <= CANONICOS
+    )
+    # La modificacion quimica es el UNICO de estos descartes que es una
+    # decision y no una necesidad tecnica: un peptido oxidado si se puede
+    # situar en su proteina, pero su ventana saldria identica a la del no
+    # modificado, de modo que entraria como si fuera otra molecula. Decision
+    # de Laura del 25 nov; `--keep-modified` la revierte.
+    modificado = (
+        df["epitope__modifications"].notna()
+        if drop_modified and "epitope__modifications" in df.columns
+        else pd.Series(False, index=df.index)
+    )
+    if descartes is not None:
+        descartes.update({
+            "filas_de_entrada": int(len(df)),
+            "sin_accession_de_proteina_madre": int(sin_accession.sum()),
+            "sin_secuencia_de_peptido": int(sin_peptido.sum()),
+            "sin_coordenadas": int((~sin_accession & sin_coords).sum()),
+            "peptido_no_canonico": int((~sin_accession & ~sin_coords & no_canonico).sum()),
+            "con_modificacion_quimica": int(
+                (~sin_accession & ~sin_coords & ~no_canonico & modificado).sum()
+            ),
+        })
     df = df[
-        (df["accession"] != "")
-        & df["peptido"].str.len().gt(0)
-        & df["inicio"].notna()
-        & df["fin"].notna()
+        ~sin_accession & ~sin_peptido & ~sin_coords & ~no_canonico & ~modificado
     ].copy()
+    if descartes is not None:
+        descartes["filas_conservadas"] = int(len(df))
     df["inicio"] = df["inicio"].astype(int)
     df["fin"] = df["fin"].astype(int)
     df["alelo"] = df["mhc_restriction__name"].astype(str).str.strip()
@@ -229,7 +266,8 @@ def ventanas_de_proteina(
     acc: str, seq: str, epitopos: list[dict], w: int, stride: int
 ) -> tuple[list[list], dict[str, int]]:
     """Genera una fila por ventana de `seq`. Devuelve (filas, contadores)."""
-    cont = {"ventanas": 0, "descartadas_no_canonico": 0, "positivas": 0}
+    cont = {"ventanas": 0, "descartadas_no_canonico": 0, "positivas": 0,
+            "duplicadas_misma_proteina": 0}
     n = len(seq)
     if n < w:
         return [], cont
@@ -287,17 +325,56 @@ def ventanas_de_proteina(
             ";".join(pmids),
         ])
 
-    return filas, cont
+    # Deduplicacion dentro de la proteina (Laura, 27 nov): misma proteina,
+    # misma secuencia y misma etiqueta -> una sola fila. Con paso 1 casi todas
+    # las ventanas son distintas, pero una proteina con una region repetida
+    # (colageno, repeticiones de baja complejidad) produce la misma ventana
+    # varias veces, y serian ejemplos identicos con pesos distintos en la
+    # perdida. Se conserva la PRIMERA ocurrencia, es decir la mas cercana al
+    # extremo N, para que el resultado no dependa del orden de iteracion.
+    #
+    # Nota: con etiqueta por secuencia (0.20.2) una misma secuencia no puede
+    # tener dos etiquetas distintas dentro de la familia —si contiene un
+    # epitopo, lo contiene siempre—, de modo que deduplicar por (secuencia,
+    # etiqueta) y por secuencia sola es lo mismo. Se incluye la etiqueta en la
+    # clave de todos modos, para que la propiedad quede comprobada y no
+    # asumida: si alguna vez difiere, la fila sobrevive y el conteo lo delata.
+    vistos: set[tuple[str, int]] = set()
+    unicas: list[list] = []
+    for f in filas:
+        clave = (f[1], f[4])          # (fragmento, label)
+        if clave in vistos:
+            cont["duplicadas_misma_proteina"] += 1
+            if f[4] == 1:
+                cont["positivas"] -= 1
+            continue
+        vistos.add(clave)
+        unicas.append(f)
+
+    return unicas, cont
 
 
 def procesar_familia(
     clean_dir: Path, out_dir: Path, seqs: dict[str, str],
     especie: str, clase: str, familia: str, w: int, stride: int,
+    drop_modified: bool = True, emit_csv: bool = False,
 ) -> dict:
-    eps = epitopos_de_familia(clean_dir, especie, clase, familia)
+    descartes: dict = {}
+    eps = epitopos_de_familia(
+        clean_dir, especie, clase, familia, descartes, drop_modified
+    )
+    if descartes:
+        logging.info(
+            "%s: %d filas del export; descartadas %d sin accession, %d sin "
+            "coordenadas, %d no canonicas, %d modificadas -> %d utilizables",
+            familia, descartes["filas_de_entrada"],
+            descartes["sin_accession_de_proteina_madre"],
+            descartes["sin_coordenadas"], descartes["peptido_no_canonico"],
+            descartes["con_modificacion_quimica"], descartes["filas_conservadas"],
+        )
     if eps.empty:
         logging.warning("%s/%s/%s: sin epitopos en el export limpio", especie, clase, familia)
-        return {"familia": familia, "filas": 0}
+        return {"familia": familia, "filas": 0, "descartes_del_export": descartes}
 
     # --- Catalogo de epitopos de la familia, por secuencia -------------------
     # La etiqueta se decide por SECUENCIA, no por la coordenada anotada. Si un
@@ -363,12 +440,19 @@ def procesar_familia(
     salida = destino / "windows.parquet"
 
     escritor = pq.ParquetWriter(salida, ESQUEMA, compression="zstd")
+    # El CSV se escribe EN PARALELO al Parquet, no al final: estas tablas son
+    # de millones de filas y releerlas para convertirlas costaria otra pasada
+    # completa. El Parquet es lo que consumen los scripts rio abajo; el CSV es
+    # la copia inspeccionable a ojo que pidio Laura el 27 nov 2026.
+    salida_csv = destino / "windows.csv" if emit_csv else None
+    csv_cabecera_escrita = False
     buffer: list[list] = []
-    tot = {"ventanas": 0, "descartadas_no_canonico": 0, "positivas": 0}
+    tot = {"ventanas": 0, "descartadas_no_canonico": 0, "positivas": 0,
+           "duplicadas_misma_proteina": 0}
     filas_escritas = 0
 
     def volcar() -> None:
-        nonlocal buffer, filas_escritas
+        nonlocal buffer, filas_escritas, csv_cabecera_escrita
         if not buffer:
             return
         df = pd.DataFrame(buffer, columns=[
@@ -379,8 +463,16 @@ def procesar_familia(
         df.insert(0, "familia", familia)
         df.insert(0, "clase", clase)
         df.insert(0, "especie", especie)
+        ordenado = df[[f.name for f in ESQUEMA]]
         escritor.write_table(pa.Table.from_pandas(
-            df[[f.name for f in ESQUEMA]], schema=ESQUEMA, preserve_index=False))
+            ordenado, schema=ESQUEMA, preserve_index=False))
+        if salida_csv is not None:
+            ordenado.to_csv(
+                salida_csv, index=False,
+                mode="w" if not csv_cabecera_escrita else "a",
+                header=not csv_cabecera_escrita,
+            )
+            csv_cabecera_escrita = True
         filas_escritas += len(df)
         buffer = []
 
@@ -404,6 +496,7 @@ def procesar_familia(
 
     res = {
         "familia": f"{especie}/{clase}/{familia}",
+        "descartes_del_export": descartes,
         "proteinas": len(por_proteina),
         "epitopos_unicos": int(len(eps)),
         "epitopos_sin_secuencia": sin_secuencia,
@@ -437,6 +530,16 @@ def main() -> None:
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--window", type=int, default=25)
     ap.add_argument("--stride", type=int, default=1)
+    ap.add_argument("--csv", action="store_true",
+                    help=("escribe tambien el CSV al lado del Parquet. Por omision SOLO "
+                          "Parquet (decision de Laura del 27 nov): el CSV se pide cuando "
+                          "hace falta mirar las columnas a ojo, y en estas tablas de "
+                          "decenas de millones de filas pesa dos ordenes de magnitud mas."))
+    ap.add_argument("--keep-modified", action="store_true",
+                    help=("conserva los epitopos con modificacion quimica. Por omision "
+                          "se descartan: su ventana saldria identica a la del peptido no "
+                          "modificado (decision de Laura del 25 nov). Desde el 27 nov el "
+                          "filtro vive aqui y no en slim_raw_export.py."))
     ap.add_argument("--only", action="append", default=None,
                     help="especie/clase/familia; repetible")
     args = ap.parse_args()
@@ -457,7 +560,9 @@ def main() -> None:
 
     args.out.mkdir(parents=True, exist_ok=True)
     resultados = [
-        procesar_familia(args.clean, args.out, seqs, esp, cls, fam, args.window, args.stride)
+        procesar_familia(args.clean, args.out, seqs, esp, cls, fam, args.window,
+                         args.stride, drop_modified=not args.keep_modified,
+                         emit_csv=args.csv)
         for esp, cls, fam in familias
     ]
 

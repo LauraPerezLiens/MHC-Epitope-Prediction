@@ -61,13 +61,23 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 
 
 def _git_commit(repo: Path) -> str | None:
     try:
         r = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
                            capture_output=True, text=True, timeout=10)
-        return r.stdout.strip() or None
+        h = r.stdout.strip()
+        if not h:
+            return None
+        # §19 pide el commit Y el estado del repositorio: devolver el hash a
+        # secas con el arbol modificado senala un codigo que no es el que se
+        # ejecuto, y quien reproduzca desde ese commit no vera los cambios.
+        s = subprocess.run(["git", "-C", str(repo), "status", "--porcelain",
+                            "--untracked-files=no"],
+                           capture_output=True, text=True, timeout=10)
+        return h + ("-sucio" if s.stdout.strip() else "")
     except Exception:
         return None
 
@@ -188,13 +198,33 @@ def main() -> int:
 
     cols = ["familia", "especie", "clase", "fragmento", "label", "alelo",
             "accession", "pmid", "ss_status"]
+    # Tres formatos de entrada, por orden de preferencia. `windows.parquet` es
+    # la salida del generador DESLIZANTE (epitope_classification.py), que no
+    # tiene columna `alelo` —en una ventana deslizante los alelos de los
+    # epitopos contenidos van en `alelos`, en plural y unidos por ';'— ni
+    # `pmid` en singular. Se normalizan los nombres aqui para que el resto del
+    # script no tenga que saber de que generador viene.
     partes = []
-    for f in sorted(args.fragments.rglob("fragments_ss.parquet")):
-        partes.append(pd.read_parquet(f, columns=cols))
+    for nombre, faltan in (("fragments_ss.parquet", ()),
+                           ("fragments.parquet", ("ss_status",)),
+                           ("windows.parquet", ("ss_status",))):
+        for f in sorted(args.fragments.rglob(nombre)):
+            disponibles = set(pq.ParquetFile(f).schema.names)
+            pedidas = [c for c in cols if c not in faltan and c in disponibles]
+            d = pd.read_parquet(f, columns=pedidas)
+            if "alelo" not in d.columns:
+                d["alelo"] = (pd.read_parquet(f, columns=["alelos"])["alelos"]
+                              if "alelos" in disponibles else None)
+            if "pmid" not in d.columns:
+                d["pmid"] = (pd.read_parquet(f, columns=["pmids"])["pmids"]
+                             if "pmids" in disponibles else None)
+            partes.append(d)
+        if partes:
+            break
     if not partes:
-        for f in sorted(args.fragments.rglob("fragments.parquet")):
-            partes.append(pd.read_parquet(
-                f, columns=[c for c in cols if c != "ss_status"]))
+        print(f"ERROR: ningun fragments_ss/fragments/windows.parquet bajo "
+              f"{args.fragments}", file=sys.stderr)
+        return 2
     D = pd.concat(partes, ignore_index=True)
     print(f"filas: {len(D):,} | proteinas {D.accession.nunique():,} | "
           f"fragmentos unicos {D.fragmento.nunique():,}")

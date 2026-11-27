@@ -87,7 +87,16 @@ def _git_commit(repo: Path) -> str | None:
     try:
         r = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
                            capture_output=True, text=True, timeout=10)
-        return r.stdout.strip() or None
+        h = r.stdout.strip()
+        if not h:
+            return None
+        # §19 pide el commit Y el estado del repositorio: devolver el hash a
+        # secas con el arbol modificado senala un codigo que no es el que se
+        # ejecuto, y quien reproduzca desde ese commit no vera los cambios.
+        s = subprocess.run(["git", "-C", str(repo), "status", "--porcelain",
+                            "--untracked-files=no"],
+                           capture_output=True, text=True, timeout=10)
+        return h + ("-sucio" if s.stdout.strip() else "")
     except Exception:
         return None
 
@@ -247,7 +256,48 @@ def una_familia(df: pd.DataFrame, prot: dict[str, str], w: int,
 
     P = pd.DataFrame(pos)
     Nn = pd.DataFrame(neg)
-    # Un senuelo repetido es una sola observacion.
+
+    # Deduplicacion de POSITIVOS por (proteina, secuencia, etiqueta), pedida
+    # por Laura el 27 nov. Hacia falta: `pos` tiene una fila por (alelo,
+    # peptido), de modo que dos alelos de la familia que presentan el MISMO
+    # peptido producian dos filas con el mismo fragmento, la misma proteina y
+    # la misma etiqueta. Eran ejemplos identicos contados dos veces.
+    #
+    # No se descartan las filas sobrantes: se AGREGAN. Si se quedara con la
+    # primera, se perderia el alelo de las demas, y la promiscuidad —el
+    # 33,76 % de los fragmentos positivos lo son en varios alelos, uno en 97
+    # (0.13.4)— es justo la informacion que hace falta para el experimento del
+    # alelo en la entrada. Alelos, epitopos, pmids y metodos se unen con ';',
+    # igual que en el generador deslizante, y las coordenadas se toman del
+    # representante mas centrado.
+    n_pos_brutos = len(P)
+    pos_fundidos = 0
+    if len(P):
+        P = P.sort_values(
+            ["accession", "fragmento", "desplazada", "epitopo_inicio"],
+            kind="stable",
+        )
+        agg = {
+            "epitopo": lambda s: ";".join(sorted({str(x) for x in s if pd.notna(x)})),
+            "alelo": lambda s: ";".join(sorted({str(x) for x in s if pd.notna(x)})),
+            "pmid": lambda s: ";".join(sorted({str(x) for x in s if pd.notna(x)})),
+            "metodo": lambda s: ";".join(sorted({str(x) for x in s if pd.notna(x)})),
+        }
+        primeros = [
+            "frag_inicio", "frag_fin", "epitopo_inicio", "epitopo_fin",
+            "epitopo_offset", "epitopo_long", "desplazada",
+        ]
+        agg.update({c: "first" for c in primeros})
+        P = (P.groupby(["accession", "fragmento", "label"], sort=False, as_index=False)
+               .agg(agg))
+        P["n_alelos"] = P["alelo"].map(lambda s: len(s.split(";")) if s else 0)
+        P["n_epitopos"] = P["epitopo"].map(lambda s: len(s.split(";")) if s else 0)
+        pos_fundidos = n_pos_brutos - len(P)
+
+    # Un senuelo repetido es una sola observacion. Esta dedup es GLOBAL, no por
+    # proteina: mas estricta que la pedida, y se conserva tal cual porque dos
+    # senuelos con la misma secuencia son el mismo vector de entrada aunque
+    # vengan de proteinas distintas.
     n_neg_brutos = len(Nn)
     if len(Nn):
         Nn = Nn.drop_duplicates("fragmento")
@@ -269,6 +319,8 @@ def una_familia(df: pd.DataFrame, prot: dict[str, str], w: int,
     n_pos, n_neg = len(P), len(Nn)
     st.update({
         "ventana": w, "positivos": n_pos, "senuelos": n_neg,
+        "positivos_antes_de_dedup": n_pos_brutos,
+        "positivos_fundidos_misma_proteina_misma_secuencia": pos_fundidos,
         "senuelos_antes_de_dedup": n_neg_brutos,
         "senuelos_duplicados_retirados": n_neg_brutos - len(Nn) - colisiones,
         "colisiones_positivo_senuelo": colisiones,
@@ -290,7 +342,11 @@ def main() -> int:
                     help="ventana para MHC clase II, en aa")
     ap.add_argument("--only", action="append", default=None,
                     help="limita a una familia, p. ej. mouse/mhc-I/H2-K")
-    ap.add_argument("--format", choices=("parquet", "csv", "both"), default="both")
+    ap.add_argument("--format", choices=("parquet", "csv", "both"), default="parquet",
+                    help=("formato de salida. Por omision solo Parquet, decision de Laura\n"
+                          "del 27 nov: el CSV se pide explicitamente cuando hace falta\n"
+                          "inspeccionar a ojo. Las tablas son de millones de filas y su\n"
+                          "CSV puede ser dos ordenes de magnitud mayor."))
     args = ap.parse_args()
 
     repo = Path(__file__).resolve().parents[3]
