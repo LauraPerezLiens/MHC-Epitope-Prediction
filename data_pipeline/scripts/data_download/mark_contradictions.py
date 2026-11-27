@@ -61,7 +61,16 @@ def _git_commit(repo: Path) -> str | None:
     try:
         r = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
                            capture_output=True, text=True, timeout=10)
-        return r.stdout.strip() or None
+        h = r.stdout.strip()
+        if not h:
+            return None
+        # §19 pide el commit Y el estado del repositorio: devolver el hash a
+        # secas con el arbol modificado senala un codigo que no es el que se
+        # ejecuto, y quien reproduzca desde ese commit no vera los cambios.
+        s = subprocess.run(["git", "-C", str(repo), "status", "--porcelain",
+                            "--untracked-files=no"],
+                           capture_output=True, text=True, timeout=10)
+        return h + ("-sucio" if s.stdout.strip() else "")
     except Exception:
         return None
 
@@ -69,7 +78,11 @@ def _git_commit(repo: Path) -> str | None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--fragments", required=True, type=Path)
-    ap.add_argument("--format", choices=("parquet", "csv", "both"), default="both")
+    ap.add_argument("--format", choices=("parquet", "csv", "both"), default="parquet",
+                    help=("formato de salida. Por omision solo Parquet, decision de Laura\n"
+                          "del 27 nov: el CSV se pide explicitamente cuando hace falta\n"
+                          "inspeccionar a ojo. Las tablas son de millones de filas y su\n"
+                          "CSV puede ser dos ordenes de magnitud mayor."))
     args = ap.parse_args()
 
     repo = Path(__file__).resolve().parents[3]

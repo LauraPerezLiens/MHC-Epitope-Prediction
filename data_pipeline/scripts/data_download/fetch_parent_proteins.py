@@ -70,7 +70,16 @@ def _git_commit(repo: Path) -> str | None:
     try:
         r = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
                            capture_output=True, text=True, timeout=10)
-        return r.stdout.strip() or None
+        h = r.stdout.strip()
+        if not h:
+            return None
+        # §19 pide el commit Y el estado del repositorio: devolver el hash a
+        # secas con el arbol modificado senala un codigo que no es el que se
+        # ejecuto, y quien reproduzca desde ese commit no vera los cambios.
+        s = subprocess.run(["git", "-C", str(repo), "status", "--porcelain",
+                            "--untracked-files=no"],
+                           capture_output=True, text=True, timeout=10)
+        return h + ("-sucio" if s.stdout.strip() else "")
     except Exception:
         return None
 
