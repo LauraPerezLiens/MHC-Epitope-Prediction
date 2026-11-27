@@ -89,51 +89,8 @@ class SecondaryMlmIntegrityTests(unittest.TestCase):
                     builder.main()
 
 
-class UniRefPredictionIntegrityTests(unittest.TestCase):
-    def setUp(self):
-        from data_pipeline.scripts.secondaryBERT import build_secondary_mlm_dataset
-        source = Path(build_secondary_mlm_dataset.__file__).with_name("predict_uniref30_secondary_structure.py")
-        spec = importlib.util.spec_from_file_location("uniref_prediction_fixture", source)
-        self.predictor = importlib.util.module_from_spec(spec)
-        tensorflow = ModuleType("tensorflow")
-        keras = ModuleType("tensorflow.keras")
-        utils = ModuleType("tensorflow.keras.utils")
-        utils.to_categorical = lambda indices, num_classes: np.eye(num_classes, dtype=np.float32)[indices]
-        keras.Model = object
-        keras.models = SimpleNamespace(load_model=lambda _: None)
-        tensorflow.keras = keras
-        tensorflow.config = SimpleNamespace(threading=SimpleNamespace(
-            set_intra_op_parallelism_threads=lambda _: None, set_inter_op_parallelism_threads=lambda _: None))
-        with patch.dict(os.environ), patch.dict(sys.modules, {
-            "tensorflow": tensorflow, "tensorflow.keras": keras, "tensorflow.keras.utils": utils,
-        }):
-            spec.loader.exec_module(self.predictor)
 
-    def test_rejects_nonfinite_or_incompatible_model_output(self):
-        for values in (np.full((1, 2, 3), np.nan), np.zeros((2, 2, 3)),
-                       np.zeros((1, 1, 3)), np.zeros((1, 2, 4))):
-            with self.subTest(shape=values.shape):
-                model = SimpleNamespace(predict=lambda *a, **k: values)
-                with self.assertRaisesRegex(ValueError, "Invalid prediction"):
-                    self.predictor.predict_window_probabilities("AC", model)
+# La clase UniRefPredictionIntegrityTests se retiro el 27 nov 2026: cargaba
+# por ruta `predict_uniref30_secondary_structure.py`, borrado en la poda del
+# commit b986ee1. Probaba codigo inexistente, no cobertura real.
 
-    def test_duplicate_fasta_ids_do_not_replace_previous_outputs(self):
-        with TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            source = root / "chunk.fasta"
-            good = root / "chunk.csv"
-            skipped = root / "chunk_skipped.csv"
-            good.write_text("original predictions")
-            skipped.write_text("original skipped rows")
-            args = Namespace(input=source, output=None, outputs_dir=root, data_dir=root, model_path=root)
-            source.write_text(">id description\nAC\n>id duplicate\nCA\n")
-            with patch.object(self.predictor, "parse_arguments", return_value=args), \
-                    patch.object(self.predictor, "predict_secondary_structure", side_effect=lambda seq, _: "C" * len(seq)):
-                with self.assertRaisesRegex(ValueError, "Duplicate protein ID"):
-                    self.predictor.main()
-                self.assertEqual(good.read_text(), "original predictions")
-                self.assertEqual(skipped.read_text(), "original skipped rows")
-                source.write_text(">id1\nAC\n>id2\nCA\n")
-                self.predictor.main()
-                self.assertEqual(pd.read_csv(good)[["protein_id", "sequence"]].values.tolist(),
-                                 [["id1", "AC"], ["id2", "CA"]])
