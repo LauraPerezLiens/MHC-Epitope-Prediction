@@ -93,15 +93,32 @@ DIM_PROTT5 = 1024
 
 
 def _git_commit() -> str | None:
+    """El commit, y `-sucio` cuando hay cambios sin confirmar.
+
+    §19 pide el commit **y el estado** del repositorio. Devolver el hash a
+    secas cuando el arbol esta modificado hace que el manifiesto senale un
+    codigo que no es el que se ejecuto, y quien intente reproducirlo desde ese
+    commit no encontrara los cambios.
+    """
     try:
         r = subprocess.run(["git", "-C", str(RAIZ), "rev-parse", "HEAD"],
                            capture_output=True, text=True, timeout=10)
-        return r.stdout.strip() or None
+        h = r.stdout.strip()
+        if not h:
+            return None
+        s = subprocess.run(["git", "-C", str(RAIZ), "status", "--porcelain",
+                            "--untracked-files=no"],
+                           capture_output=True, text=True, timeout=10)
+        return h + ("-sucio" if s.stdout.strip() else "")
     except Exception:
         return None
 
 
-def _sha256(p: Path) -> str:
+def _sha256(p: Path | None) -> str | None:
+    """None cuando no hay fichero: los brazos de solo estructura (one-hot o
+    SecondaryBERT) no se estandarizan y corren sin scaler."""
+    if p is None:
+        return None
     h = hashlib.sha256()
     with p.open("rb") as fh:
         while chunk := fh.read(1 << 20):
@@ -200,7 +217,16 @@ def main() -> int:
     ap_.add_argument("--test", action="store_true",
                      help="puntuar TEST. Hacerlo UNA vez, con la configuracion "
                           "ganadora en VALIDATION (§13.9)")
+    ap_.add_argument("--solo-test", action="store_true",
+                     help="NO entrenar: cargar los best_*.pt que ya hay en "
+                          "--out, puntuar TEST con ellos y fusionar el "
+                          "resultado en el resultado.json existente, "
+                          "conservando el mejor_por_modelo de VALIDATION. "
+                          "Implica --test. Es la forma de puntuar TEST sin "
+                          "repetir las horas de entrenamiento ya hechas")
     args = ap_.parse_args()
+    if args.solo_test:
+        args.test = True
 
     import torch
     from torch import nn
@@ -355,7 +381,49 @@ def main() -> int:
     sin_mejora = 0
     t0 = time.time()
 
-    for ep in range(1, args.epochs + 1):
+    previo = {}
+    if args.solo_test:
+        # Sin entrenar: los pesos y la eleccion de epoca vienen de la ejecucion
+        # anterior. Se exige que esten los cuatro checkpoints, porque puntuar
+        # TEST con un modelo recien inicializado no da un error, da un numero.
+        faltan = [k for k in modelos if not (args.out / f"best_{k}.pt").exists()]
+        if faltan:
+            print(f"ERROR: faltan checkpoints en {args.out}: {faltan}",
+                  file=sys.stderr)
+            return 2
+        p_prev = args.out / "resultado.json"
+        if p_prev.exists():
+            previo = json.loads(p_prev.read_text())
+            mejor = previo.get("mejor_por_modelo", mejor)
+            print(f"--solo-test: pesos y VALIDATION de {p_prev}", flush=True)
+        else:
+            # Sin resultado.json, el VALIDATION se reconstruye del historico
+            # con el MISMO criterio del entrenamiento: mayor AP, y en empate la
+            # epoca mas temprana, porque el checkpoint solo se reescribe cuando
+            # el AP mejora de forma estricta.
+            p_hist = args.out / "history.jsonl"
+            if not p_hist.exists():
+                print(f"ERROR: ni {p_prev} ni {p_hist}; sin VALIDATION no se "
+                      f"puede saber a que epoca corresponden los pesos",
+                      file=sys.stderr)
+                return 2
+            for linea in p_hist.read_text().splitlines():
+                if not linea.strip():
+                    continue
+                reg = json.loads(linea)
+                if reg.get("type") != "epoch_end":
+                    continue
+                for k in modelos:
+                    v = reg.get("validation", {}).get(k, {})
+                    if v.get("ap", -1) > mejor[k]["ap"]:
+                        mejor[k] = {"ap": v["ap"], "epoca": reg["epoca"],
+                                    "validation": v}
+            print(f"--solo-test: VALIDATION reconstruido de {p_hist} "
+                  f"(epocas elegidas "
+                  + ", ".join(f"{k}={mejor[k]['epoca']}" for k in modelos)
+                  + ")", flush=True)
+
+    for ep in range(1, (0 if args.solo_test else args.epochs) + 1):
         for m in modelos.values():
             m.train()
         acum = {k: 0.0 for k in modelos}
@@ -450,6 +518,16 @@ def main() -> int:
         "test": res_test,
         "segundos_totales": round(time.time() - t0, 1),
     }
+    if args.solo_test and previo:
+        # El entrenamiento no se ha repetido, de modo que su fecha, su commit,
+        # sus argumentos y su duracion siguen siendo los validos: se conservan
+        # y solo se anade el TEST, con su propia procedencia aparte.
+        man = dict(previo, test=res_test, puntuado_en_test={
+            "fecha_utc": man["fecha_utc"], "commit_git": man["commit_git"],
+            "segundos": man["segundos_totales"],
+            "filas": man["filas"]["test"],
+            "prevalencia": man["prevalencia"]["test"],
+            "pesos": "best_*.pt elegidos por AP de VALIDATION, sin reentrenar"})
     (args.out / "resultado.json").write_text(json.dumps(man, indent=2,
                                                         ensure_ascii=False))
     hist.close()
