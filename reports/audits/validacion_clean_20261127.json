@@ -1,0 +1,1570 @@
+{
+  "total_fallos": 7846,
+  "ficheros": [
+    {
+      "fichero": "data/data_raw_full_20261126_clean/human/mhc-I/HLA-A/mhc_export_full_slim.parquet",
+      "kind": "mhc",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 1650
+      },
+      "filas": 568389,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "assay__method",
+        "assay__qualitative_measurement",
+        "reference__pmid",
+        "reference__date"
+      ],
+      "sin_accession": 2387,
+      "localizacion": {
+        "coordenadas_exactas": 479703,
+        "localizable_en_otra_posicion": 33780,
+        "no_localizable": 1650,
+        "peptido_no_canonico": 51112,
+        "accession_no_esta_en_el_almacen": 0,
+        "longitud_distinta_de_end_menos_start": 7
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "P20138",
+          "peptido": "AIISGDSPV",
+          "start": 65,
+          "end": 73,
+          "longitud_proteina": 364
+        },
+        {
+          "accession": "A0ACI8THP2",
+          "peptido": "ATGFKQSSK",
+          "start": 17,
+          "end": 25,
+          "longitud_proteina": 1129
+        },
+        {
+          "accession": "A0ACI8THP2",
+          "peptido": "ATGFKQSSK",
+          "start": 17,
+          "end": 25,
+          "longitud_proteina": 1129
+        },
+        {
+          "accession": "A0ACI8THP2",
+          "peptido": "GFKQSSKALQR",
+          "start": 19,
+          "end": 29,
+          "longitud_proteina": 1129
+        },
+        {
+          "accession": "A0ACI8THP2",
+          "peptido": "GFKQSSKALQR",
+          "start": 19,
+          "end": 29,
+          "longitud_proteina": 1129
+        }
+      ],
+      "peptidos_no_canonicos": 51112
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/human/mhc-I/HLA-A/tcell_export_full_slim.parquet",
+      "kind": "tcell",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 285
+      },
+      "filas": 7368,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "assay_antigen__name",
+        "assay_antigen__epitope_relation",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__species",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "mhc_restriction__evidence_code",
+        "assay__qualitative_measurement",
+        "host__name",
+        "first_immunogen__object_type",
+        "reference__pmid",
+        "reference__date",
+        "peptido_origen"
+      ],
+      "sin_accession": 29,
+      "localizacion": {
+        "coordenadas_exactas": 6448,
+        "localizable_en_otra_posicion": 440,
+        "no_localizable": 285,
+        "peptido_no_canonico": 42,
+        "accession_no_esta_en_el_almacen": 124,
+        "longitud_distinta_de_end_menos_start": 9
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "Q16385",
+          "peptido": "GYDQIMPKK",
+          "start": 17,
+          "end": 25,
+          "longitud_proteina": 188
+        },
+        {
+          "accession": "Q16385",
+          "peptido": "GYDQIMPKK",
+          "start": 17,
+          "end": 25,
+          "longitud_proteina": 188
+        },
+        {
+          "accession": "P20138",
+          "peptido": "AIISGDSPV",
+          "start": 65,
+          "end": 73,
+          "longitud_proteina": 364
+        },
+        {
+          "accession": "K7EM85",
+          "peptido": "VLHDDLLEA",
+          "start": 137,
+          "end": 145,
+          "longitud_proteina": 1163
+        },
+        {
+          "accession": "K7EM85",
+          "peptido": "VLHDDLLEA",
+          "start": 137,
+          "end": 145,
+          "longitud_proteina": 1163
+        }
+      ],
+      "peptidos_no_canonicos": 42,
+      "peptido_origen": {
+        "epitope__name": 7310,
+        "assay_antigen__name": 58
+      }
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/human/mhc-I/HLA-B/mhc_export_full_slim.parquet",
+      "kind": "mhc",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 2054
+      },
+      "filas": 663858,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "assay__method",
+        "assay__qualitative_measurement",
+        "reference__pmid",
+        "reference__date"
+      ],
+      "sin_accession": 2309,
+      "localizacion": {
+        "coordenadas_exactas": 537635,
+        "localizable_en_otra_posicion": 65960,
+        "no_localizable": 2054,
+        "peptido_no_canonico": 56087,
+        "accession_no_esta_en_el_almacen": 0,
+        "longitud_distinta_de_end_menos_start": 2
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "A0ACI8THP2",
+          "peptido": "ATGFKQSSKAL",
+          "start": 17,
+          "end": 27,
+          "longitud_proteina": 1129
+        },
+        {
+          "accession": "A0ACI8THP2",
+          "peptido": "GFKQSSKAL",
+          "start": 19,
+          "end": 27,
+          "longitud_proteina": 1129
+        },
+        {
+          "accession": "P00519",
+          "peptido": "LTINKEEAL",
+          "start": 94,
+          "end": 102,
+          "longitud_proteina": 1130
+        },
+        {
+          "accession": "P46736",
+          "peptido": "DRYRRIHSL",
+          "start": 201,
+          "end": 209,
+          "longitud_proteina": 316
+        },
+        {
+          "accession": "P46736",
+          "peptido": "DRYRRIHSL",
+          "start": 201,
+          "end": 209,
+          "longitud_proteina": 316
+        }
+      ],
+      "peptidos_no_canonicos": 56087
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/human/mhc-I/HLA-B/tcell_export_full_slim.parquet",
+      "kind": "tcell",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 49
+      },
+      "filas": 824,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "assay_antigen__name",
+        "assay_antigen__epitope_relation",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__species",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "mhc_restriction__evidence_code",
+        "assay__qualitative_measurement",
+        "host__name",
+        "first_immunogen__object_type",
+        "reference__pmid",
+        "reference__date",
+        "peptido_origen"
+      ],
+      "sin_accession": 5,
+      "localizacion": {
+        "coordenadas_exactas": 642,
+        "localizable_en_otra_posicion": 61,
+        "no_localizable": 49,
+        "peptido_no_canonico": 31,
+        "accession_no_esta_en_el_almacen": 36,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "Q2L6G2",
+          "peptido": "WDRETQICKAKAQ",
+          "start": 84,
+          "end": 96,
+          "longitud_proteina": 362
+        },
+        {
+          "accession": "Q2L6G2",
+          "peptido": "WDRETQICKAKAQ",
+          "start": 84,
+          "end": 96,
+          "longitud_proteina": 362
+        },
+        {
+          "accession": "Q2L6G2",
+          "peptido": "WDRETQICKAKAQ",
+          "start": 84,
+          "end": 96,
+          "longitud_proteina": 362
+        },
+        {
+          "accession": "Q2L6G2",
+          "peptido": "LLRGYHQDAY",
+          "start": 133,
+          "end": 142,
+          "longitud_proteina": 362
+        },
+        {
+          "accession": "Q2L6G2",
+          "peptido": "LLRGYHQDAY",
+          "start": 133,
+          "end": 142,
+          "longitud_proteina": 362
+        }
+      ],
+      "peptidos_no_canonicos": 31,
+      "peptido_origen": {
+        "epitope__name": 806,
+        "assay_antigen__name": 18
+      }
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/human/mhc-I/HLA-C/mhc_export_full_slim.parquet",
+      "kind": "mhc",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 503
+      },
+      "filas": 139836,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "assay__method",
+        "assay__qualitative_measurement",
+        "reference__pmid",
+        "reference__date"
+      ],
+      "sin_accession": 509,
+      "localizacion": {
+        "coordenadas_exactas": 122549,
+        "localizable_en_otra_posicion": 4599,
+        "no_localizable": 503,
+        "peptido_no_canonico": 11733,
+        "accession_no_esta_en_el_almacen": 0,
+        "longitud_distinta_de_end_menos_start": 3
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "Q8NG04",
+          "peptido": "MAWLFFWAI",
+          "start": 1,
+          "end": 9,
+          "longitud_proteina": 563
+        },
+        {
+          "accession": "Q9Y236",
+          "peptido": "KAMPLVEET",
+          "start": 43,
+          "end": 51,
+          "longitud_proteina": 505
+        },
+        {
+          "accession": "A6NMZ5",
+          "peptido": "FFVPFSYL",
+          "start": 251,
+          "end": 258,
+          "longitud_proteina": 306
+        },
+        {
+          "accession": "Q53YP1",
+          "peptido": "VMAPRTLLL",
+          "start": 3,
+          "end": 11,
+          "longitud_proteina": 366
+        },
+        {
+          "accession": "P13498",
+          "peptido": "HMTAVVKLF",
+          "start": 72,
+          "end": 80,
+          "longitud_proteina": 195
+        }
+      ],
+      "peptidos_no_canonicos": 11733
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/human/mhc-I/HLA-C/tcell_export_full_slim.parquet",
+      "kind": "tcell",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 5
+      },
+      "filas": 211,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "assay_antigen__name",
+        "assay_antigen__epitope_relation",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__species",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "mhc_restriction__evidence_code",
+        "assay__qualitative_measurement",
+        "host__name",
+        "first_immunogen__object_type",
+        "reference__pmid",
+        "reference__date",
+        "peptido_origen"
+      ],
+      "localizacion": {
+        "coordenadas_exactas": 137,
+        "localizable_en_otra_posicion": 61,
+        "no_localizable": 5,
+        "peptido_no_canonico": 3,
+        "accession_no_esta_en_el_almacen": 5,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "P08779",
+          "peptido": "ISSVLAGASCPA",
+          "start": 31,
+          "end": 42,
+          "longitud_proteina": 473
+        },
+        {
+          "accession": "P08779",
+          "peptido": "ISSVLAGASCPA",
+          "start": 31,
+          "end": 42,
+          "longitud_proteina": 473
+        },
+        {
+          "accession": "P26885",
+          "peptido": "MRLSWFQVL",
+          "start": 1,
+          "end": 9,
+          "longitud_proteina": 142
+        },
+        {
+          "accession": "P18887",
+          "peptido": "HRMRRRLPSRRYL",
+          "start": 390,
+          "end": 402,
+          "longitud_proteina": 633
+        },
+        {
+          "accession": "P18887",
+          "peptido": "RMRRRLPSRRYL",
+          "start": 391,
+          "end": 402,
+          "longitud_proteina": 633
+        }
+      ],
+      "peptidos_no_canonicos": 3,
+      "peptido_origen": {
+        "epitope__name": 202,
+        "assay_antigen__name": 9
+      }
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/human/mhc-II/HLA-DP/mhc_export_full_slim.parquet",
+      "kind": "mhc",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 347
+      },
+      "filas": 162166,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "assay__method",
+        "assay__qualitative_measurement",
+        "reference__pmid",
+        "reference__date"
+      ],
+      "sin_accession": 852,
+      "localizacion": {
+        "coordenadas_exactas": 150929,
+        "localizable_en_otra_posicion": 1896,
+        "no_localizable": 347,
+        "peptido_no_canonico": 8195,
+        "accession_no_esta_en_el_almacen": 0,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "A0ACI8R1X9",
+          "peptido": "FRKFHYLPFLPST",
+          "start": 171,
+          "end": 183,
+          "longitud_proteina": 250
+        },
+        {
+          "accession": "Q9UIQ6",
+          "peptido": "EKKYFAATQFEPLAARL",
+          "start": 1,
+          "end": 17,
+          "longitud_proteina": 1025
+        },
+        {
+          "accession": "Q9UIQ6",
+          "peptido": "KKYFAATQFEPLAARL",
+          "start": 2,
+          "end": 17,
+          "longitud_proteina": 1025
+        },
+        {
+          "accession": "A0A0G2JH50",
+          "peptido": "GEPRFIAVGYVDDTQFVRFDSD",
+          "start": 42,
+          "end": 63,
+          "longitud_proteina": 372
+        },
+        {
+          "accession": "P01889",
+          "peptido": "GRLLRGHNQYAYDGK",
+          "start": 131,
+          "end": 145,
+          "longitud_proteina": 362
+        }
+      ],
+      "peptidos_no_canonicos": 8195
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/human/mhc-II/HLA-DP/tcell_export_full_slim.parquet",
+      "kind": "tcell",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 13
+      },
+      "filas": 273,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "assay_antigen__name",
+        "assay_antigen__epitope_relation",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__species",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "mhc_restriction__evidence_code",
+        "assay__qualitative_measurement",
+        "host__name",
+        "first_immunogen__object_type",
+        "reference__pmid",
+        "reference__date",
+        "peptido_origen"
+      ],
+      "sin_accession": 3,
+      "localizacion": {
+        "coordenadas_exactas": 217,
+        "localizable_en_otra_posicion": 23,
+        "no_localizable": 13,
+        "peptido_no_canonico": 15,
+        "accession_no_esta_en_el_almacen": 2,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "P02686",
+          "peptido": "CNMYKDSHHPARTA",
+          "start": 81,
+          "end": 94,
+          "longitud_proteina": 304
+        },
+        {
+          "accession": "P10147",
+          "peptido": "NFMADYFETS",
+          "start": 39,
+          "end": 48,
+          "longitud_proteina": 92
+        },
+        {
+          "accession": "P00395",
+          "peptido": "LLASATVEAGAGTGWTVYPP",
+          "start": 92,
+          "end": 111,
+          "longitud_proteina": 513
+        },
+        {
+          "accession": "P03928",
+          "peptido": "LPPSPEPMKMKNYNKPWEPK",
+          "start": 35,
+          "end": 54,
+          "longitud_proteina": 68
+        },
+        {
+          "accession": "P00156",
+          "peptido": "PDNYTPANPLNTPPHIKPEW",
+          "start": 14,
+          "end": 33,
+          "longitud_proteina": 380
+        }
+      ],
+      "peptidos_no_canonicos": 15,
+      "peptido_origen": {
+        "epitope__name": 238,
+        "assay_antigen__name": 35
+      }
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/human/mhc-II/HLA-DQ/mhc_export_full_slim.parquet",
+      "kind": "mhc",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 449
+      },
+      "filas": 50157,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "assay__method",
+        "assay__qualitative_measurement",
+        "reference__pmid",
+        "reference__date"
+      ],
+      "sin_accession": 540,
+      "localizacion": {
+        "coordenadas_exactas": 44129,
+        "localizable_en_otra_posicion": 2172,
+        "no_localizable": 449,
+        "peptido_no_canonico": 2875,
+        "accession_no_esta_en_el_almacen": 0,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "P01112",
+          "peptido": "LLDILDTAGLEEYSAMRD",
+          "start": 52,
+          "end": 69,
+          "longitud_proteina": 189
+        },
+        {
+          "accession": "P01112",
+          "peptido": "LLDILDTAGLEEYSAMRD",
+          "start": 52,
+          "end": 69,
+          "longitud_proteina": 189
+        },
+        {
+          "accession": "P01112",
+          "peptido": "LLDILDTAGLEEYSAMRD",
+          "start": 52,
+          "end": 69,
+          "longitud_proteina": 189
+        },
+        {
+          "accession": "P01909",
+          "peptido": "YLTFLPSDDEIYDCKV",
+          "start": 153,
+          "end": 168,
+          "longitud_proteina": 254
+        },
+        {
+          "accession": "A0ACI8THP2",
+          "peptido": "KQSSKALQRPVA",
+          "start": 33,
+          "end": 44,
+          "longitud_proteina": 1129
+        }
+      ],
+      "peptidos_no_canonicos": 2875
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/human/mhc-II/HLA-DQ/tcell_export_full_slim.parquet",
+      "kind": "tcell",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 62
+      },
+      "filas": 644,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "assay_antigen__name",
+        "assay_antigen__epitope_relation",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__species",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "mhc_restriction__evidence_code",
+        "assay__qualitative_measurement",
+        "host__name",
+        "first_immunogen__object_type",
+        "reference__pmid",
+        "reference__date",
+        "peptido_origen"
+      ],
+      "sin_accession": 13,
+      "localizacion": {
+        "coordenadas_exactas": 391,
+        "localizable_en_otra_posicion": 137,
+        "no_localizable": 62,
+        "peptido_no_canonico": 39,
+        "accession_no_esta_en_el_almacen": 2,
+        "longitud_distinta_de_end_menos_start": 50
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "A0A5S8K7A4",
+          "peptido": "KDLLEQKRAAVDTYC",
+          "start": 65,
+          "end": 79,
+          "longitud_proteina": 266
+        },
+        {
+          "accession": "A0A5S8K7A4",
+          "peptido": "KDLLEQKRAAVDTYC",
+          "start": 65,
+          "end": 79,
+          "longitud_proteina": 266
+        },
+        {
+          "accession": "P02708",
+          "peptido": "PLFSHLQNEQWVD",
+          "start": 95,
+          "end": 107,
+          "longitud_proteina": 457
+        },
+        {
+          "accession": "Q33E94",
+          "peptido": "TGLSTTGAMQAYTWS",
+          "start": 445,
+          "end": 459,
+          "longitud_proteina": 735
+        },
+        {
+          "accession": "P10636",
+          "peptido": "SLEDEAAGHVTQARMV",
+          "start": 113,
+          "end": 128,
+          "longitud_proteina": 758
+        }
+      ],
+      "peptidos_no_canonicos": 39,
+      "peptido_origen": {
+        "epitope__name": 591,
+        "assay_antigen__name": 53
+      }
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/human/mhc-II/HLA-DR/mhc_export_full_slim.parquet",
+      "kind": "mhc",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 1595
+      },
+      "filas": 405338,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "assay__method",
+        "assay__qualitative_measurement",
+        "reference__pmid",
+        "reference__date"
+      ],
+      "sin_accession": 2563,
+      "localizacion": {
+        "coordenadas_exactas": 351547,
+        "localizable_en_otra_posicion": 17162,
+        "no_localizable": 1595,
+        "peptido_no_canonico": 32638,
+        "accession_no_esta_en_el_almacen": 0,
+        "longitud_distinta_de_end_menos_start": 22
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "P01112",
+          "peptido": "LLDILDTAGLEEYSAMRD",
+          "start": 52,
+          "end": 69,
+          "longitud_proteina": 189
+        },
+        {
+          "accession": "P01112",
+          "peptido": "LLDILDTAGLEEYSAMRD",
+          "start": 52,
+          "end": 69,
+          "longitud_proteina": 189
+        },
+        {
+          "accession": "P01112",
+          "peptido": "LLDILDTAGLEEYSAMRD",
+          "start": 52,
+          "end": 69,
+          "longitud_proteina": 189
+        },
+        {
+          "accession": "P01112",
+          "peptido": "LLDILDTAGLEEYSAMRD",
+          "start": 52,
+          "end": 69,
+          "longitud_proteina": 189
+        },
+        {
+          "accession": "P01112",
+          "peptido": "LLDILDTAGLEEYSAMRD",
+          "start": 52,
+          "end": 69,
+          "longitud_proteina": 189
+        }
+      ],
+      "peptidos_no_canonicos": 32638
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/human/mhc-II/HLA-DR/tcell_export_full_slim.parquet",
+      "kind": "tcell",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 196
+      },
+      "filas": 5492,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "assay_antigen__name",
+        "assay_antigen__epitope_relation",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__species",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "mhc_restriction__evidence_code",
+        "assay__qualitative_measurement",
+        "host__name",
+        "first_immunogen__object_type",
+        "reference__pmid",
+        "reference__date",
+        "peptido_origen"
+      ],
+      "sin_accession": 13,
+      "localizacion": {
+        "coordenadas_exactas": 4134,
+        "localizable_en_otra_posicion": 603,
+        "no_localizable": 196,
+        "peptido_no_canonico": 506,
+        "accession_no_esta_en_el_almacen": 40,
+        "longitud_distinta_de_end_menos_start": 47
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "A0A140T958",
+          "peptido": "KDILEDRRGQVDTYC",
+          "start": 60,
+          "end": 74,
+          "longitud_proteina": 250
+        },
+        {
+          "accession": "A0A5S8K7A4",
+          "peptido": "KDFLEDRRALVDTYC",
+          "start": 48,
+          "end": 62,
+          "longitud_proteina": 266
+        },
+        {
+          "accession": "A0A0B4J2H0",
+          "peptido": "ASGGTFSSFAINWVRQAPGQ",
+          "start": 24,
+          "end": 43,
+          "longitud_proteina": 117
+        },
+        {
+          "accession": "A0A0B4J2H0",
+          "peptido": "ASGGTFSSFAINWVRQAPGQ",
+          "start": 24,
+          "end": 43,
+          "longitud_proteina": 117
+        },
+        {
+          "accession": "A0A0B4J2H0",
+          "peptido": "ASGGTFSSFAINWVRQAPGQ",
+          "start": 24,
+          "end": 43,
+          "longitud_proteina": 117
+        }
+      ],
+      "peptidos_no_canonicos": 506,
+      "peptido_origen": {
+        "epitope__name": 5354,
+        "assay_antigen__name": 138
+      }
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/mouse/mhc-I/H2-D/mhc_export_full_slim.parquet",
+      "kind": "mhc",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 73
+      },
+      "filas": 45576,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "assay__method",
+        "assay__qualitative_measurement",
+        "reference__pmid",
+        "reference__date"
+      ],
+      "sin_accession": 103,
+      "localizacion": {
+        "coordenadas_exactas": 33783,
+        "localizable_en_otra_posicion": 8707,
+        "no_localizable": 73,
+        "peptido_no_canonico": 2944,
+        "accession_no_esta_en_el_almacen": 0,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "P14685",
+          "peptido": "ISTQNHRALDLVA",
+          "start": 191,
+          "end": 203,
+          "longitud_proteina": 530
+        },
+        {
+          "accession": "A0A075B5R1",
+          "peptido": "DNPKNTLFL",
+          "start": 65,
+          "end": 73,
+          "longitud_proteina": 117
+        },
+        {
+          "accession": "P03975",
+          "peptido": "RRKGKYTGL",
+          "start": 88,
+          "end": 96,
+          "longitud_proteina": 557
+        },
+        {
+          "accession": "Q9D8V0",
+          "peptido": "SSVIGVWYL",
+          "start": 107,
+          "end": 115,
+          "longitud_proteina": 378
+        },
+        {
+          "accession": "Q9D8V0",
+          "peptido": "SSVIGVWYL",
+          "start": 107,
+          "end": 115,
+          "longitud_proteina": 378
+        }
+      ],
+      "peptidos_no_canonicos": 2944
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/mouse/mhc-I/H2-D/tcell_export_full_slim.parquet",
+      "kind": "tcell",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 25
+      },
+      "filas": 414,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "assay_antigen__name",
+        "assay_antigen__epitope_relation",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__species",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "mhc_restriction__evidence_code",
+        "assay__qualitative_measurement",
+        "host__name",
+        "first_immunogen__object_type",
+        "reference__pmid",
+        "reference__date",
+        "peptido_origen"
+      ],
+      "sin_accession": 3,
+      "localizacion": {
+        "coordenadas_exactas": 276,
+        "localizable_en_otra_posicion": 61,
+        "no_localizable": 25,
+        "peptido_no_canonico": 29,
+        "accession_no_esta_en_el_almacen": 20,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "P04213",
+          "peptido": "DTGHGLRLIHYSYGAGSTEKGDI",
+          "start": 6,
+          "end": 28,
+          "longitud_proteina": 122
+        },
+        {
+          "accession": "Q9D8V0",
+          "peptido": "SSVIGVWYL",
+          "start": 107,
+          "end": 115,
+          "longitud_proteina": 378
+        },
+        {
+          "accession": "Q9D8V0",
+          "peptido": "SSVIGVWYL",
+          "start": 107,
+          "end": 115,
+          "longitud_proteina": 378
+        },
+        {
+          "accession": "Q9D8V0",
+          "peptido": "SSVIGVWYL",
+          "start": 107,
+          "end": 115,
+          "longitud_proteina": 378
+        },
+        {
+          "accession": "P04213",
+          "peptido": "DTGHGLRLIHYSYGAGSTEKGDI",
+          "start": 6,
+          "end": 28,
+          "longitud_proteina": 122
+        }
+      ],
+      "peptidos_no_canonicos": 29,
+      "peptido_origen": {
+        "epitope__name": 407,
+        "assay_antigen__name": 7
+      }
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/mouse/mhc-I/H2-K/mhc_export_full_slim.parquet",
+      "kind": "mhc",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 85
+      },
+      "filas": 87563,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "assay__method",
+        "assay__qualitative_measurement",
+        "reference__pmid",
+        "reference__date"
+      ],
+      "sin_accession": 309,
+      "localizacion": {
+        "coordenadas_exactas": 71413,
+        "localizable_en_otra_posicion": 7799,
+        "no_localizable": 85,
+        "peptido_no_canonico": 8016,
+        "accession_no_esta_en_el_almacen": 0,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "A0A075B5R1",
+          "peptido": "AYISSGSSTL",
+          "start": 65,
+          "end": 74,
+          "longitud_proteina": 117
+        },
+        {
+          "accession": "P14685",
+          "peptido": "ISTQNHRAL",
+          "start": 191,
+          "end": 199,
+          "longitud_proteina": 530
+        },
+        {
+          "accession": "A0A075B5R1",
+          "peptido": "AYISSGSSTL",
+          "start": 65,
+          "end": 74,
+          "longitud_proteina": 117
+        },
+        {
+          "accession": "P19253",
+          "peptido": "KYQAVTTTLEE",
+          "start": 148,
+          "end": 158,
+          "longitud_proteina": 203
+        },
+        {
+          "accession": "P19253",
+          "peptido": "KYQAVTTTLEE",
+          "start": 148,
+          "end": 158,
+          "longitud_proteina": 203
+        }
+      ],
+      "peptidos_no_canonicos": 8016
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/mouse/mhc-I/H2-K/tcell_export_full_slim.parquet",
+      "kind": "tcell",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 63
+      },
+      "filas": 952,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "assay_antigen__name",
+        "assay_antigen__epitope_relation",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__species",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "mhc_restriction__evidence_code",
+        "assay__qualitative_measurement",
+        "host__name",
+        "first_immunogen__object_type",
+        "reference__pmid",
+        "reference__date",
+        "peptido_origen"
+      ],
+      "sin_accession": 1,
+      "localizacion": {
+        "coordenadas_exactas": 819,
+        "localizable_en_otra_posicion": 55,
+        "no_localizable": 63,
+        "peptido_no_canonico": 3,
+        "accession_no_esta_en_el_almacen": 11,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "A0A075B5R1",
+          "peptido": "AYISSGSSTL",
+          "start": 65,
+          "end": 74,
+          "longitud_proteina": 117
+        },
+        {
+          "accession": "A0A075B5R1",
+          "peptido": "AYISSGSSTL",
+          "start": 65,
+          "end": 74,
+          "longitud_proteina": 117
+        },
+        {
+          "accession": "P19253",
+          "peptido": "KYQAVTTTLEE",
+          "start": 148,
+          "end": 158,
+          "longitud_proteina": 203
+        },
+        {
+          "accession": "P19253",
+          "peptido": "KYQAVTTTL",
+          "start": 148,
+          "end": 156,
+          "longitud_proteina": 203
+        },
+        {
+          "accession": "P03888",
+          "peptido": "MFFINVL",
+          "start": 1,
+          "end": 7,
+          "longitud_proteina": 318
+        }
+      ],
+      "peptidos_no_canonicos": 3,
+      "peptido_origen": {
+        "epitope__name": 938,
+        "assay_antigen__name": 14
+      }
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/mouse/mhc-I/H2-L/mhc_export_full_slim.parquet",
+      "kind": "mhc",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 4
+      },
+      "filas": 40,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "assay__method",
+        "assay__qualitative_measurement",
+        "reference__pmid",
+        "reference__date"
+      ],
+      "localizacion": {
+        "coordenadas_exactas": 30,
+        "localizable_en_otra_posicion": 5,
+        "no_localizable": 4,
+        "peptido_no_canonico": 1,
+        "accession_no_esta_en_el_almacen": 0,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "P14685",
+          "peptido": "ISTQNHRALDLVA",
+          "start": 191,
+          "end": 203,
+          "longitud_proteina": 530
+        },
+        {
+          "accession": "P06330",
+          "peptido": "SSSTAHMEL",
+          "start": 75,
+          "end": 83,
+          "longitud_proteina": 118
+        },
+        {
+          "accession": "P14685",
+          "peptido": "TQNHRALDL",
+          "start": 193,
+          "end": 201,
+          "longitud_proteina": 530
+        },
+        {
+          "accession": "P14685",
+          "peptido": "TQNHRALDL",
+          "start": 192,
+          "end": 200,
+          "longitud_proteina": 530
+        }
+      ],
+      "peptidos_no_canonicos": 1
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/mouse/mhc-I/H2-L/tcell_export_full_slim.parquet",
+      "kind": "tcell",
+      "fallos": {},
+      "filas": 76,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "assay_antigen__name",
+        "assay_antigen__epitope_relation",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__species",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "mhc_restriction__evidence_code",
+        "assay__qualitative_measurement",
+        "host__name",
+        "first_immunogen__object_type",
+        "reference__pmid",
+        "reference__date",
+        "peptido_origen"
+      ],
+      "localizacion": {
+        "coordenadas_exactas": 62,
+        "localizable_en_otra_posicion": 10,
+        "no_localizable": 0,
+        "peptido_no_canonico": 0,
+        "accession_no_esta_en_el_almacen": 4,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "peptidos_no_canonicos": 0,
+      "peptido_origen": {
+        "epitope__name": 72,
+        "assay_antigen__name": 4
+      }
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/mouse/mhc-II/H2-IA/mhc_export_full_slim.parquet",
+      "kind": "mhc",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 275
+      },
+      "filas": 29841,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "assay__method",
+        "assay__qualitative_measurement",
+        "reference__pmid",
+        "reference__date"
+      ],
+      "sin_accession": 557,
+      "localizacion": {
+        "coordenadas_exactas": 21672,
+        "localizable_en_otra_posicion": 3295,
+        "no_localizable": 275,
+        "peptido_no_canonico": 4274,
+        "accession_no_esta_en_el_almacen": 0,
+        "longitud_distinta_de_end_menos_start": 2
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "P04230",
+          "peptido": "PEFLEQRRAAVDTYC",
+          "start": 60,
+          "end": 74,
+          "longitud_proteina": 264
+        },
+        {
+          "accession": "P04230",
+          "peptido": "PEFLEQRRAAVDTYC",
+          "start": 60,
+          "end": 74,
+          "longitud_proteina": 264
+        },
+        {
+          "accession": "P04230",
+          "peptido": "PEFLEQRRAAVDTYC",
+          "start": 60,
+          "end": 74,
+          "longitud_proteina": 264
+        },
+        {
+          "accession": "Q5DTZ0",
+          "peptido": "SDLYNWKNNNPSFSEDPG",
+          "start": 232,
+          "end": 249,
+          "longitud_proteina": 1840
+        },
+        {
+          "accession": "P06344",
+          "peptido": "VPTSLRRLEQPNVAIS",
+          "start": 83,
+          "end": 98,
+          "longitud_proteina": 263
+        }
+      ],
+      "peptidos_no_canonicos": 4274
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/mouse/mhc-II/H2-IA/tcell_export_full_slim.parquet",
+      "kind": "tcell",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 105
+      },
+      "filas": 1502,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "assay_antigen__name",
+        "assay_antigen__epitope_relation",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__species",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "mhc_restriction__evidence_code",
+        "assay__qualitative_measurement",
+        "host__name",
+        "first_immunogen__object_type",
+        "reference__pmid",
+        "reference__date",
+        "peptido_origen"
+      ],
+      "sin_accession": 34,
+      "localizacion": {
+        "coordenadas_exactas": 1005,
+        "localizable_en_otra_posicion": 218,
+        "no_localizable": 105,
+        "peptido_no_canonico": 64,
+        "accession_no_esta_en_el_almacen": 76,
+        "longitud_distinta_de_end_menos_start": 81
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "P06344",
+          "peptido": "VPTSLRRLEQPNVAIS",
+          "start": 83,
+          "end": 98,
+          "longitud_proteina": 263
+        },
+        {
+          "accession": "Q00493",
+          "peptido": "KNSLINYLEQIHRGVKGFVR",
+          "start": 363,
+          "end": 382,
+          "longitud_proteina": 476
+        },
+        {
+          "accession": "P04230",
+          "peptido": "PEFLEQRRAAVDTYC",
+          "start": 60,
+          "end": 74,
+          "longitud_proteina": 264
+        },
+        {
+          "accession": "P04230",
+          "peptido": "PEFLEQRRAAVDTYC",
+          "start": 60,
+          "end": 74,
+          "longitud_proteina": 264
+        },
+        {
+          "accession": "P01851",
+          "peptido": "PSQTSVYFCA",
+          "start": 101,
+          "end": 110,
+          "longitud_proteina": 173
+        }
+      ],
+      "peptidos_no_canonicos": 64,
+      "peptido_origen": {
+        "epitope__name": 1407,
+        "assay_antigen__name": 95
+      }
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/mouse/mhc-II/H2-IE/mhc_export_full_slim.parquet",
+      "kind": "mhc",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 4
+      },
+      "filas": 224,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "assay__method",
+        "assay__qualitative_measurement",
+        "reference__pmid",
+        "reference__date"
+      ],
+      "sin_accession": 6,
+      "localizacion": {
+        "coordenadas_exactas": 160,
+        "localizable_en_otra_posicion": 51,
+        "no_localizable": 4,
+        "peptido_no_canonico": 3,
+        "accession_no_esta_en_el_almacen": 0,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "P01887",
+          "peptido": "ACRVKHDSMAEPKTVY",
+          "start": 99,
+          "end": 114,
+          "longitud_proteina": 119
+        },
+        {
+          "accession": "P10404",
+          "peptido": "GALEKSVSALK",
+          "start": 479,
+          "end": 489,
+          "longitud_proteina": 641
+        },
+        {
+          "accession": "Q5DTZ0",
+          "peptido": "EDVQRIASNQSVDVKKR",
+          "start": 17,
+          "end": 33,
+          "longitud_proteina": 1840
+        },
+        {
+          "accession": "Q5DTZ0",
+          "peptido": "AQRAELIALTQALKM",
+          "start": 1216,
+          "end": 1230,
+          "longitud_proteina": 1840
+        }
+      ],
+      "peptidos_no_canonicos": 3
+    },
+    {
+      "fichero": "data/data_raw_full_20261126_clean/mouse/mhc-II/H2-IE/tcell_export_full_slim.parquet",
+      "kind": "tcell",
+      "fallos": {
+        "peptido_NO_localizable_en_su_proteina": 4
+      },
+      "filas": 134,
+      "columnas": [
+        "assay_id",
+        "epitope__name",
+        "epitope__modifications",
+        "assay_antigen__name",
+        "assay_antigen__epitope_relation",
+        "epitope__molecule_parent_iri",
+        "epitope__starting_position",
+        "epitope__ending_position",
+        "epitope__species",
+        "epitope__source_organism",
+        "mhc_restriction__name",
+        "mhc_restriction__evidence_code",
+        "assay__qualitative_measurement",
+        "host__name",
+        "first_immunogen__object_type",
+        "reference__pmid",
+        "reference__date",
+        "peptido_origen"
+      ],
+      "sin_accession": 5,
+      "localizacion": {
+        "coordenadas_exactas": 81,
+        "localizable_en_otra_posicion": 27,
+        "no_localizable": 4,
+        "peptido_no_canonico": 17,
+        "accession_no_esta_en_el_almacen": 0,
+        "longitud_distinta_de_end_menos_start": 0
+      },
+      "ejemplos_no_localizables": [
+        {
+          "accession": "P06330",
+          "peptido": "FYNQKFKGKATL",
+          "start": 59,
+          "end": 70,
+          "longitud_proteina": 118
+        },
+        {
+          "accession": "P06330",
+          "peptido": "FYNQKFKGKATL",
+          "start": 59,
+          "end": 70,
+          "longitud_proteina": 118
+        },
+        {
+          "accession": "P10400",
+          "peptido": "AQRAELIALTQALKM",
+          "start": 399,
+          "end": 413,
+          "longitud_proteina": 120
+        },
+        {
+          "accession": "P10400",
+          "peptido": "AQRAELIALTQALKM",
+          "start": 399,
+          "end": 413,
+          "longitud_proteina": 120
+        }
+      ],
+      "peptidos_no_canonicos": 17,
+      "peptido_origen": {
+        "epitope__name": 124,
+        "assay_antigen__name": 10
+      }
+    }
+  ]
+}

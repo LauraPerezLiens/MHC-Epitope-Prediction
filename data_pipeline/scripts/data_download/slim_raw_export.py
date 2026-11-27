@@ -15,20 +15,47 @@ el DATASET DE TRABAJO. No confundirlos: solo el segundo elimina filas.
     vacias en todas las familias, o duplicados IRI de una columna legible que
     si se conserva.
 
-  * `--columns core`  -> 11 columnas en `mhc`, 22 en `tcell`, y CUATRO FILTROS
-    DE FILA (decididos por Laura el 25 nov 2026; CLAUDE.md 0.6.7 sexies):
-    modificacion quimica no vacia, `epitope__name` no canonico, accession de
-    proteina madre ausente, y especie del epitopo distinta de la propia.
-    Sobre las 11 familias deja 1.979.022 filas de 2.986.343 (66,3 %). El filtro
-    caro es el de accession, y sobre todo en HLA-DR (445.756 filas, el 46,1 %
-    de la familia: peptidos sinteticos sin proteina madre).
-    `epitope__object_type` no quita ninguna fila —la consulta ya lo filtra en
-    origen— y queda como asercion.
+  * `--columns core`  -> 12 columnas en `mhc`, 22 en `tcell`, y TRES FILTROS
+    DE FILA, los MISMOS en los dos exports (decision de Laura del 27 nov 2026,
+    que SUSTITUYE a los cinco del 25 nov recogidos en CLAUDE.md 0.6.7 sexies):
+
+      1. `epitope__object_type == "Linear peptide"`. No quita ninguna fila
+         —la consulta ya lo filtra en origen— y queda como ASERCION: si
+         apareciera otra cosa, la descarga no es la que creemos.
+      2. `assay__qualitative_measurement` empieza por "Positive".
+      3. `epitope__species` es la propia de la rama del arbol: `Homo sapiens`
+         en las familias humanas, `Mus musculus` en las murinas.
+
+    `assay__method` NO se filtra: se conservan todos los tipos de ensayo.
+
+RETIRADOS DEL NUCLEO EL 27 NOV, Y POR QUE IMPORTA SABERLO
+---------------------------------------------------------
+Cinco filtros que `core` aplicaba hasta el 27 nov dejan de aplicarse, y pasan a
+ser opciones explicitas (`--drop-modified`, `--only-canonical`,
+`--require-accession`, `--drop-mutant-alleles`, `--require-complete`). El
+criterio nuevo es que esta salida sea un inventario fiel de lo que IEDB mide,
+y que cada paso rio abajo aplique los suyos. Consecuencias que NO conviene
+olvidar al leer la tabla resultante:
+
+  * Entran filas SIN accession de proteina madre (503.288 en la descarga del
+    24, de las que 445.756 son de HLA-DR). No se pueden convertir en ventana:
+    el paso de ventanas vuelve a necesitar el accession y las descartara alli.
+  * Entran peptidos con modificacion quimica (188.412 filas). Por eso
+    `epitope__modifications` pasa a CONSERVARSE en `mhc` —antes se usaba para
+    filtrar y se tiraba—: sin ella, un peptido oxidado seria indistinguible
+    del no modificado.
+  * Entran `epitope__name` con letras fuera de los 20 canonicos (43 filas) y
+    alelos mutantes de laboratorio (6.930 filas, el 0,35 %).
+  * `require_complete` deja de aplicarse, de modo que hay celdas vacias. Era
+    ademas incompatible con `tcell`: alli se llevaba el 100 % de las filas
+    supervivientes, porque `epitope__modifications` queda vacia por
+    construccion tras el filtro 1 y `reference__submission_id` es la
+    alternativa al `pmid` y nunca estan los dos.
 
 Lo que `core` NO decide, a proposito, porque son las decisiones abiertas de
-CLAUDE.md 0.6.8.3: el valor cualitativo (la etiqueta se conserva tal cual),
-`assay_antigen__epitope_relation`, `mhc_restriction__evidence_code` y el tipo
-de ensayo. Las columnas para tomarlas se conservan o estan en `full`.
+CLAUDE.md 0.6.8.3: `assay_antigen__epitope_relation`,
+`mhc_restriction__evidence_code` y el tipo de ensayo. Las columnas para
+tomarlas se conservan o estan en `full`.
 
 La lista de columnas que se conservan es CURADA Y FIJA, no se deriva de la tasa
 de relleno de un fichero concreto. Motivo: una columna vacia en H2-K puede estar
@@ -50,11 +77,15 @@ USO
 ---
     P=/home/nap/miniconda3/envs/nap_env/bin/python
 
-    # dataset de trabajo (lo normal): 11 columnas, solo mhc, con los 4 filtros
+    # dataset de trabajo (lo normal): los 3 filtros, mhc y tcell
     $P -u data_pipeline/scripts/data_download/slim_raw_export.py \
         --raw data/data_raw_full_YYYYMMDD \
         --out data/data_raw_full_YYYYMMDD_clean \
-        --columns core --census
+        --columns core --kind ambos --census
+
+    # con los filtros retirados del nucleo, si se quieren de vuelta:
+    $P -u ... --columns core --drop-modified --only-canonical \
+        --require-accession --drop-mutant-alleles
 
     # inventario completo, sin filtrar filas
     $P -u ... --columns full --out DIR_slim --audit-dropped
@@ -74,6 +105,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 # --------------------------------------------------------------------------- #
@@ -434,6 +466,10 @@ CORE_MHC: dict[str, list[str]] = {
     ],
     "peptido": [
         "epitope__name",                        # la secuencia
+        # Desde el 27 nov la modificacion quimica ya no filtra filas, asi que
+        # la columna pasa a CONSERVARSE: sin ella un peptido oxidado seria
+        # indistinguible del no modificado. Rellena en 188.412 filas (6,3 %).
+        "epitope__modifications",
     ],
     "proteina_madre": [
         "epitope__molecule_parent_iri",         # accession UniProt: ventanas y senuelos
@@ -485,11 +521,17 @@ CORE_TCELL: dict[str, list[str]] = {
         "mhc_restriction__evidence_code",       # 26,7 % 'MHC binding prediction'
     ],
     "ensayo": [
-        "assay__method",
-        "assay__response_measured",
+        # Retiradas el 27 nov por decision de Laura: `assay__method` (20
+        # valores) y `assay__response_measured` (77). Estaban al 100 % de
+        # relleno y eran lo unico que separaba inmunogenicidad de union dentro
+        # de `tcell` —hay 4.006 filas de `qualitative binding` y 3.963 de
+        # `multimer/tetramer`, que miden union y no respuesta funcional—, de
+        # modo que tras quitarlas esas filas quedan indistinguibles. Decision
+        # consciente: no se filtra por ellas y no se conservan. Recuperables
+        # re-extrayendo del CSV crudo o con `--columns full`.
         "assay__qualitative_measurement",
-        "assay__number_of_subjects_positive",   # etiqueta graduada
-        "assay__number_of_subjects_tested",
+        # Retiradas tambien `assay__number_of_subjects_positive` (27,7 % de
+        # relleno) y `__tested` (29,1 %): eran la etiqueta graduada y no se usa.
     ],
     "contexto": [
         "host__name",
@@ -497,7 +539,7 @@ CORE_TCELL: dict[str, list[str]] = {
     ],
     "publicacion": [
         "reference__pmid",
-        "reference__submission_id",
+        # `reference__submission_id` retirada: 0,4 % de relleno (103 filas).
         "reference__date",
     ],
 }
@@ -526,9 +568,18 @@ CORE_TCELL: dict[str, list[str]] = {
 # del 25 nov es no distinguir ahora que se mide.
 # --------------------------------------------------------------------------- #
 LINEAR_PEPTIDE = "Linear peptide"
+# Decision de Laura del 27 nov: la condicion es la MISMA en los dos exports,
+# `epitope__object_type == "Linear peptide"`, y nada mas.
+#
+# `assay_antigen__object_type` SE RETIRA de `tcell`, donde filtraba hasta el
+# 27 nov. Quitaba las filas cuyo antigeno del ensayo es un organismo entero,
+# una proteina o una celula tumoral (187 de 1.303 en H2-IE; 10.482 en el
+# conjunto). La columna se conserva en `full` y la decision queda abierta
+# junto con `assay_antigen__epitope_relation`, que mide lo mismo con mas
+# detalle (hallazgo S).
 FILTER_OBJECT_TYPE: dict[str, list[str]] = {
     "mhc": ["epitope__object_type"],
-    "tcell": ["epitope__object_type", "assay_antigen__object_type"],
+    "tcell": ["epitope__object_type"],
 }
 
 # Los 20 aminoacidos canonicos. Un `epitope__name` con cualquier otra letra no
@@ -715,14 +766,20 @@ def slim_one(
     filter_linear: bool = True,
     self_species: str | None = None,
     only_positives: bool = True,
-    require_complete: bool = True,
+    require_complete: bool = False,
+    drop_modified: bool = False,
+    only_canonical: bool = False,
+    require_accession: bool = False,
+    drop_mutant_alleles: bool = False,
+    proteomas: dict[str, str] | None = None,
 ) -> dict:
     """Proyecta un CSV crudo sobre la lista curada del perfil `profile`.
 
-    Con `--columns core` aplica ademas los cuatro filtros de fila del nucleo
-    (modificacion quimica, peptido no canonico, falta de accession de proteina
-    madre y especie ajena). Se registra cuantas filas quita cada condicion y
-    con que valores.
+    Con `--columns core` aplica ademas los TRES filtros de fila del nucleo, los
+    mismos en `mhc` y en `tcell`: objeto `Linear peptide` (asercion), valor
+    cualitativo positivo y especie del epitopo igual a la propia. Los otros
+    cinco son opcionales y vienen desactivados. Se registra cuantas filas quita
+    cada condicion y con que valores.
     """
     if profile == "core":
         groups = CORE_MHC if kind == "mhc" else CORE_TCELL
@@ -801,24 +858,26 @@ def slim_one(
         df = df[mask]
 
     if profile == "core":
-        if "epitope__modifications" in df.columns:
+        # --- Opcionales, desactivados por omision desde el 27 nov 2026. ---
+        if drop_modified and "epitope__modifications" in df.columns:
             _apply(
                 "epitope__modifications", df["epitope__modifications"].isna(),
                 "epitope__modifications", "vacio (sin modificacion quimica)",
             )
-        if "epitope__name" in df.columns:
+        if only_canonical and "epitope__name" in df.columns:
             _apply(
                 "epitope__name", df["epitope__name"].map(
                     lambda p: isinstance(p, str) and bool(p) and set(p) <= CANONICAL_AA
                 ),
                 None, "solo los 20 aminoacidos canonicos",
             )
-        if "epitope__molecule_parent_iri" in df.columns:
+        if require_accession and "epitope__molecule_parent_iri" in df.columns:
             _apply(
                 "epitope__molecule_parent_iri",
                 df["epitope__molecule_parent_iri"].notna(),
                 None, "no vacio (hay accession de proteina madre)",
             )
+        # --- Nucleo: especie propia. ---
         if self_species and "epitope__species" in df.columns:
             _apply(
                 "epitope__species",
@@ -827,8 +886,8 @@ def slim_one(
                 ),
                 "epitope__species", f'contiene "{self_species}"',
             )
-        # 5. Alelos artificiales fuera.
-        if "mhc_restriction__name" in df.columns:
+        # Opcional: alelos artificiales fuera.
+        if drop_mutant_alleles and "mhc_restriction__name" in df.columns:
             _apply(
                 "mhc_restriction__name",
                 ~df["mhc_restriction__name"].fillna("").str.contains(
@@ -836,11 +895,93 @@ def slim_one(
                 ),
                 "mhc_restriction__name", "no es un mutante puntual de laboratorio",
             )
-        # 6. Solo positivos. Los negativos no se usan en este proyecto, y
-        #    ademas la elucion no produce ninguno: de los 575.559 negativos
-        #    experimentales, los filtros anteriores ya dejan 12.133, porque
-        #    son casi todos peptidos sinteticos de ensayo de union sin
-        #    proteina madre.
+        # --- Nucleo de `tcell`: el peptido que se midio de verdad. ---------
+        #
+        # En `tcell_export` la secuencia anotada en `epitope__name` no siempre
+        # es la que se probo: `assay_antigen__epitope_relation` dice cual es la
+        # relacion entre las dos. Medido sobre las 11 familias, el 23,4 % de
+        # las filas NO es `Epitope`. Dos ejemplos reales de H2-D:
+        #
+        #   rel=Structurally Related  epitope__name=FQDENYLYL  antigeno=YFIENYLEL
+        #   rel=Source Antigen        epitope__name=FSHHNIIRL  antigeno=Eph receptor A2
+        #
+        # En el primero se midio OTRO peptido; en el segundo, la proteina
+        # entera. Tomar `epitope__name` como la secuencia probada etiqueta un
+        # peptido con el resultado de un experimento que midio otra cosa.
+        #
+        # Decision de Laura del 27 nov: no descartar sin mas, sino CORREGIR la
+        # secuencia cuando se puede. Si `assay_antigen__name` es una secuencia
+        # peptidica canonica, pasa a ser el peptido de la fila; si es un nombre
+        # de proteina o de organismo, la fila no puede ser un ejemplo de
+        # peptido y se descarta. Recupera 1.829 de las 5.556 filas afectadas y
+        # sube el conservado del 76,6 % al 84,3 %.
+        if kind == "tcell" and "assay_antigen__epitope_relation" in df.columns:
+            rel = df["assay_antigen__epitope_relation"].fillna("")
+            antigeno = df.get("assay_antigen__name", pd.Series("", index=df.index))
+            limpio = antigeno.fillna("").str.strip().str.upper()
+            es_peptido = limpio.map(
+                lambda s: bool(s) and 5 <= len(s) <= 60 and set(s) <= CANONICAL_AA
+            )
+            corregible = (rel != "Epitope") & es_peptido
+            df["peptido_origen"] = np.where(
+                rel == "Epitope", "epitope__name",
+                np.where(corregible, "assay_antigen__name", "descartada"),
+            )
+            n_corr = int(corregible.sum())
+            df.loc[corregible, "epitope__name"] = limpio[corregible]
+            # Al cambiar la secuencia, las coordenadas anotadas dejan de
+            # corresponder: un peptido estructuralmente relacionado no esta en
+            # la misma posicion. Arrastrarlas situaria el peptido donde no
+            # esta, que es peor que no tenerlas. Pero tampoco hay que tirarlas:
+            # si el peptido nuevo ESTA en la misma proteina madre, sus
+            # coordenadas se RECALCULAN. Medido sobre las 11 familias: de 1.829
+            # peptidos corregidos, 441 se localizan en su proteina madre y
+            # 1.352 no (variantes estructurales que no estan en esa proteina).
+            # Los que no se localizan quedan sin coordenadas y caen despues por
+            # el filtro de coordenadas del nucleo.
+            recalculadas = 0
+            tiene_coords = all(
+                c in df.columns for c in
+                ("epitope__starting_position", "epitope__ending_position")
+            )
+            if tiene_coords:
+                df.loc[corregible, "epitope__starting_position"] = None
+                df.loc[corregible, "epitope__ending_position"] = None
+                if proteomas and "epitope__molecule_parent_iri" in df.columns:
+                    for i in df.index[corregible]:
+                        iri = df.at[i, "epitope__molecule_parent_iri"]
+                        if not isinstance(iri, str):
+                            continue
+                        seq = proteomas.get(iri.rsplit("/", 1)[-1])
+                        if not seq:
+                            continue
+                        pep = df.at[i, "epitope__name"]
+                        p = seq.find(pep)
+                        if p < 0:
+                            continue
+                        # Coordenadas de IEDB: base 1 e inclusivas.
+                        df.at[i, "epitope__starting_position"] = str(p + 1)
+                        df.at[i, "epitope__ending_position"] = str(p + len(pep))
+                        recalculadas += 1
+            _apply(
+                "assay_antigen__epitope_relation",
+                (rel == "Epitope") | corregible,
+                "assay_antigen__epitope_relation",
+                ('== "Epitope", o la secuencia se corrige con assay_antigen__name '
+                 "cuando este es un peptido canonico"),
+            )
+            filtros["assay_antigen__epitope_relation"].update({
+                "peptidos_corregidos": n_corr,
+                "coordenadas_recalculadas": recalculadas,
+                "nota": ("al corregir la secuencia las coordenadas se recalculan "
+                         "localizando el peptido nuevo en su proteina madre; si no "
+                         "esta, quedan vacias y la fila cae por el filtro de "
+                         "coordenadas"),
+            })
+
+        # --- Nucleo: solo positivos. Los negativos no se usan en este
+        #     proyecto. Admite `Positive` y sus variantes High / Intermediate
+        #     / Low sin distinguirlas.
         if only_positives and "assay__qualitative_measurement" in df.columns:
             _apply(
                 "assay__qualitative_measurement",
@@ -849,11 +990,34 @@ def slim_one(
                 ),
                 "assay__qualitative_measurement", 'empieza por "Positive"',
             )
-        # 7. Ninguna celda vacia. Deja una tabla en la que toda columna esta
-        #    rellena en toda fila, de modo que nada rio abajo tiene que
-        #    tratar ausencias. Lo que quita: epitopos sin coordenadas en su
-        #    proteina, y filas cuya referencia es un envio directo a IEDB y
-        #    por tanto no tiene pmid.
+        # --- Nucleo: el epitopo tiene que estar SITUADO en su proteina. -----
+        #
+        # Decision de Laura del 27 nov: `epitope__starting_position` y
+        # `__ending_position` no pueden estar vacias. Una fila que no dice
+        # donde esta el epitopo no se puede convertir en ventana ni centrar en
+        # un fragmento, de modo que no es un ejemplo utilizable.
+        #
+        # Cuesta poco en `mhc`: 1.263 filas de 2.154.251 (0,1 %), con H2-L
+        # (9,1 %) y H2-IE (3,9 %) como unicas familias donde se nota. En
+        # `tcell` cuesta mas (12,9 %) porque arrastra los peptidos corregidos
+        # que no se pudieron relocalizar.
+        coord_cols = [
+            c for c in ("epitope__starting_position", "epitope__ending_position")
+            if c in df.columns
+        ]
+        if coord_cols:
+            _apply(
+                "_coordenadas",
+                ~df[coord_cols].isna().any(axis=1),
+                None,
+                "epitope__starting_position y __ending_position no vacias",
+            )
+
+        # Opcional: ninguna celda vacia. Desactivado desde el 27 nov, y NO
+        # usarlo con `tcell`: alli se lleva el 100 % de las filas, porque
+        # `epitope__modifications` queda vacia por construccion tras el filtro
+        # de modificacion y `reference__submission_id` es la alternativa al
+        # `pmid` (nunca estan los dos). Medido en H2-IE: 115 de 115.
         if require_complete:
             presentes = [
                 c for c in keep
@@ -873,7 +1037,11 @@ def slim_one(
             if vacios_por_col:
                 filtros["_completitud"]["vacios_por_columna"] = vacios_por_col
 
-    df = df.reset_index(drop=True)[keep]  # orden estable, el de la lista curada
+    # Orden estable, el de la lista curada. `peptido_origen` no viene de IEDB:
+    # la genera la correccion de secuencia de `tcell`, y va al final para que
+    # el orden de las columnas de IEDB no dependa de si se aplico o no.
+    salida_cols = keep + [c for c in ("peptido_origen",) if c in df.columns]
+    df = df.reset_index(drop=True)[salida_cols]
 
     dst_dir.mkdir(parents=True, exist_ok=True)
     stem = src.stem + "_slim"
@@ -1034,7 +1202,7 @@ def main() -> int:
                     help="directorio de salida; replica la estructura especie/clase/familia")
     ap.add_argument("--only", action="append", default=None,
                     help="limita a una familia, p. ej. mouse/mhc-I/H2-K (repetible)")
-    ap.add_argument("--format", choices=("parquet", "csv", "both"), default="both",
+    ap.add_argument("--format", choices=("parquet", "csv", "both"), default="parquet",
                     help=("formato de salida. Por omision 'both': el Parquet es el artefacto "
                           "de trabajo y el CSV la copia inspeccionable a mano."))
     ap.add_argument("--chunksize", type=int, default=200_000)
@@ -1051,12 +1219,33 @@ def main() -> int:
     ap.add_argument("--keep-negatives", action="store_true",
                     help=("conserva los ensayos negativos. Por omision se filtran: no se usan "
                           "en este proyecto y la elucion no produce ninguno."))
+    ap.add_argument("--require-complete", action="store_true",
+                    help=("exige que toda columna conservada este rellena en toda fila "
+                          "(salvo reference__pmid). Desactivado desde el 27 nov. NO "
+                          "usarlo con 'tcell': se lleva el 100 % de las filas."))
     ap.add_argument("--allow-incomplete", action="store_true",
-                    help=("permite celdas vacias. Por omision se exige que toda columna "
-                          "conservada este rellena en toda fila."))
+                    help="obsoleto: la completitud ya no se aplica por omision. Se ignora.")
+    ap.add_argument("--drop-modified", action="store_true",
+                    help=("quita las filas con modificacion quimica en el epitopo "
+                          "(188.412 filas, 6,3 %%). Retirado del nucleo el 27 nov."))
+    ap.add_argument("--only-canonical", action="store_true",
+                    help=("quita los epitope__name con letras fuera de los 20 "
+                          "aminoacidos canonicos (43 filas). Retirado el 27 nov."))
+    ap.add_argument("--require-accession", action="store_true",
+                    help=("exige accession de proteina madre (quita 503.288 filas, de "
+                          "ellas 445.756 de HLA-DR). Retirado del nucleo el 27 nov: el "
+                          "paso de ventanas lo necesita y lo aplica alli."))
+    ap.add_argument("--proteins", type=Path, default=None,
+                    help=("almacen de proteinas madre (parent_proteins.parquet). Solo se "
+                          "usa en 'tcell': permite RECALCULAR las coordenadas de los "
+                          "peptidos corregidos localizandolos en su proteina madre, en "
+                          "lugar de perderlos por el filtro de coordenadas."))
+    ap.add_argument("--drop-mutant-alleles", action="store_true",
+                    help=("quita los alelos mutantes de laboratorio (6.930 filas, "
+                          "0,35 %%). Retirado del nucleo el 27 nov."))
     ap.add_argument("--kind", choices=("mhc", "tcell", "ambos"), default="mhc",
-                    help=("que export procesar. Por omision solo 'mhc': 'tcell' quedo "
-                          "aparcado por decision de Laura del 25 nov."))
+                    help=("que export procesar. Por omision solo 'mhc'. Desde el 27 nov "
+                          "'tcell' usa los mismos tres filtros que 'mhc' y es utilizable."))
     ap.add_argument("--emit-csv", action="store_true",
                     help=("escribe el CSV equivalente al lado de cada Parquet ya existente, "
                           "sin releer los CSV crudos. Para anadir la copia inspeccionable a "
@@ -1092,11 +1281,29 @@ def main() -> int:
             "perfil_columnas": args.columns,
             "filtro_linear_peptide": not args.keep_nonpeptide,
             "nota": (
-                "Proyeccion de columnas mas un unico filtro de fila: objeto "
-                "'Linear peptide'. NO se aplica ningun otro filtro: ni cualitativo, "
-                "ni de organismo fuente, ni de codigo de evidencia, ni de relacion "
-                "antigeno-epitopo. Esas decisiones quedan abiertas y las columnas "
-                "necesarias para tomarlas se conservan."
+                "Perfil 'core' (27 nov 2026): proyeccion de columnas mas TRES filtros "
+                "de fila, los mismos en mhc y en tcell: objeto 'Linear peptide' "
+                "(asercion, no quita filas), valor cualitativo positivo, y especie del "
+                "epitopo igual a la propia de la rama. assay__method NO se filtra. "
+                "Retirados del nucleo y disponibles como opciones: modificacion "
+                "quimica, peptido canonico, accession de proteina madre, alelo mutante "
+                "y completitud. Las decisiones que siguen abiertas "
+                "(assay_antigen__epitope_relation, mhc_restriction__evidence_code, "
+                "tipo de ensayo) se toman rio abajo y sus columnas se conservan."
+            ),
+            "filtros_del_nucleo": [
+                "epitope__object_type == 'Linear peptide' (asercion)",
+                "assay__qualitative_measurement empieza por 'Positive'",
+                "epitope__species es la propia de la rama del arbol",
+            ],
+            "filtros_opcionales_activos": sorted(
+                n for n, v in {
+                    "epitope__modifications vacio": args.drop_modified,
+                    "epitope__name canonico": args.only_canonical,
+                    "accession de proteina madre": args.require_accession,
+                    "sin alelos mutantes": args.drop_mutant_alleles,
+                    "ninguna celda vacia": args.require_complete,
+                }.items() if v
             ),
             "ficheros": {},
         }
@@ -1111,6 +1318,15 @@ def main() -> int:
             print(f"ERROR: ningun *_export*.csv bajo {raw}", file=sys.stderr)
             return 2
         print(f"(sin CSV crudos bajo {raw}: se trabaja solo sobre la salida ya escrita)")
+
+    proteomas: dict[str, str] | None = None
+    if args.proteins is not None:
+        if not args.proteins.exists():
+            print(f"ERROR: no existe {args.proteins}", file=sys.stderr)
+            return 2
+        _p = pd.read_parquet(args.proteins, columns=["accession", "secuencia"])
+        proteomas = dict(zip(_p["accession"], _p["secuencia"].astype(str).str.upper()))
+        print(f"almacen de proteinas: {len(proteomas):,} secuencias")
 
     tot_in = tot_out = 0
     tot_rows = 0
@@ -1135,7 +1351,12 @@ def main() -> int:
             profile=args.columns, filter_linear=not args.keep_nonpeptide,
             self_species=self_species,
             only_positives=not args.keep_negatives,
-            require_complete=not args.allow_incomplete,
+            require_complete=args.require_complete,
+            drop_modified=args.drop_modified,
+            only_canonical=args.only_canonical,
+            require_accession=args.require_accession,
+            drop_mutant_alleles=args.drop_mutant_alleles,
+            proteomas=proteomas,
         )
         manifest["ficheros"][key] = info
         man_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
